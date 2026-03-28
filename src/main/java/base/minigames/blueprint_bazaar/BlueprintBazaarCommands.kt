@@ -1,7 +1,6 @@
 package base.minigames.blueprint_bazaar
 
 import base.commands.MinigameCommandsSkeleton
-import base.minigames.maze_hunt.MazeHuntCommands
 import org.bukkit.command.Command
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
@@ -40,23 +39,23 @@ class BlueprintBazaarCommands(private val blueprintbazaar: BlueprintBazaar) : Mi
     override fun handleCommand(sender: Player, command: Command, label: String, args: Array<String>): Boolean {
         when (SubCommands.fromString(args[0])) {
             SubCommands.START -> {
-                if (blueprintbazaar.stopIfGameIsRunning()) return false
+                if (blueprintbazaar.isGameRunning()) return false
                 blueprintbazaar.start(sender)
             }
             SubCommands.START_HARD_MODE -> {
-                if (blueprintbazaar.stopIfGameIsRunning()) return false
+                if (blueprintbazaar.isGameRunning()) return false
                 blueprintbazaar.startFastMode(sender)
             }
             SubCommands.PAUSE -> {
-                if (blueprintbazaar.stopIfGameIsPaused()) return false
+                if (blueprintbazaar.isGamePaused()) return false
                 blueprintbazaar.pauseGame()
             }
             SubCommands.RESUME -> {
-                if (blueprintbazaar.stopIfGameIsNotPaused()) return false
+                if (blueprintbazaar.isGameNotPaused()) return false
                 blueprintbazaar.resumeGame()
             }
             SubCommands.END -> {
-                if (blueprintbazaar.stopIfGameIsNotRunning()) return false
+                if (blueprintbazaar.isGameNotRunning()) return false
                 blueprintbazaar.endGame()
             }
             SubCommands.INIT_SCHEMATICS -> blueprintbazaar.initSchematics()

@@ -39,23 +39,23 @@ class MazeHuntCommands(val mazeHunt: MazeHunt) : MinigameCommandsSkeleton() {
     ): Boolean {
         when (SubCommands.fromString(args[0])) {
             SubCommands.START -> {
-                if (mazeHunt.stopIfGameIsRunning()) return false
+                if (mazeHunt.isGameRunning()) return false
                 mazeHunt.start(sender)
             }
             SubCommands.START_HARD_MODE -> {
-                if (mazeHunt.stopIfGameIsRunning()) return false
+                if (mazeHunt.isGameRunning()) return false
                 mazeHunt.startFastMode(sender)
             }
             SubCommands.PAUSE -> {
-                if (mazeHunt.stopIfGameIsPaused()) return false
+                if (mazeHunt.isGamePaused()) return false
                 mazeHunt.pauseGame()
             }
             SubCommands.RESUME -> {
-                if (mazeHunt.stopIfGameIsNotPaused()) return false
+                if (mazeHunt.isGameNotPaused()) return false
                 mazeHunt.resumeGame()
             }
             SubCommands.END -> {
-                if (mazeHunt.stopIfGameIsNotRunning()) return false
+                if (mazeHunt.isGameNotRunning()) return false
                 mazeHunt.endGame()
             }
             SubCommands.NUKE_ARENA -> mazeHunt.nukeArea()

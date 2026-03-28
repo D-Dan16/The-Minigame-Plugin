@@ -247,7 +247,7 @@ protected constructor() {
      * @param content The main text content to be displayed in both the broadcast and title
      * @param subContent The subtitle text to be displayed in the title
      * @param color The hex color string to be used for both the message and title text
-     * @param duration The time the message last as a [Title] on the players' screen, not including the time it fades in and out. Defaults to 3s.
+     * @param duration The time the message lasts as a [Title] on the players' screen, not including the time it fades in and out. Defaults to 3s.
      * @param toGameSender If true, sends it only to the game sender; if false, sends it to all players (default: false)
      *
      * The title is displayed with the following timing:
@@ -302,7 +302,7 @@ protected constructor() {
      *
      *  @return true if the guard has stopped the command from calling the [start] method, otherwise, false.
      *  */
-    fun stopIfGameIsRunning() : Boolean {
+    fun isGameRunning() : Boolean {
         if (isGameRunning) {
             announceMessage(
                 "Minigame is already running!",
@@ -323,7 +323,7 @@ protected constructor() {
      *
      *  @return true if the guard has stopped the command from calling the [resumeGame] method, otherwise, false.
      *  */
-    fun stopIfGameIsNotPaused() : Boolean {
+    fun isGameNotPaused() : Boolean {
         if (!isGameRunning || !isGamePaused ) {
             announceMessage(
                 "Minigame is not paused!",
@@ -345,7 +345,7 @@ protected constructor() {
      *
      *  @return true if the guard has stopped the command from calling the [pauseGame] method, otherwise, false.
      *  */
-    fun stopIfGameIsPaused() : Boolean {
+    fun isGamePaused() : Boolean {
         if (!isGameRunning || isGamePaused) {
             announceMessage(
                 "Minigame already paused!",
@@ -367,7 +367,7 @@ protected constructor() {
      *
      *  @return true if the guard has stopped the command from calling the [endGame] method, otherwise, false.
      *  */
-    fun stopIfGameIsNotRunning() : Boolean {
+    fun isGameNotRunning() : Boolean {
         if (!isGameRunning) {
             announceMessage(
                 "Minigame is not running!",

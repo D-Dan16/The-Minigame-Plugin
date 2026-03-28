@@ -12,6 +12,8 @@ import base.commands.MiscCommands
 import base.minigames.maze_hunt.MHConst.Locations.WORLD
 import base.minigames.maze_hunt.MazeHunt
 import base.minigames.maze_hunt.MazeHuntCommands
+import base.minigames.parkour_dash.ParkourDash
+import base.minigames.parkour_dash.ParkourDashCommands
 import org.bukkit.Bukkit
 import org.bukkit.Difficulty
 import org.bukkit.GameMode
@@ -26,6 +28,7 @@ class MinigamePlugin : JavaPlugin() {
     lateinit var blueprintBazaar: BlueprintBazaar
     lateinit var holeInTheWall: HoleInTheWall
     lateinit var mazeHunt: MazeHunt
+    lateinit var parkourDash: ParkourDash
 
     override fun onEnable() {
         plugin = this
@@ -35,6 +38,7 @@ class MinigamePlugin : JavaPlugin() {
         blueprintBazaar= BlueprintBazaar(this)
         holeInTheWall = HoleInTheWall(this)
         mazeHunt = MazeHunt(this)
+        parkourDash = ParkourDash(this)
 
 
         world = server.getWorld("world")!! // Initialize the world object
@@ -90,6 +94,7 @@ class MinigamePlugin : JavaPlugin() {
             MinigameType.HOLE_IN_THE_WALL -> this.holeInTheWall
             MinigameType.DISCO_MAYHEM -> this.discoMayhem
             MinigameType.BLUEPRINT_BAZAAR -> this.blueprintBazaar
+            MinigameType.PARKOUR_DASH -> this.parkourDash
         }
     }
 
@@ -100,7 +105,8 @@ class MinigamePlugin : JavaPlugin() {
         enum class MinigameType {
             HOLE_IN_THE_WALL,
             DISCO_MAYHEM,
-            BLUEPRINT_BAZAAR
+            BLUEPRINT_BAZAAR,
+            PARKOUR_DASH
         }
     }
 }

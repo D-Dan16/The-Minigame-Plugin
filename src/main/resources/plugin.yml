@@ -1,5 +1,5 @@
 name: MinigamePlugin
-version: '4.6.0'
+version: '5.0.0'
 main: base.MinigamePlugin
 api-version: '1.21'
 commands:
@@ -21,13 +21,6 @@ commands:
   mg_maze_hunt:
     description: Starts the Maze Hunt minigame
     usage: /<command> <state>
-
-
-
-
-  push_block:
-    description: Pushes the block in a specified coordinate by a specified amount of blocks in a specified direction. The block will be pushed every specified interval by 1 block in ticks.
-    usage: /<command> <x> <y> <z> <amount> <direction> <interval>
-  give_diamonds:
-    description: Gives the player 3 diamonds
-    usage: /<command>
+  mg_parkour_dash:
+    description: Starts the Parkour Dash minigame
+    usage: /<command> <state>

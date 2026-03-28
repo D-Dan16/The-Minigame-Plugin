@@ -1,6 +1,14 @@
 package base.annotations
 
 /**
- * Annotation to indicate that a function is being called by a command. Does not mean that its only call is from a command.
+ * Marks that a command can call this function. Use the `mode` to tag how it may be called.
  */
-annotation class CalledByCommand
+@Target(AnnotationTarget.FUNCTION)
+@Retention(AnnotationRetention.SOURCE)
+@MustBeDocumented
+annotation class CalledByCommand(
+    val mode: Mode = Mode.UNSPECIFIED
+) {
+}
+
+enum class Mode { UNSPECIFIED, EXCLUSIVE, NON_EXCLUSIVE }
