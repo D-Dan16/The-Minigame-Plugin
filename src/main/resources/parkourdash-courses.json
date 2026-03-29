@@ -1,0 +1,787 @@
+{
+  "version": 1,
+  "schematicsBase": "parkourdash",
+  "courses": [
+    {
+      "id": "freeform_1",
+      "name": "Freeform 1",
+      "theme": "Freeform",
+      "variants": [
+        { "path": "DirtyDan16_-pkw-course.schem", "difficulty": 5 }
+      ]
+    },
+    {
+      "id": "freeform_2",
+      "name": "Freeform 2",
+      "theme": "Freeform",
+      "variants": [
+        { "path": "DirtyDan16_-pkw-course-2.schem", "difficulty": 5 }
+      ]
+    },
+    {
+      "id": "freeform_3",
+      "name": "Freeform 3",
+      "theme": "Freeform",
+      "variants": [
+        { "path": "DirtyDan16_-pkw-course-3.schem", "difficulty": 5 }
+      ]
+    },
+    {
+      "id": "freeform_4",
+      "name": "Freeform 4",
+      "theme": "Freeform",
+      "variants": [
+        { "path": "DirtyDan16_-pkw-course-4.schem", "difficulty": 5 }
+      ]
+    },
+    {
+      "id": "freeform_5",
+      "name": "Freeform 5",
+      "theme": "Freeform",
+      "variants": [
+        { "path": "DirtyDan16_-pkw-course-5.schem", "difficulty": 5 }
+      ]
+    },
+    {
+      "id": "freeform_6",
+      "name": "Freeform 6",
+      "theme": "Freeform",
+      "variants": [
+        { "path": "DirtyDan16_-pkw-course-6.schem", "difficulty": 5 }
+      ]
+    },
+    {
+      "id": "freeform_7",
+      "name": "Freeform 7",
+      "theme": "Freeform",
+      "variants": [
+        { "path": "DirtyDan16_-pkw-course-7.schem", "difficulty": 5 }
+      ]
+    },
+    {
+      "id": "freeform_8",
+      "name": "Freeform 8",
+      "theme": "Freeform",
+      "variants": [
+        { "path": "DirtyDan16_-pkw-course-8.schem", "difficulty": 5 }
+      ]
+    },
+    {
+      "id": "freeform_9",
+      "name": "Freeform 9",
+      "theme": "Freeform",
+      "variants": [
+        { "path": "DirtyDan16_-pkw-course-9.schem", "difficulty": 5 }
+      ]
+    },
+    {
+      "id": "freeform_10",
+      "name": "Freeform 10",
+      "theme": "Freeform",
+      "variants": [
+        { "path": "DirtyDan16_-pkw-course-10.schem", "difficulty": 5 }
+      ]
+    },
+    {
+      "id": "freeform_11",
+      "name": "Freeform 11",
+      "theme": "Freeform",
+      "variants": [
+        { "path": "DirtyDan16_-pkw-course-11.schem", "difficulty": 5 }
+      ]
+    },
+    {
+      "id": "freeform_12",
+      "name": "Freeform 12",
+      "theme": "Freeform",
+      "variants": [
+        { "path": "DirtyDan16_-pkw-course-12.schem", "difficulty": 5 }
+      ]
+    },
+    {
+      "id": "freeform_13",
+      "name": "Freeform 13",
+      "theme": "Freeform",
+      "variants": [
+        { "path": "DirtyDan16_-pkw-course-13.schem", "difficulty": 5 }
+      ]
+    },
+    {
+      "id": "freeform_14",
+      "name": "Freeform 14",
+      "theme": "Freeform",
+      "variants": [
+        { "path": "DirtyDan16_-pkw-course-14.schem", "difficulty": 5 }
+      ]
+    },
+    {
+      "id": "freeform_15",
+      "name": "Freeform 15",
+      "theme": "Freeform",
+      "variants": [
+        { "path": "DirtyDan16_-pkw-course-15.schem", "difficulty": 5 }
+      ]
+    },
+    {
+      "id": "freeform_16",
+      "name": "Freeform 16",
+      "theme": "Freeform",
+      "variants": [
+        { "path": "DirtyDan16_-pkw-course-16.schem", "difficulty": 5 }
+      ]
+    },
+    {
+      "id": "freeform_17",
+      "name": "Freeform 17",
+      "theme": "Freeform",
+      "variants": [
+        { "path": "DirtyDan16_-pkw-course-17.schem", "difficulty": 5 }
+      ]
+    },
+    {
+      "id": "freeform_18",
+      "name": "Freeform 18",
+      "theme": "Freeform",
+      "variants": [
+        { "path": "DirtyDan16_-pkw-course-18.schem", "difficulty": 5 }
+      ]
+    },
+    {
+      "id": "freeform_19",
+      "name": "Freeform 19",
+      "theme": "Freeform",
+      "variants": [
+        { "path": "DirtyDan16_-pkw-course-19.schem", "difficulty": 5 }
+      ]
+    },
+    {
+      "id": "freeform_20",
+      "name": "Freeform 20",
+      "theme": "Freeform",
+      "variants": [
+        { "path": "DirtyDan16_-pkw-course-20.schem", "difficulty": 5 }
+      ]
+    },
+    {
+      "id": "freeform_21",
+      "name": "Freeform 21",
+      "theme": "Freeform",
+      "variants": [
+        { "path": "DirtyDan16_-pkw-course-21.schem", "difficulty": 5 }
+      ]
+    },
+    {
+      "id": "freeform_22",
+      "name": "Freeform 22",
+      "theme": "Freeform",
+      "variants": [
+        { "path": "DirtyDan16_-pkw-course-22.schem", "difficulty": 5 }
+      ]
+    },
+    {
+      "id": "freeform_23",
+      "name": "Freeform 23",
+      "theme": "Freeform",
+      "variants": [
+        { "path": "DirtyDan16_-pkw-course-23.schem", "difficulty": 5 }
+      ]
+    },
+    {
+      "id": "freeform_24",
+      "name": "Freeform 24",
+      "theme": "Freeform",
+      "variants": [
+        { "path": "DirtyDan16_-pkw-course-24.schem", "difficulty": 5 }
+      ]
+    },
+    {
+      "id": "freeform_25",
+      "name": "Freeform 25",
+      "theme": "Freeform",
+      "variants": [
+        { "path": "DirtyDan16_-pkw-course-25.schem", "difficulty": 5 }
+      ]
+    },
+    {
+      "id": "freeform_26",
+      "name": "Freeform 26",
+      "theme": "Freeform",
+      "variants": [
+        { "path": "DirtyDan16_-pkw-course-26.schem", "difficulty": 5 }
+      ]
+    },
+    {
+      "id": "freeform_27",
+      "name": "Freeform 27",
+      "theme": "Freeform",
+      "variants": [
+        { "path": "DirtyDan16_-pkw-course-27.schem", "difficulty": 5 }
+      ]
+    },
+    {
+      "id": "freeform_28",
+      "name": "Freeform 28",
+      "theme": "Freeform",
+      "variants": [
+        { "path": "DirtyDan16_-pkw-course-28.schem", "difficulty": 5 }
+      ]
+    },
+
+    {
+      "id": "candy_course1",
+      "name": "Candy Course 1",
+      "theme": "Candy",
+      "variants": [
+        { "path": "DirtyDan16_-pkw-course-Candy-course1-variant1.schem", "difficulty": 4 },
+        { "path": "DirtyDan16_-pkw-course-Candy-course1-variant2.schem", "difficulty": 4 },
+        { "path": "DirtyDan16_-pkw-course-Candy-course1-variant3.schem", "difficulty": 4 }
+      ]
+    },
+    {
+      "id": "candy_course2",
+      "name": "Candy Course 2",
+      "theme": "Candy",
+      "variants": [
+        { "path": "DirtyDan16_-pkw-course-Candy-course2-variant-1.schem", "difficulty": 4 },
+        { "path": "DirtyDan16_-pkw-course-Candy-course2-variant-2.schem", "difficulty": 4 },
+        { "path": "DirtyDan16_-pkw-course-Candy-course2-variant-3.schem", "difficulty": 4 }
+      ]
+    },
+    {
+      "id": "candy_course3",
+      "name": "Candy Course 3",
+      "theme": "Candy",
+      "variants": [
+        { "path": "DirtyDan16_-pkw-course-Candy-course3.schem", "difficulty": 4 }
+      ]
+    },
+    {
+      "id": "candy_course4",
+      "name": "Candy Course 4",
+      "theme": "Candy",
+      "variants": [
+        { "path": "DirtyDan16_-pkw-course-Candy-course4-variant1.schem", "difficulty": 4 },
+        { "path": "DirtyDan16_-pkw-course-Candy-course4-variant2.schem", "difficulty": 4 },
+        { "path": "DirtyDan16_-pkw-course-Candy-course4-variant3.schem", "difficulty": 4 }
+      ]
+    },
+    {
+      "id": "candy_course5",
+      "name": "Candy Course 5",
+      "theme": "Candy",
+      "variants": [
+        { "path": "DirtyDan16_-pkw-course-Candy-course5-variant1.schem", "difficulty": 4 },
+        { "path": "DirtyDan16_-pkw-course-Candy-course5-variant2.schem", "difficulty": 4 },
+        { "path": "DirtyDan16_-pkw-course-Candy-course5-variant3.schem", "difficulty": 4 }
+      ]
+    },
+    {
+      "id": "candy_course6",
+      "name": "Candy Course 6",
+      "theme": "Candy",
+      "variants": [
+        { "path": "DirtyDan16_-pkw-course-Candy-course6-variant1.schem", "difficulty": 4 },
+        { "path": "DirtyDan16_-pkw-course-Candy-course6-variant2.schem", "difficulty": 4 },
+        { "path": "DirtyDan16_-pkw-course-Candy-course6-variant3.schem", "difficulty": 4 }
+      ]
+    },
+    {
+      "id": "candy_course7",
+      "name": "Candy Course 7",
+      "theme": "Candy",
+      "variants": [
+        { "path": "DirtyDan16_-pkw-course-Candy-course7-variant1.schem", "difficulty": 4 },
+        { "path": "DirtyDan16_-pkw-course-Candy-course7-variant2.schem", "difficulty": 4 },
+        { "path": "DirtyDan16_-pkw-course-Candy-course7-variant3.schem", "difficulty": 4 }
+      ]
+    },
+
+    {
+      "id": "downtown_course1",
+      "name": "Downtown Course 1",
+      "theme": "Downtown",
+      "variants": [
+        { "path": "DirtyDan16_-pkw-course-Downtown-variant1.schem", "difficulty": 5 },
+        { "path": "DirtyDan16_-pkw-course-Downtown-variant2.schem", "difficulty": 5 }
+      ]
+    },
+    {
+      "id": "downtown_course2",
+      "name": "Downtown Course 2",
+      "theme": "Downtown",
+      "variants": [
+        { "path": "DirtyDan16_-pkw-course-Downtown-course2.schem", "difficulty": 5 }
+      ]
+    },
+    {
+      "id": "downtown_course3",
+      "name": "Downtown Course 3",
+      "theme": "Downtown",
+      "variants": [
+        { "path": "DirtyDan16_-pkw-course-Downtown-course3.schem", "difficulty": 5 }
+      ]
+    },
+    {
+      "id": "downtown_course4",
+      "name": "Downtown Course 4",
+      "theme": "Downtown",
+      "variants": [
+        { "path": "DirtyDan16_-pkw-course-Downtown-course4-variant1.schem", "difficulty": 5 },
+        { "path": "DirtyDan16_-pkw-course-Downtown-course4-variant2.schem", "difficulty": 5 },
+        { "path": "DirtyDan16_-pkw-course-Downtown-course4-variant3.schem", "difficulty": 5 }
+      ]
+    },
+
+    {
+      "id": "side_easy_course1",
+      "name": "Side-Easy Course 1",
+      "theme": "Side-Easy",
+      "variants": [
+        { "path": "DirtyDan16_-pkw-course-Easy-course1-variant-1.schem", "difficulty": 5 },
+        { "path": "DirtyDan16_-pkw-course-Easy-course1-variant-2.schem", "difficulty": 5 },
+        { "path": "DirtyDan16_-pkw-course-Easy-course1-variant-3.schem", "difficulty": 5 }
+      ]
+    },
+    {
+      "id": "side_easy_course2",
+      "name": "Side-Easy Course 2",
+      "theme": "Side-Easy",
+      "variants": [
+        { "path": "DirtyDan16_-pkw-course-Easy-course2-variant-1.schem", "difficulty": 5 },
+        { "path": "DirtyDan16_-pkw-course-Easy-course2-variant-2.schem", "difficulty": 5 },
+        { "path": "DirtyDan16_-pkw-course-Easy-course2-variant-3.schem", "difficulty": 5 }
+      ]
+    },
+    {
+      "id": "side_easy_course3",
+      "name": "Side-Easy Course 3",
+      "theme": "Side-Easy",
+      "variants": [
+        { "path": "DirtyDan16_-pkw-course-Easy-course3-variant1.schem", "difficulty": 5 },
+        { "path": "DirtyDan16_-pkw-course-Easy-course3-variant2.schem", "difficulty": 5 },
+        { "path": "DirtyDan16_-pkw-course-Easy-course3-variant3.schem", "difficulty": 5 }
+      ]
+    },
+    {
+      "id": "side_easy_course4",
+      "name": "Side-Easy Course 4",
+      "theme": "Side-Easy",
+      "variants": [
+        { "path": "DirtyDan16_-pkw-course-Easy-course4-variant1.schem", "difficulty": 5 },
+        { "path": "DirtyDan16_-pkw-course-Easy-course4-variant2.schem", "difficulty": 5 },
+        { "path": "DirtyDan16_-pkw-course-Easy-course4-variant3.schem", "difficulty": 5 }
+      ]
+    },
+    {
+      "id": "side_easy_course5",
+      "name": "Side-Easy Course 5",
+      "theme": "Side-Easy",
+      "variants": [
+        { "path": "DirtyDan16_-pkw-course-Easy-course5-variant1.schem", "difficulty": 5 },
+        { "path": "DirtyDan16_-pkw-course-Easy-course5-variant2.schem", "difficulty": 5 },
+        { "path": "DirtyDan16_-pkw-course-Easy-course5-variant3.schem", "difficulty": 5 }
+      ]
+    },
+    {
+      "id": "side_easy_course6",
+      "name": "Side-Easy Course 6",
+      "theme": "Side-Easy",
+      "variants": [
+        { "path": "DirtyDan16_-pkw-course-Easy-course6-variant1.schem", "difficulty": 5 },
+        { "path": "DirtyDan16_-pkw-course-Easy-course6-variant2.schem", "difficulty": 5 },
+        { "path": "DirtyDan16_-pkw-course-Easy-course6-variant3.schem", "difficulty": 5 }
+      ]
+    },
+    {
+      "id": "side_easy_course7",
+      "name": "Side-Easy Course 7",
+      "theme": "Side-Easy",
+      "variants": [
+        { "path": "DirtyDan16_-pkw-course-Easy-course7-variant1.schem", "difficulty": 5 },
+        { "path": "DirtyDan16_-pkw-course-Easy-course7-variant2.schem", "difficulty": 5 },
+        { "path": "DirtyDan16_-pkw-course-Easy-course7-variant3.schem", "difficulty": 5 }
+      ]
+    },
+    {
+      "id": "side_easy_course8",
+      "name": "Side-Easy Course 8",
+      "theme": "Side-Easy",
+      "variants": [
+        { "path": "DirtyDan16_-pkw-course-Easy-course8-variant1.schem", "difficulty": 5 },
+        { "path": "DirtyDan16_-pkw-course-Easy-course8-variant2.schem", "difficulty": 5 },
+        { "path": "DirtyDan16_-pkw-course-Easy-course8-variant3.schem", "difficulty": 5 }
+      ]
+    },
+    {
+      "id": "side_easy_course9",
+      "name": "Side-Easy Course 9",
+      "theme": "Side-Easy",
+      "variants": [
+        { "path": "DirtyDan16_-pkw-course-Easy-course9-variant1.schem", "difficulty": 5 },
+        { "path": "DirtyDan16_-pkw-course-Easy-course9-variant2.schem", "difficulty": 5 },
+        { "path": "DirtyDan16_-pkw-course-Easy-course9-variant3.schem", "difficulty": 5 }
+      ]
+    },
+    {
+      "id": "side_easy_course10",
+      "name": "Side-Easy Course 10",
+      "theme": "Side-Easy",
+      "variants": [
+        { "path": "DirtyDan16_-pkw-course-Easy-course10-variant1.schem", "difficulty": 5 },
+        { "path": "DirtyDan16_-pkw-course-Easy-course10-variant2.schem", "difficulty": 5 },
+        { "path": "DirtyDan16_-pkw-course-Easy-course10-variant3.schem", "difficulty": 5 }
+      ]
+    },
+    {
+      "id": "side_easy_course11",
+      "name": "Side-Easy Course 11",
+      "theme": "Side-Easy",
+      "variants": [
+        { "path": "DirtyDan16_-pkw-course-Easy-course11-variant1.schem", "difficulty": 5 },
+        { "path": "DirtyDan16_-pkw-course-Easy-course11-variant2.schem", "difficulty": 5 },
+        { "path": "DirtyDan16_-pkw-course-Easy-course11-variant3.schem", "difficulty": 5 }
+      ]
+    },
+    {
+      "id": "side_easy_course12",
+      "name": "Side-Easy Course 12",
+      "theme": "Side-Easy",
+      "variants": [
+        { "path": "DirtyDan16_-pkw-course-Easy-course12-variant1.schem", "difficulty": 5 },
+        { "path": "DirtyDan16_-pkw-course-Easy-course12-variant2.schem", "difficulty": 5 },
+        { "path": "DirtyDan16_-pkw-course-Easy-course12-variant3.schem", "difficulty": 5 }
+      ]
+    },
+
+    {
+      "id": "factory_course1",
+      "name": "Factory Course 1",
+      "theme": "Factory",
+      "variants": [
+        { "path": "DirtyDan16_-pkw-course-Factory-course1.schem", "difficulty": 3 }
+      ]
+    },
+    {
+      "id": "factory_course2",
+      "name": "Factory Course 2",
+      "theme": "Factory",
+      "variants": [
+        { "path": "DirtyDan16_-pkw-course-Factory-course2.schem", "difficulty": 3 }
+      ]
+    },
+    {
+      "id": "factory_course3",
+      "name": "Factory Course 3",
+      "theme": "Factory",
+      "variants": [
+        { "path": "DirtyDan16_-pkw-course-Factory-course3-variant1.schem", "difficulty": 3 },
+        { "path": "DirtyDan16_-pkw-course-Factory-course3-variant2.schem", "difficulty": 3 },
+        { "path": "DirtyDan16_-pkw-course-Factory-course3-variant3.schem", "difficulty": 3 }
+      ]
+    },
+    {
+      "id": "factory_course4",
+      "name": "Factory Course 4",
+      "theme": "Factory",
+      "variants": [
+        { "path": "DirtyDan16_-pkw-course-Factory-course4-variant1.schem", "difficulty": 3 },
+        { "path": "DirtyDan16_-pkw-course-Factory-course4-variant2.schem", "difficulty": 3 },
+        { "path": "DirtyDan16_-pkw-course-Factory-course4-variant3.schem", "difficulty": 3 }
+      ]
+    },
+    {
+      "id": "factory_course5",
+      "name": "Factory Course 5",
+      "theme": "Factory",
+      "variants": [
+        { "path": "DirtyDan16_-pkw-course-Factory-course5.schem", "difficulty": 3 }
+      ]
+    },
+
+    {
+      "id": "farm_course1",
+      "name": "Farm Course 1",
+      "theme": "Farm",
+      "variants": [
+        { "path": "DirtyDan16_-pkw-course-Farm-course1-variant1.schem", "difficulty": 6 },
+        { "path": "DirtyDan16_-pkw-course-Farm-course1-variant2.schem", "difficulty": 6 },
+        { "path": "DirtyDan16_-pkw-course-Farm-course1-variant3.schem", "difficulty": 6 }
+      ]
+    },
+    {
+      "id": "farm_course2",
+      "name": "Farm Course 2",
+      "theme": "Farm",
+      "variants": [
+        { "path": "DirtyDan16_-pkw-course-Farm-course2.schem", "difficulty": 6 }
+      ]
+    },
+    {
+      "id": "farm_course3",
+      "name": "Farm Course 3",
+      "theme": "Farm",
+      "variants": [
+        { "path": "DirtyDan16_-pkw-course-Farm-course3-variant1.schem", "difficulty": 6 },
+        { "path": "DirtyDan16_-pkw-course-Farm-course3-variant2.schem", "difficulty": 6 },
+        { "path": "DirtyDan16_-pkw-course-Farm-course3-variant3.schem", "difficulty": 6 }
+      ]
+    },
+    {
+      "id": "farm_course4",
+      "name": "Farm Course 4",
+      "theme": "Farm",
+      "variants": [
+        { "path": "DirtyDan16_-pkw-course-Farm-course4.schem", "difficulty": 6 }
+      ]
+    },
+    {
+      "id": "farm_course5",
+      "name": "Farm Course 5",
+      "theme": "Farm",
+      "variants": [
+        { "path": "DirtyDan16_-pkw-course-Farm-course5-variant1.schem", "difficulty": 6 },
+        { "path": "DirtyDan16_-pkw-course-Farm-course5-variant2.schem", "difficulty": 6 },
+        { "path": "DirtyDan16_-pkw-course-Farm-course5-variant3.schem", "difficulty": 6 }
+      ]
+    },
+
+    {
+      "id": "side_hard_course1",
+      "name": "Side-Hard Course 1",
+      "theme": "Side-Hard",
+      "variants": [
+        { "path": "DirtyDan16_-pkw-course-Hard-course1.schem", "difficulty": 20 }
+      ]
+    },
+    {
+      "id": "side_hard_course2",
+      "name": "Side-Hard Course 2",
+      "theme": "Side-Hard",
+      "variants": [
+        { "path": "DirtyDan16_-pkw-course-Hard-course2-variant1.schem", "difficulty": 20 },
+        { "path": "DirtyDan16_-pkw-course-Hard-course2-variant2.schem", "difficulty": 20 },
+        { "path": "DirtyDan16_-pkw-course-Hard-course2-variant3.schem", "difficulty": 20 }
+      ]
+    },
+    {
+      "id": "side_hard_course3",
+      "name": "Side-Hard Course 3",
+      "theme": "Side-Hard",
+      "variants": [
+        { "path": "DirtyDan16_-pkw-course-Hard-course3.schem", "difficulty": 20 }
+      ]
+    },
+    {
+      "id": "side_hard_course4",
+      "name": "Side-Hard Course 4",
+      "theme": "Side-Hard",
+      "variants": [
+        { "path": "DirtyDan16_-pkw-course-Hard-course4-variant1.schem", "difficulty": 20 },
+        { "path": "DirtyDan16_-pkw-course-Hard-course4-variant2.schem", "difficulty": 20 },
+        { "path": "DirtyDan16_-pkw-course-Hard-course4-variant3.schem", "difficulty": 20 }
+      ]
+    },
+    {
+      "id": "side_hard_course5",
+      "name": "Side-Hard Course 5",
+      "theme": "Side-Hard",
+      "variants": [
+        { "path": "DirtyDan16_-pkw-course-Hard-course5.schem", "difficulty": 20 }
+      ]
+    },
+    {
+      "id": "side_hard_course6",
+      "name": "Side-Hard Course 6",
+      "theme": "Side-Hard",
+      "variants": [
+        { "path": "DirtyDan16_-pkw-course-Hard-course6-variant1.schem", "difficulty": 20 },
+        { "path": "DirtyDan16_-pkw-course-Hard-course6-variant2.schem", "difficulty": 20 },
+        { "path": "DirtyDan16_-pkw-course-Hard-course6-variant3.schem", "difficulty": 20 }
+      ]
+    },
+    {
+      "id": "side_hard_course7",
+      "name": "Side-Hard Course 7",
+      "theme": "Side-Hard",
+      "variants": [
+        { "path": "DirtyDan16_-pkw-course-Hard-course7.schem", "difficulty": 20 }
+      ]
+    },
+    {
+      "id": "side_hard_course8",
+      "name": "Side-Hard Course 8",
+      "theme": "Side-Hard",
+      "variants": [
+        { "path": "DirtyDan16_-pkw-course-Hard-course8-variant1.schem", "difficulty": 20 },
+        { "path": "DirtyDan16_-pkw-course-Hard-course8-variant2.schem", "difficulty": 20 }
+      ]
+    },
+    {
+      "id": "side_hard_course9",
+      "name": "Side-Hard Course 9",
+      "theme": "Side-Hard",
+      "variants": [
+        { "path": "DirtyDan16_-pkw-course-Hard-course9-variant1.schem", "difficulty": 20 },
+        { "path": "DirtyDan16_-pkw-course-Hard-course9-variant2.schem", "difficulty": 20 },
+        { "path": "DirtyDan16_-pkw-course-Hard-course9-variant3.schem", "difficulty": 20 }
+      ]
+    },
+
+    {
+      "id": "side_medium_course1",
+      "name": "Side-Medium Course 1",
+      "theme": "Side-Medium",
+      "variants": [
+        { "path": "DirtyDan16_-pkw-course-medium-course1.schem", "difficulty": 10 }
+      ]
+    },
+    {
+      "id": "side_medium_course2",
+      "name": "Side-Medium Course 2",
+      "theme": "Side-Medium",
+      "variants": [
+        { "path": "DirtyDan16_-pkw-course-Medium-course2.schem", "difficulty": 10 }
+      ]
+    },
+    {
+      "id": "side_medium_course3",
+      "name": "Side-Medium Course 3",
+      "theme": "Side-Medium",
+      "variants": [
+        { "path": "DirtyDan16_-pkw-course-Medium-course3-variant1.schem", "difficulty": 10 },
+        { "path": "DirtyDan16_-pkw-course-Medium-course3-variant2.schem", "difficulty": 10 },
+        { "path": "DirtyDan16_-pkw-course-Medium-course3-variant3.schem", "difficulty": 10 }
+      ]
+    },
+    {
+      "id": "side_medium_course4",
+      "name": "Side-Medium Course 4",
+      "theme": "Side-Medium",
+      "variants": [
+        { "path": "DirtyDan16_-pkw-course-Medium-course4.schem", "difficulty": 10 }
+      ]
+    },
+    {
+      "id": "side_medium_course5",
+      "name": "Side-Medium Course 5",
+      "theme": "Side-Medium",
+      "variants": [
+        { "path": "DirtyDan16_-pkw-course-Medium-course5.schem", "difficulty": 10 }
+      ]
+    },
+    {
+      "id": "side_medium_course6",
+      "name": "Side-Medium Course 6",
+      "theme": "Side-Medium",
+      "variants": [
+        { "path": "DirtyDan16_-pkw-course-Medium-course6.schem", "difficulty": 10 }
+      ]
+    },
+    {
+      "id": "side_medium_course7",
+      "name": "Side-Medium Course 7",
+      "theme": "Side-Medium",
+      "variants": [
+        { "path": "DirtyDan16_-pkw-course-Medium-course7.schem", "difficulty": 10 }
+      ]
+    },
+    {
+      "id": "side_medium_course8",
+      "name": "Side-Medium Course 8",
+      "theme": "Side-Medium",
+      "variants": [
+        { "path": "DirtyDan16_-pkw-course-Medium-course8.schem", "difficulty": 10 }
+      ]
+    },
+    {
+      "id": "side_medium_course9",
+      "name": "Side-Medium Course 9",
+      "theme": "Side-Medium",
+      "variants": [
+        { "path": "DirtyDan16_-pkw-course-Medium-course9-variant1.schem", "difficulty": 10 },
+        { "path": "DirtyDan16_-pkw-course-Medium-course9-variant2.schem", "difficulty": 10 },
+        { "path": "DirtyDan16_-pkw-course-Medium-course9-variant3.schem", "difficulty": 10 }
+      ]
+    },
+
+    {
+      "id": "mesa_course1",
+      "name": "Mesa Course 1",
+      "theme": "Mesa",
+      "variants": [
+        { "path": "DirtyDan16_-pkw-course-Mesa-Course1.schem", "difficulty": 1 }
+      ]
+    },
+    {
+      "id": "mesa_course2",
+      "name": "Mesa Course 2",
+      "theme": "Mesa",
+      "variants": [
+        { "path": "DirtyDan16_-pkw-course-Mesa-Course2.schem", "difficulty": 1 }
+      ]
+    },
+    {
+      "id": "mesa_course3",
+      "name": "Mesa Course 3",
+      "theme": "Mesa",
+      "variants": [
+        { "path": "DirtyDan16_-pkw-course-Mesa-course3-variant1.schem", "difficulty": 1 },
+        { "path": "DirtyDan16_-pkw-course-Mesa-course3-variant2.schem", "difficulty": 1 },
+        { "path": "DirtyDan16_-pkw-course-Mesa-course3-variant3.schem", "difficulty": 1 }
+      ]
+    },
+    {
+      "id": "mesa_course4",
+      "name": "Mesa Course 4",
+      "theme": "Mesa",
+      "variants": [
+        { "path": "DirtyDan16_-pkw-course-Mesa-Course4.schem", "difficulty": 1 }
+      ]
+    },
+    {
+      "id": "mesa_course5",
+      "name": "Mesa Course 5",
+      "theme": "Mesa",
+      "variants": [
+        { "path": "DirtyDan16_-pkw-course-Mesa-Course5.schem", "difficulty": 1 }
+      ]
+    },
+    {
+      "id": "mesa_course6",
+      "name": "Mesa Course 6",
+      "theme": "Mesa",
+      "variants": [
+        { "path": "DirtyDan16_-pkw-course-Mesa-course6-variant1.schem", "difficulty": 1 },
+        { "path": "DirtyDan16_-pkw-course-Mesa-course6-variant2.schem", "difficulty": 1 },
+        { "path": "DirtyDan16_-pkw-course-Mesa-course6-variant3.schem", "difficulty": 1 }
+      ]
+    },
+
+    {
+      "id": "side_very_hard_course1",
+      "name": "Side-Very-Hard Course 1",
+      "theme": "Side-Very-Hard",
+      "variants": [
+        { "path": "DirtyDan16_-pkw-course-VeryHard.schem", "difficulty": 25 }
+      ]
+    },
+    {
+      "id": "side_very_hard_course2",
+      "name": "Side-Very-Hard Course 2",
+      "theme": "Side-Very-Hard",
+      "variants": [
+        { "path": "DirtyDan16_-pkw-course-VeryHard-course2-variant1.schem", "difficulty": 25 },
+        { "path": "DirtyDan16_-pkw-course-VeryHard-course2-variant2.schem", "difficulty": 25 },
+        { "path": "DirtyDan16_-pkw-course-VeryHard-course2-variant3.schem", "difficulty": 25 }
+      ]
+    },
+    {
+      "id": "side_very_hard_course3",
+      "name": "Side-Very-Hard Course 3",
+      "theme": "Side-Very-Hard",
+      "variants": [
+        { "path": "DirtyDan16_-pkw-course-VeryHard-course3.schem", "difficulty": 25 }
+      ]
+    }
+  ]
+}
