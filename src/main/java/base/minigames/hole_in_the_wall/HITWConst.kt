@@ -12,7 +12,6 @@ object HITWConst {
 
     const val WALLPACK_FOLDER: String = "wallpack"
     const val MAP_FOLDER: String = "map"
-    const val GAME_FOLDER: String = "holeinthewall"
 
     val availableMaps: List<String> = listOf("Map1", "Map2", "Map3")
 

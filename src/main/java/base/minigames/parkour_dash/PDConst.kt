@@ -13,6 +13,11 @@ object PDConst {
     const val TIME_OF_DAY = 1000L
     val WORLD: World = Bukkit.getWorld("world") ?: throw IllegalStateException("World 'world' not found")
 
+
+    object FilePaths {
+        const val COURSES_FILE_PATH = "parkourdash-courses"
+    }
+
     object Locations {
         val PIVOT = Location(WORLD, 0.0, 100.0, 0.0)
 

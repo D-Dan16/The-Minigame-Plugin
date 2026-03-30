@@ -762,7 +762,7 @@ class HoleInTheWall (val plugin: Plugin) : MinigameSkeleton() {
     override fun prepareArea() {
         fun getGameBaseFolder(): File {
             check(plugin is MinigamePlugin) { "Invalid plugin type" }
-            val baseFolder: File = plugin.getSchematicsFolder(HITWConst.GAME_FOLDER)
+            val baseFolder: File = plugin.getSchematicsBaseFolder(MinigamePlugin.Companion.MinigameType.HOLE_IN_THE_WALL)
             Objects.requireNonNull(baseFolder, "Game base folder not found")
             return baseFolder
         }

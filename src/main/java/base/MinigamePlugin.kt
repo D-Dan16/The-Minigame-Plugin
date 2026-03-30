@@ -9,7 +9,6 @@ import base.minigames.hole_in_the_wall.HoleInTheWall
 import base.minigames.hole_in_the_wall.HoleInTheWallCommands
 import base.minigames.MinigameSkeleton
 import base.commands.MiscCommands
-import base.minigames.maze_hunt.MHConst.Locations.WORLD
 import base.minigames.maze_hunt.MazeHunt
 import base.minigames.maze_hunt.MazeHuntCommands
 import base.minigames.parkour_dash.ParkourDash
@@ -21,6 +20,7 @@ import org.bukkit.GameRule
 import org.bukkit.World
 import org.bukkit.plugin.java.JavaPlugin
 import java.io.File
+import java.util.Locale.getDefault
 
 class MinigamePlugin : JavaPlugin() {
 
@@ -33,34 +33,31 @@ class MinigamePlugin : JavaPlugin() {
     override fun onEnable() {
         plugin = this
 
-
         discoMayhem = DiscoMayhem(this)
         blueprintBazaar= BlueprintBazaar(this)
         holeInTheWall = HoleInTheWall(this)
         mazeHunt = MazeHunt(this)
         parkourDash = ParkourDash(this)
 
-
         world = server.getWorld("world")!! // Initialize the world object
 
-        //region Server Gamerule Settings
+        //<editor-fold desc="Server Game rule Settings">
         world.setGameRule(GameRule.DO_FIRE_TICK,false)
         world.setGameRule(GameRule.MOB_GRIEFING,false)
         world.difficulty = Difficulty.PEACEFUL
         Bukkit.getServer().onlinePlayers.forEach {
             it.gameMode = GameMode.ADVENTURE
         }
-        //endregion
+        //</editor-fold>
 
-
-
-        // Register the event listeners
+        //<editor-fold desc="Register the event listeners">
         server.pluginManager.let {
             it.registerEvents(PlayerDeathListener(discoMayhem, holeInTheWall,mazeHunt), this)
             it.registerEvents(mazeHunt,this)
         }
+        //</editor-fold>
 
-
+        //<editor-fold desc="Register Command Classes for the minigames">
         getCommand("mg_disco_mayhem")?.setExecutor(
             DiscoMayhemCommands(discoMayhem)
         )
@@ -73,7 +70,10 @@ class MinigamePlugin : JavaPlugin() {
         getCommand("mg_maze_hunt")?.setExecutor(
             MazeHuntCommands(mazeHunt)
         )
-        getCommand("misc")?.setExecutor(MiscCommands(this))
+        getCommand("mg_parkour_dash")?.setExecutor(
+            ParkourDashCommands(parkourDash)
+        )
+        //</editor-fold>
     }
 
 
@@ -81,11 +81,13 @@ class MinigamePlugin : JavaPlugin() {
         // Plugin shutdown logic
     }
 
-    fun getSchematicsFolder(minigame: String): File {
+    fun getSchematicsBaseFolder(minigame: MinigameType): File {
         return when (minigame) {
-            "blueprintbazaar" -> File(dataFolder, "BlueprintBazaar")
-            "holeinthewall" -> File(dataFolder, "HoleInTheWall")
-            else -> throw IllegalStateException("Unexpected value: $minigame")
+            MinigameType.BLUEPRINT_BAZAAR -> File(dataFolder, "BlueprintBazaar")
+            MinigameType.HOLE_IN_THE_WALL -> File(dataFolder, "HoleInTheWall")
+            MinigameType.DISCO_MAYHEM -> File(dataFolder, "DiscoMayhem") //Doesn't exist
+            MinigameType.PARKOUR_DASH -> File(dataFolder, "parkourdash")
+            MinigameType.MAZE_HUNT -> File(dataFolder, "MazeHunt") //Doesn't exist
         }
     }
 
@@ -95,6 +97,7 @@ class MinigamePlugin : JavaPlugin() {
             MinigameType.DISCO_MAYHEM -> this.discoMayhem
             MinigameType.BLUEPRINT_BAZAAR -> this.blueprintBazaar
             MinigameType.PARKOUR_DASH -> this.parkourDash
+            MinigameType.MAZE_HUNT -> this.mazeHunt
         }
     }
 
@@ -106,7 +109,8 @@ class MinigamePlugin : JavaPlugin() {
             HOLE_IN_THE_WALL,
             DISCO_MAYHEM,
             BLUEPRINT_BAZAAR,
-            PARKOUR_DASH
+            PARKOUR_DASH,
+            MAZE_HUNT;
         }
     }
 }

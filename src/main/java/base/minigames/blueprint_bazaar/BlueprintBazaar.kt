@@ -160,7 +160,7 @@ class BlueprintBazaar(plugin: Plugin) : MinigameSkeleton() {
         }
 
         // Gets the schematics folder from the MinigamePlugin.java. This is where the builds are stored.
-        val schematicsFolder = plugin.getSchematicsFolder("blueprintbazaar")
+        val schematicsFolder = plugin.getSchematicsBaseFolder(MinigamePlugin.Companion.MinigameType.BLUEPRINT_BAZAAR)
 
         schematicsFolder.listFiles().forEach { path ->
             when (path.name.substringBefore('.')) {
@@ -199,7 +199,7 @@ class BlueprintBazaar(plugin: Plugin) : MinigameSkeleton() {
             return
         }
 
-        // Randomly decide if the build should be mirrored //fixme: false for now bcuz mirroring does more than wanted and moves the entre pos of the build plot
+        // Randomly decide if the build should be mirrored //fixme: false for now bcuz mirroring does more than wanted and moves the entire pos of the build plot
         val shouldBeMirrored = false//Random().nextBoolean()
 
         // Create the new build
