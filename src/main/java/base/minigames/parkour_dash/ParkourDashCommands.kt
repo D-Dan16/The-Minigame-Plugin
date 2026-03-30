@@ -14,16 +14,14 @@ class ParkourDashCommands(val parkourDash: ParkourDash) : MinigameCommandsSkelet
         RESUME,
         END,
         RESET,
-        GENERATE, // Effectively END -> START
+        GENERATE,
         NUKE_ARENA,
         NEXT_LEVEL,
         SET_CHECKPOINT,
         RESPAWN;
 
         companion object {
-            fun fromString(str: String): SubCommands? {
-                return entries.find { it.name.equals(str, ignoreCase = true) }
-            }
+            fun fromString(str: String): SubCommands? = entries.find { it.name.equals(str,true) }
         }
     }
 
@@ -33,9 +31,7 @@ class ParkourDashCommands(val parkourDash: ParkourDash) : MinigameCommandsSkelet
         EXTREME;
 
         companion object {
-            fun fromString(str: String): Modes? {
-                return Modes.entries.find { it.name.equals(str, ignoreCase = true) }
-            }
+            fun fromString(str: String): Modes? = entries.find { it.name.equals(str,true) }
         }
     }
 
@@ -44,9 +40,7 @@ class ParkourDashCommands(val parkourDash: ParkourDash) : MinigameCommandsSkelet
         ALL;
 
         companion object {
-            fun fromString(str: String): Targets? {
-                return entries.find { it.name.equals(str, ignoreCase = true) }
-            }
+            fun fromString(str: String): Targets? = entries.find { it.name.equals(str,true) }
         }
     }
 
@@ -110,7 +104,7 @@ class ParkourDashCommands(val parkourDash: ParkourDash) : MinigameCommandsSkelet
 
             SubCommands.GENERATE -> {
                 if (parkourDash.isGameRunning()) return false
-                parkourDash.generateCourse()
+                parkourDash.prepareArea()
             }
         }
 
