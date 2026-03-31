@@ -289,7 +289,7 @@ class MazeHunt(val plugin: Plugin) : MinigameSkeleton() , Listener {
             }
         )
 
-        chainElements.activateChain(stopCondition = {!isGameRunning})
+        chainElements.activateChain(stopCondition = {!guardAlreadyRunning})
     }
 
     @EventHandler
@@ -457,7 +457,7 @@ class MazeHunt(val plugin: Plugin) : MinigameSkeleton() , Listener {
     /** Disable mobs getting burned by the sun while Maze Hunt is running*/
     @EventHandler
     private fun onEntityCombust(event: EntityCombustEvent) {
-        if (!isGameRunning) return
+        if (!guardAlreadyRunning) return
 
         event.isCancelled = true
     }

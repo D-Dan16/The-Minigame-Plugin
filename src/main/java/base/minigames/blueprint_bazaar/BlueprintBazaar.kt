@@ -154,7 +154,7 @@ class BlueprintBazaar(plugin: Plugin) : MinigameSkeleton() {
      */
     @CalledByCommand
     fun initSchematics() {
-        if (isGameRunning) {
+        if (guardAlreadyRunning) {
             sender!!.sendMessage("Cannot initialize schematics while the game is running.")
             return
         }
@@ -279,7 +279,7 @@ class BlueprintBazaar(plugin: Plugin) : MinigameSkeleton() {
 
     @CalledByCommand
     fun skipToNextBuild() {
-        if (!isGameRunning) {
+        if (!guardAlreadyRunning) {
             sender!!.sendMessage("can't execute this if the game isn't running.")
             return
         }
@@ -319,7 +319,7 @@ class BlueprintBazaar(plugin: Plugin) : MinigameSkeleton() {
 
     @CalledByCommand
     fun cycleThroughSchematics() {
-        if (!isGameRunning || isGamePaused) {
+        if (!guardAlreadyRunning || guardAlreadyPaused) {
             sender!!.sendMessage("Game is not currently alive to do this.")
             return
         }

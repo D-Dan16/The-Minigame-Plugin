@@ -39,19 +39,19 @@ class MazeHuntCommands(val mazeHunt: MazeHunt) : MinigameCommandsSkeleton() {
     ): Boolean {
         when (SubCommands.fromString(args[0])) {
             SubCommands.START -> {
-                if (mazeHunt.isGameRunning()) return false
+                if (mazeHunt.guardAlreadyRunning()) return false
                 mazeHunt.start(sender)
             }
             SubCommands.START_HARD_MODE -> {
-                if (mazeHunt.isGameRunning()) return false
+                if (mazeHunt.guardAlreadyRunning()) return false
                 mazeHunt.startFastMode(sender)
             }
             SubCommands.PAUSE -> {
-                if (mazeHunt.isGamePaused()) return false
+                if (mazeHunt.guardAlreadyPaused()) return false
                 mazeHunt.pauseGame()
             }
             SubCommands.RESUME -> {
-                if (mazeHunt.isGameNotPaused()) return false
+                if (mazeHunt.guardNotPaused()) return false
                 mazeHunt.resumeGame()
             }
             SubCommands.END -> {

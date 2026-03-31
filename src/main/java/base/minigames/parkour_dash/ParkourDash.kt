@@ -4,13 +4,10 @@ import base.MinigamePlugin
 import base.annotations.CalledByCommand
 import base.annotations.Mode
 import base.minigames.MinigameSkeleton
-import base.minigames.hole_in_the_wall.HITWConst
-import net.kyori.adventure.text.logger.slf4j.ComponentLogger.logger
 import org.bukkit.entity.Player
-import org.bukkit.plugin.Plugin
+import org.bukkit.plugin.java.JavaPlugin
 import java.io.File
 import java.io.IOException
-import java.util.Objects
 
 class ParkourDash(val plugin: MinigamePlugin) : MinigameSkeleton() {
     override val minigameName: String = this::class.simpleName ?: "Unknown"
@@ -22,14 +19,41 @@ class ParkourDash(val plugin: MinigamePlugin) : MinigameSkeleton() {
     var courseLength: Int = 0
     //</editor-fold> ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+    //<editor-fold desc="Timers">
+    private var remainingTimeSeconds: Long = PDConst.Times.GAME_DURATION
+    //</editor-fold>
+
     //<editor-fold desc="Files">
-    lateinit var coursesFolder: File
+    lateinit var coursesFile: File
     //</editor-fold>
     //</editor-fold> --------------------------------------------------------
 
     @CalledByCommand(Mode.EXCLUSIVE)
     override fun start(sender: Player) {
         super.start(sender)
+
+        //<editor-fold desc="Add Parkour Dash specific scoreboard line: Time Remaining">
+        registerScoreboardLine(
+            key = "timeRemaining",
+            entryText = "Time Remaining: ",
+            suffix = remainingTimeSeconds
+        )
+
+        // Tick down every second and update suffix. When it reaches 0, end the game.
+        pausableRunnables += base.utils.additions.PausableBukkitRunnable(
+            plugin as JavaPlugin,
+            remainingTicks = 20L,
+            periodTicks = 20L
+        ) {
+            remainingTimeSeconds = (remainingTimeSeconds - 1).coerceAtLeast(0)
+            updateScoreboardLineSuffix("timeRemaining", remainingTimeSeconds)
+
+            // Auto end the game when time runs out
+            if (remainingTimeSeconds == 0L)
+                endGame()
+
+        }.apply { this.start() }
+        //</editor-fold>
     }
 
     @CalledByCommand(Mode.EXCLUSIVE)
@@ -45,15 +69,17 @@ class ParkourDash(val plugin: MinigamePlugin) : MinigameSkeleton() {
     @CalledByCommand(Mode.EXCLUSIVE)
     override fun endGame() {
         super.endGame()
+        // Reset timer for the next round
+        remainingTimeSeconds = PDConst.Times.GAME_DURATION
     }
 
     @CalledByCommand(Mode.NON_EXCLUSIVE)
     fun nukeArea() {
-        TODO("Not yet implemented")
+//        TODO("Not yet implemented")
     }
 
-    fun generateCourse(): Nothing {
-        TODO("Not yet implemented")
+    fun generateCourse() {
+//        TODO("Not yet implemented")
     }
 
     override fun prepareGameSetting() {
@@ -62,13 +88,13 @@ class ParkourDash(val plugin: MinigamePlugin) : MinigameSkeleton() {
 
     @CalledByCommand(Mode.NON_EXCLUSIVE)
     override fun prepareArea() {
-        //<editor-fold desc="obtain courses folder">
-        if (this::coursesFolder.isInitialized.not()) {
+        //<editor-fold desc="obtain courses file">
+        if (this::coursesFile.isInitialized.not()) {
             val baseFolder = plugin.getSchematicsBaseFolder(MinigamePlugin.Companion.MinigameType.PARKOUR_DASH)
-            coursesFolder = File(baseFolder, PDConst.FilePaths.COURSES_FILE_PATH)
+            coursesFile = File(baseFolder, PDConst.FilePaths.COURSES_FILE_PATH)
 
-            if (coursesFolder.exists().not())
-                throw IOException("Parkour Dash Courses folder does not exist")
+            if (coursesFile.exists().not())
+                throw IOException("Parkour Dash Courses file does not exist")
         }
         //</editor-fold>
 
@@ -76,36 +102,36 @@ class ParkourDash(val plugin: MinigamePlugin) : MinigameSkeleton() {
     }
 
     private fun generateCourses() {
-        TODO("Not yet implemented")
+//        TODO("Not yet implemented")
     }
 
     @CalledByCommand(Mode.EXCLUSIVE)
-    fun setDifficulty(mode: ParkourDashCommands.Modes) {
-        TODO("Not yet implemented")
+    fun setDifficultyMode(mode: ParkourDashCommands.Modes) {
+//        TODO("Not yet implemented")
     }
 
     @CalledByCommand(Mode.NON_EXCLUSIVE)
-    fun tpPlayerToNextSection(player: Player): Nothing {
-        TODO("Not yet implemented")
+    fun tpPlayerToNextSection(player: Player) {
+//        TODO("Not yet implemented")
     }
 
     @CalledByCommand(Mode.NON_EXCLUSIVE)
-    fun tpPlayersToNextSection(): Nothing {
-        TODO("Not yet implemented")
+    fun tpPlayersToNextSection() {
+//        TODO("Not yet implemented")
     }
 
     @CalledByCommand(Mode.EXCLUSIVE)
-    fun setCheckpointFor(player: Player): Nothing {
-        TODO("Not yet implemented")
+    fun setCheckpointFor(player: Player) {
+//        TODO("Not yet implemented")
     }
 
     @CalledByCommand(Mode.NON_EXCLUSIVE)
-    fun sendToLastCheckpoint(player: Player): Nothing {
-        TODO("Not yet implemented")
+    fun sendToLastCheckpoint(player: Player) {
+//        TODO("Not yet implemented")
     }
 
     @CalledByCommand(Mode.NON_EXCLUSIVE)
-    fun reset(): Nothing {
-        TODO("Not yet implemented")
+    fun reset() {
+//        TODO("Not yet implemented")
     }
 }

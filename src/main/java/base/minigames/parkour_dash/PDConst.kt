@@ -4,6 +4,7 @@ package base.minigames.parkour_dash
 
 import base.MinigamePlugin.Companion.world
 import base.annotations.OptionalFeature
+import com.sk89q.worldedit.math.BlockVector3
 import org.bukkit.Bukkit
 import org.bukkit.Location
 import org.bukkit.Material
@@ -15,7 +16,7 @@ object PDConst {
 
 
     object FilePaths {
-        const val COURSES_FILE_PATH = "parkourdash-courses"
+        const val COURSES_FILE_PATH = "parkourdash-courses.json"
     }
 
     object Locations {
@@ -27,6 +28,30 @@ object PDConst {
             PIVOT.x + 20,
             PIVOT.y,
             PIVOT.z
+        )
+    }
+
+    object CourseBoundaries {
+        enum class Directions {
+            /** Left */ NEG_Z,
+            /** Right */ POS_Z,
+            /** Backwards */ NEG_X,
+            /** Forwards */ POS_X,
+            /** Down */ NEG_Y,
+            /** Up  */ POS_Y
+        }
+
+        /**
+         * These are offsets from the pivot point of a parkour course [the gold block].
+         * These offsets help us to know and assess where courses can generate so we won't overlap with those already generated
+         */
+        val COURSE_BOUNDARIES: Map<Directions, BlockVector3> = mapOf(
+            Directions.NEG_Z to BlockVector3.at(0, 0, -10),
+            Directions.POS_Z to BlockVector3.at(0, 0, 10),
+            Directions.NEG_X to BlockVector3.at(0, 0, 0), //This overlaps with the pivot point
+            Directions.POS_X to BlockVector3.at(45, 0, 0),
+            Directions.NEG_Y to BlockVector3.at(0, -12, 0),
+            Directions.POS_Y to BlockVector3.at(0, 16, 0)
         )
     }
 

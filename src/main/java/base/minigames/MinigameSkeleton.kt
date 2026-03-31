@@ -42,6 +42,40 @@ protected constructor() {
     val scoreboard = Bukkit.getScoreboardManager().newScoreboard
     val scoreboardObjective: Objective = scoreboard.registerNewObjective("The Minigame Plugin","dummy","The Minigame Plugin")
 
+    // Scoreboard line allocator: Highest score at top (15..1)
+    private var nextScoreSlot: Int = 15
+
+    /**
+     * Register or fetch a scoreboard team/line identified by a unique [key].
+     * - Ensures an entry with [entryText] exists on the sidebar and is bound to the team
+     * - Optionally sets [prefix] and [suffix]
+     * - Returns the [Team] so callers can update its suffix later without Bukkit boilerplate
+     */
+    protected fun registerScoreboardLine(
+        key: String,
+        entryText: String,
+        prefix: String? = null,
+        suffix: Any? = null
+    ): Team {
+        val team = scoreboard.getTeam(key) ?: scoreboard.registerNewTeam(key).apply {
+            addEntry(entryText)
+            // Allocate score only the first time we see this entry
+            scoreboardObjective.getScore(entryText).score = allocateScoreSlot()
+        }
+        if (prefix != null) team.prefix(text(prefix))
+        if (suffix != null) team.suffix(text(suffix.toString()))
+        return team
+    }
+
+    /** Updates only the suffix of a previously registered scoreboard line */
+    protected fun updateScoreboardLineSuffix(key: String, newSuffix: Any) {
+        val team = scoreboard.getTeam(key) ?: return
+        team.suffix(text(newSuffix.toString()))
+    }
+
+    /** Allocate the next free sidebar score slot, counting down from 15. */
+    private fun allocateScoreSlot(): Int = nextScoreSlot--
+
 
     /**
      *
@@ -89,26 +123,29 @@ protected constructor() {
         //Construct the scoreboard info for the minigame.
         scoreboardObjective.displaySlot = DisplaySlot.SIDEBAR
 
-        //region ScoreBoard init bullshit :)
-        val teamForTimeElapsed: Team = scoreboard.getTeam("timeElapsed") ?: scoreboard.registerNewTeam("timeElapsed").apply {
-            addEntry("")
-            prefix(text("Time Elapsed: "))
-            suffix(text(gameTimeElapsed))
-        }
+        //<editor-fold desc="ScoreBoard init">
+        // reset slot allocator for a fresh sidebar
+        nextScoreSlot = 15
 
-
-        // Add the team's line to the scoreboard
-        scoreboardObjective.getScore("${ChatColor.YELLOW}Name: $minigameName").score = 15
-        scoreboardObjective.getScore("").score = 14
+        // Add the minigame name and elapsed time lines using the helper API
+        registerScoreboardLine(
+            key = "minigameName",
+            entryText = "${ChatColor.YELLOW}Name: $minigameName"
+        )
+        registerScoreboardLine(
+            key = "timeElapsed",
+            entryText = "Time Elapsed: ",
+            suffix = gameTimeElapsed
+        )
 
         // display the minigame's scoreboard to the players.
         players.forEach { it.scoreboard = scoreboard }
-        //endregion
+        //</editor-fold>
 
         // Keep track of the timer for the length of the game and display it in the scoreboard
         pausableRunnables += PausableBukkitRunnable(plugin as JavaPlugin, remainingTicks = 20L, periodTicks = 20L) {
             gameTimeElapsed++
-            teamForTimeElapsed.suffix(text(gameTimeElapsed))
+            updateScoreboardLineSuffix("timeElapsed", gameTimeElapsed)
         }.apply { this.start() }
 
         announceMessage("Minigame $minigameName started!", "Good Luck", LIME_GREEN)
@@ -200,7 +237,7 @@ protected constructor() {
      * @return True if the player is in the minigame, false otherwise
      */
     fun isPlayerInGame(player: Player?): Boolean {
-        return isGameRunning && players.contains(player)
+        return guardAlreadyRunning && players.contains(player)
     }
 
     /**
@@ -294,6 +331,13 @@ protected constructor() {
 
     //region Game State Guards
     val commandNotExecutedMessage = "Command has not been executed"
+
+    // Convenience boolean properties so callers can use simple boolean checks (without parentheses)
+    val guardAlreadyRunning: Boolean
+        get() = isGameRunning
+    val guardAlreadyPaused: Boolean
+        get() = isGamePaused
+
     /**
      *  Guard clause for executing the method that the command called.
      *  Used for when wanting to call [start].
@@ -302,7 +346,7 @@ protected constructor() {
      *
      *  @return true if the guard has stopped the command from calling the [start] method, otherwise, false.
      *  */
-    fun isGameRunning() : Boolean {
+    fun guardAlreadyRunning() : Boolean {
         if (isGameRunning) {
             announceMessage(
                 "Minigame is already running!",
@@ -323,7 +367,7 @@ protected constructor() {
      *
      *  @return true if the guard has stopped the command from calling the [resumeGame] method, otherwise, false.
      *  */
-    fun isGameNotPaused() : Boolean {
+    fun guardNotPaused() : Boolean {
         if (!isGameRunning || !isGamePaused ) {
             announceMessage(
                 "Minigame is not paused!",
@@ -345,7 +389,7 @@ protected constructor() {
      *
      *  @return true if the guard has stopped the command from calling the [pauseGame] method, otherwise, false.
      *  */
-    fun isGamePaused() : Boolean {
+    fun guardAlreadyPaused() : Boolean {
         if (!isGameRunning || isGamePaused) {
             announceMessage(
                 "Minigame already paused!",

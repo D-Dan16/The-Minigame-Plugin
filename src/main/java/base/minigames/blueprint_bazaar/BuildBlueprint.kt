@@ -299,7 +299,7 @@ class BuildBlueprint(
 
     @EventHandler
     private fun onBlockPlaced(event: BlockPlaceEvent) {
-        if (!game.isGameRunning || !game.isPlayerInGame(event.player)) return
+        if (!game.guardAlreadyRunning || !game.isPlayerInGame(event.player)) return
 
         // Not allow block placing outside the designated plot.
 
@@ -325,7 +325,7 @@ class BuildBlueprint(
 
     @EventHandler
     private fun onBlockTouched(event: BlockDamageEvent) {
-        if (!game.isGameRunning || !game.isPlayerInGame(event.player)) return
+        if (!game.guardAlreadyRunning || !game.isPlayerInGame(event.player)) return
 
         // Not allow block breaking outside the designated plot.
         if (event.block.toBlockVector3() !in region) {
