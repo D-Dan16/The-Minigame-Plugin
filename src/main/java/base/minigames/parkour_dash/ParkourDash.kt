@@ -4,6 +4,7 @@ import base.MinigamePlugin
 import base.annotations.CalledByCommand
 import base.annotations.Mode
 import base.minigames.MinigameSkeleton
+import base.utils.additions.PausableBukkitRunnable
 import org.bukkit.entity.Player
 import org.bukkit.plugin.java.JavaPlugin
 import java.io.File
@@ -11,36 +12,35 @@ import java.io.IOException
 
 class ParkourDash(val plugin: MinigamePlugin) : MinigameSkeleton() {
     override val minigameName: String = this::class.simpleName ?: "Unknown"
-
     //<editor-fold desc="Properties"> --------------------------------------------------------
 
     //<editor-fold desc="Game Modifiers"> ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     var difficulty: ParkourDashCommands.Modes = ParkourDashCommands.Modes.NORMAL
+
     var courseLength: Int = 0
+    //</editor-fold>
     //</editor-fold> ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     //<editor-fold desc="Timers">
     private var remainingTimeSeconds: Long = PDConst.Times.GAME_DURATION
-    //</editor-fold>
 
     //<editor-fold desc="Files">
     lateinit var coursesFile: File
     //</editor-fold>
     //</editor-fold> --------------------------------------------------------
 
-    @CalledByCommand(Mode.EXCLUSIVE)
-    override fun start(sender: Player) {
-        super.start(sender)
-
-        //<editor-fold desc="Add Parkour Dash specific scoreboard line: Time Remaining">
+    override fun addScoreboardElements() {
+        // Add Parkour Dash specific scoreboard line: Time Remaining
         registerScoreboardLine(
             key = "timeRemaining",
             entryText = "Time Remaining: ",
             suffix = remainingTimeSeconds
         )
+    }
 
+    override fun addTimeBasedEvents() {
         // Tick down every second and update suffix. When it reaches 0, end the game.
-        pausableRunnables += base.utils.additions.PausableBukkitRunnable(
+        pausableRunnables += PausableBukkitRunnable(
             plugin as JavaPlugin,
             remainingTicks = 20L,
             periodTicks = 20L
@@ -49,11 +49,13 @@ class ParkourDash(val plugin: MinigamePlugin) : MinigameSkeleton() {
             updateScoreboardLineSuffix("timeRemaining", remainingTimeSeconds)
 
             // Auto end the game when time runs out
-            if (remainingTimeSeconds == 0L)
-                endGame()
+            if (remainingTimeSeconds == 0L) endGame()
+        }
+    }
 
-        }.apply { this.start() }
-        //</editor-fold>
+    @CalledByCommand(Mode.EXCLUSIVE)
+    override fun start(sender: Player) {
+        super.start(sender)
     }
 
     @CalledByCommand(Mode.EXCLUSIVE)

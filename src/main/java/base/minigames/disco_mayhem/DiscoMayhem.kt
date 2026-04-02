@@ -178,7 +178,7 @@ class DiscoMayhem (val plugin: Plugin) : MinigameSkeleton() {
      * @param referenceLocation The location to reference for the new floor. This is the location of the last floor. This location will be used to calculate the new floor's center.
      */
     private fun preppingForAFloorCycle(referenceLocation: Location) {
-        if (!guardAlreadyRunning || guardAlreadyPaused) {
+        if (!isAlreadyRunning() || isAlreadyPaused()) {
             return
         }
         Bukkit.getServer().broadcast(Component.text("prepping for change floor").color(NamedTextColor.DARK_AQUA))
@@ -265,7 +265,7 @@ class DiscoMayhem (val plugin: Plugin) : MinigameSkeleton() {
         xRad: Int,
         zRad: Int
     ) {
-        if (!guardAlreadyRunning || guardAlreadyPaused) {
+        if (!isAlreadyRunning() || isAlreadyPaused()) {
             return
         }
 
@@ -326,14 +326,14 @@ class DiscoMayhem (val plugin: Plugin) : MinigameSkeleton() {
         set(value) = TODO()
 
     private fun decreaseStartingIntervalForChangingFloorTimer() {
-        if (!guardAlreadyRunning || guardAlreadyPaused) {
+        if (!isAlreadyRunning() || isAlreadyPaused()) {
             return
         }
 
         // Decrease the interval for changing the floor as time goes on. The interval is decreased by 2 every a certain amount of time seconds.
         intervalTask = object : BukkitRunnable() {
             override fun run() {
-                if (!guardAlreadyRunning || guardAlreadyPaused) {
+                if (!isAlreadyRunning() || isAlreadyPaused()) {
                     cancel()
                     return
                 }
@@ -379,7 +379,7 @@ class DiscoMayhem (val plugin: Plugin) : MinigameSkeleton() {
         zLengthRad: Int,
         materialToKeep: Material?
     ) {
-        if (!guardAlreadyRunning || guardAlreadyPaused) {
+        if (!isAlreadyRunning() || isAlreadyPaused()) {
             return
         }
 
@@ -405,7 +405,7 @@ class DiscoMayhem (val plugin: Plugin) : MinigameSkeleton() {
         // as the old chosen material from , if they are in the bounds of the old floor.
         object : BukkitRunnable() {
             override fun run() {
-                if (!guardAlreadyRunning || guardAlreadyPaused) {
+                if (!isAlreadyRunning() || isAlreadyPaused()) {
                     cancel()
                     return
                 }

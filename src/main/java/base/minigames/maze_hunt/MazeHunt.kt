@@ -27,10 +27,8 @@ import base.minigames.maze_hunt.MHConst.Locations.Y_LEVEL_FOR_CRATE_OFFSET
 import base.minigames.maze_hunt.MHConst.MazeGen.REGENERATE_MAZE_INITIAL_COOLDOWN_FOR_HARD_MODE
 import base.minigames.maze_hunt.MHConst.Spawns.LootCrates.INITIAL_AMOUNTS_OF_CRATES_TO_SPAWN_IN_A_CYCLE_FOR_HARD_MODE
 import base.minigames.maze_hunt.MHConst.Spawns.LootCrates.LootCrateType.*
-import base.minigames.maze_hunt.MHConst.Spawns.LootCrates.applyRandomDurability
 import base.minigames.maze_hunt.MHConst.Spawns.Mobs.INITIAL_AMOUNTS_OF_MOBS_TO_SPAWN_IN_A_CYCLE_FOR_HARD_MODE
 import base.minigames.maze_hunt.MHConst.Spawns.Mobs.MOBS_BEING_PASSIVE_DURATION
-import base.utils.extensions_for_classes.modifyDuraBy
 import base.resources.Colors
 import base.utils.additions.PausableBukkitRunnable
 import base.utils.extensions_for_classes.getWeightedRandom
@@ -39,11 +37,6 @@ import base.utils.additions.Utils.successChance
 import base.utils.additions.activateChain
 import base.utils.additions.delayTheFollowing
 import base.utils.extensions_for_classes.breakGradually
-import base.utils.extensions_for_classes.fullyContains
-import base.utils.extensions_for_classes.getItemStackByMaterial
-import base.utils.extensions_for_classes.hasDurability
-import base.utils.extensions_for_classes.remainingDurability
-import base.utils.extensions_for_classes.returnQuantityOfEach
 import net.kyori.adventure.text.Component.*
 import net.kyori.adventure.text.format.TextColor
 import org.bukkit.Difficulty
@@ -55,33 +48,23 @@ import org.bukkit.entity.LivingEntity
 import org.bukkit.entity.MagmaCube
 import org.bukkit.entity.Mob
 import org.bukkit.entity.Slime
-import org.bukkit.entity.TNTPrimed
-import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
-import org.bukkit.event.block.BlockBreakEvent
-import org.bukkit.event.block.BlockPlaceEvent
-import org.bukkit.event.entity.EntityCombustEvent
-import org.bukkit.event.entity.EntityDamageByEntityEvent
-import org.bukkit.event.entity.EntityDeathEvent
-import org.bukkit.inventory.ItemStack
 import org.bukkit.metadata.FixedMetadataValue
 import org.bukkit.plugin.Plugin
 import org.bukkit.plugin.java.JavaPlugin
 import org.bukkit.scheduler.BukkitRunnable
-import org.bukkit.scoreboard.Team
 import kotlin.collections.plusAssign
-import kotlin.jvm.java
 
 class MazeHunt(val plugin: Plugin) : MinigameSkeleton() , Listener {
     override val minigameName: String = this::class.simpleName ?: "Unknown"
+
     /** this set keeps track of all the indices of the bits that have been generated */
     @ShouldBeReset
     private val generatedBitsIndexes: MutableSet<BitPoint> = mutableSetOf()
-
-
     /** Number of mobs to spawn every mob spawning cycle. Gets increased as time goes on. */
     @ShouldBeReset
     private var amountOfMobsToSpawnPerInterval: Int = Mobs.INITIAL_AMOUNTS_OF_MOBS_TO_SPAWN_IN_A_CYCLE
+
 
     /** Number of Loot Crates to spawn every crate spawning cycle. Gets increased as time goes on. */
     @ShouldBeReset
@@ -90,60 +73,29 @@ class MazeHunt(val plugin: Plugin) : MinigameSkeleton() , Listener {
     @ShouldBeReset
     var curTimeLeftTillNewMaze = MazeGen.REGENERATE_MAZE_INITIAL_COOLDOWN
 
-    @CalledByCommand
-    override fun start(sender: Player) {
-        try {
-            super.start(sender)
-
-            pausableRunnables += PausableBukkitRunnable(plugin as JavaPlugin, remainingTicks = MHConst.STARTING_PLATFORM_LIFESPAN) {
-                startGameLoop()
-            }.apply { this.start() }
-
-            // keep track of if players have fallen of the arena based on their Y level and kill them because they can cheat fall damage via slow-falling potions
-            runnables += object : BukkitRunnable() {
-                override fun run() {
-                    players.forEach {
-                        if (it.location.y < Locations.MIN_LEGAL_Y_LEVEL && it.gameMode !in listOf(GameMode.CREATIVE, GameMode.SPECTATOR))
-                            it.health = 0.0
-                    }
-                }
-            }.apply { runTaskTimer(MinigamePlugin.Companion.plugin, 0L, 10L) }
-        } catch (e: InterruptedException) {
-            pauseGame()
-            throw e
-        }
+    override fun addScoreboardElements() {
+        // Register Maze Hunt specific scoreboard line: Time Remaining Till New Maze (in seconds)
+        registerScoreboardLine(
+            key = "timeRemainingTillNewMaze",
+            entryText = "Time Remaining Till New Maze: ",
+            suffix = curTimeLeftTillNewMaze / 20
+        )
     }
 
-    override fun startFastMode(player: Player) {
-        amountOfMobsToSpawnPerInterval = INITIAL_AMOUNTS_OF_MOBS_TO_SPAWN_IN_A_CYCLE_FOR_HARD_MODE
-        amountOfCratesToSpawnPerInterval = INITIAL_AMOUNTS_OF_CRATES_TO_SPAWN_IN_A_CYCLE_FOR_HARD_MODE
-        curTimeLeftTillNewMaze = REGENERATE_MAZE_INITIAL_COOLDOWN_FOR_HARD_MODE
-
-        super.startFastMode(player)
-    }
-
-    private fun startGameLoop() {
-        //region new maze generation timer logic
-        countDownToNewMazeGeneration(curTimeLeftTillNewMaze)
-
-        val teamForTimeRemainingTillSwap: Team = scoreboard.getTeam("timeRemainingTillNewMaze") ?: scoreboard.registerNewTeam("timeRemainingTillNewMaze").apply {
-            addEntry("Time Remaining Till New Maze: ")
-            suffix(text(curTimeLeftTillNewMaze/20))
+    override fun addTimeBasedEvents() {
+        // Delete the initial floor later on
+        pausableRunnables += PausableBukkitRunnable(plugin, remainingTicks = MHConst.STARTING_PLATFORM_LIFESPAN) {
+            deleteStartingPlatform()
         }
 
-        scoreboardObjective.getScore("Time Remaining Till New Maze: ").score = 13
-
-        // Keep track of the timer for the length of the game and display it in the scoreboard
-        pausableRunnables += PausableBukkitRunnable(plugin as JavaPlugin, remainingTicks = 20L, periodTicks = 20L) {
+        // Begin the per-second ticker for the maze regeneration countdown one second after
+        pausableRunnables += PausableBukkitRunnable(plugin, remainingTicks = 20L, periodTicks = 20L) {
             curTimeLeftTillNewMaze -= 20L
-            teamForTimeRemainingTillSwap.suffix(text(curTimeLeftTillNewMaze/20))
-        }.apply { this.start() }
+            updateScoreboardLineSuffix("timeRemainingTillNewMaze", curTimeLeftTillNewMaze / 20)
+        }
 
-        //endregion
-
-        //region Start Spawning Loot Crates
-        //fixme: loot crates that are from previous instance of game, when those crates' lifespans are over, they'll also set the block to air in the current instance
-        pausableRunnables += PausableBukkitRunnable(plugin, periodTicks = Mobs.SPAWN_CYCLE_DELAY) {
+        // Start spawning Loot Crates after the platform expires, then repeat every cycle
+        pausableRunnables += PausableBukkitRunnable(plugin, remainingTicks = MHConst.STARTING_PLATFORM_LIFESPAN, periodTicks = Mobs.SPAWN_CYCLE_DELAY) {
             repeat(amountOfCratesToSpawnPerInterval) {
                 if (generatedBitsIndexes.isEmpty())
                     return@repeat
@@ -158,7 +110,7 @@ class MazeHunt(val plugin: Plugin) : MinigameSkeleton() , Listener {
                     z += (-MazeGen.BIT_RADIUS..MazeGen.BIT_RADIUS).random()
                 }
 
-                var blockAt = WORLD.getBlockAt(chosenLocationToSpawnAt)
+                val blockAt = WORLD.getBlockAt(chosenLocationToSpawnAt)
 
                 blockAt.type = chosenCrateType.material
 
@@ -166,22 +118,18 @@ class MazeHunt(val plugin: Plugin) : MinigameSkeleton() , Listener {
                 // The onLootCrateBreak will listen to the block break and check the metadata of the block.
                 blockAt.setMetadata("isALootCrate", FixedMetadataValue(plugin, chosenCrateType.name))
 
-
                 // ~ the lifespan of the loot crate ~
                 blockAt.breakGradually(MHConst.Spawns.LootCrates.LIFESPAN)
             }
-        }.apply { this.start() }
+        }
 
-        // Gradually increase the number of crates spawned per interval
-        pausableRunnables += PausableBukkitRunnable(plugin, periodTicks = MHConst.Spawns.LootCrates.NUM_OF_SPAWNS_INCREASER_TIMER
-        ) {
+        // Gradually increase the number of crates spawned per interval, starting after the platform expires
+        pausableRunnables += PausableBukkitRunnable(plugin, remainingTicks = MHConst.STARTING_PLATFORM_LIFESPAN, periodTicks = MHConst.Spawns.LootCrates.NUM_OF_SPAWNS_INCREASER_TIMER) {
             amountOfCratesToSpawnPerInterval += 1
-        }.apply { this.start() }
+        }
 
-        //endregion
-
-        //region Start spawning mobs
-        pausableRunnables += PausableBukkitRunnable(plugin, periodTicks = Mobs.SPAWN_CYCLE_DELAY) {
+        // Start spawning mobs after the platform expires, then repeat every cycle
+        pausableRunnables += PausableBukkitRunnable(plugin, remainingTicks = MHConst.STARTING_PLATFORM_LIFESPAN, periodTicks = Mobs.SPAWN_CYCLE_DELAY) {
             repeat(amountOfMobsToSpawnPerInterval) {
                 if (generatedBitsIndexes.isEmpty())
                     return@repeat
@@ -212,32 +160,40 @@ class MazeHunt(val plugin: Plugin) : MinigameSkeleton() , Listener {
             }
 
             players.forEach {
-                it.sendActionBar(text("New mob wave",TextColor.fromHexString(Colors.TitleColors.AQUA)))
+                it.sendActionBar(text("New mob wave", TextColor.fromHexString(Colors.TitleColors.AQUA)))
             }
+        }
 
-        }.apply { this.start() }
-
-
-        // Gradually increase the number of mobs spawned per interval
-        pausableRunnables += PausableBukkitRunnable(plugin, periodTicks = Mobs.NUM_OF_SPAWNS_INCREASER_TIMER) {
+        // Gradually increase the number of mobs spawned per interval, starting after the platform expires
+        pausableRunnables += PausableBukkitRunnable(plugin, remainingTicks = MHConst.STARTING_PLATFORM_LIFESPAN, periodTicks = Mobs.NUM_OF_SPAWNS_INCREASER_TIMER) {
             amountOfMobsToSpawnPerInterval += 1
-        }.apply { this.start() }
-
-        //endregion
+        }
     }
 
-    /**
-     * List used for newly created mobs that trigger on contact with a player.
-     * Each mob in this list will not trigger their action while on there.
-     * Should include: Slimes, Magma Cubes
-     */
-    private val mobsToDisableContactDamage: MutableList<Mob> = mutableListOf()
+    @CalledByCommand
+    override fun start(sender: Player) {
+        super.start(sender)
 
-    @EventHandler
-    fun ignoreContactDamageOfSlimes(event: EntityDamageByEntityEvent) {
-        if (event.damager in mobsToDisableContactDamage) {
-            event.isCancelled = true
-        }
+        // keep track of if players have fallen of the arena based on their Y level and kill them because they can cheat fall damage via slow-falling potions
+        runnables += object : BukkitRunnable() {
+            override fun run() {
+                players.forEach {
+                    if (it.location.y < Locations.MIN_LEGAL_Y_LEVEL && it.gameMode !in listOf(GameMode.CREATIVE, GameMode.SPECTATOR))
+                        it.health = 0.0
+                }
+            }
+        }.apply { runTaskTimer(MinigamePlugin.Companion.plugin, 0L, 10L) }
+
+        // Start game loop
+        countDownToNewMazeGeneration(curTimeLeftTillNewMaze)
+    }
+
+    override fun startFastMode(player: Player) {
+        amountOfMobsToSpawnPerInterval = INITIAL_AMOUNTS_OF_MOBS_TO_SPAWN_IN_A_CYCLE_FOR_HARD_MODE
+        amountOfCratesToSpawnPerInterval = INITIAL_AMOUNTS_OF_CRATES_TO_SPAWN_IN_A_CYCLE_FOR_HARD_MODE
+        curTimeLeftTillNewMaze = REGENERATE_MAZE_INITIAL_COOLDOWN_FOR_HARD_MODE
+
+        super.startFastMode(player)
     }
 
     private fun countDownToNewMazeGeneration(startedWaitTime: Long) {
@@ -272,125 +228,16 @@ class MazeHunt(val plugin: Plugin) : MinigameSkeleton() , Listener {
                     Colors.TitleColors.AQUA,
                 )
 
-
                 WORLD.entities
                     .filter { it is LivingEntity && it !is Player }
                     .forEach { it.remove() }
-
-                // kill any mobs that don't die from fall damage - such as blazes and slime
-//                40L delayTheFollowing {
-//                    WORLD.entities
-//                        .filter { it is LivingEntity && it !is Player }
-//                        .forEach { it.remove() }
-//                }
 
                 curTimeLeftTillNewMaze = startedWaitTime + MazeGen.INCREASE_IN_DURATION_FOR_MAZE_GENERATION
                 countDownToNewMazeGeneration(curTimeLeftTillNewMaze)
             }
         )
 
-        chainElements.activateChain(stopCondition = {!guardAlreadyRunning})
-    }
-
-    @EventHandler
-    private fun onBlockPlace(event: BlockPlaceEvent) {
-        val block = event.block
-
-        // Do special action for tnt specifically and ignite the block instead of breaking it
-        if (block.type == Material.TNT) {
-            block.type = Material.AIR
-
-            val tnt = WORLD.spawn(
-                block.location.add(0.5, 0.0, 0.5),
-                TNTPrimed::class.java
-            )
-            tnt.fuseTicks = 4 * 20
-
-            return
-        }
-
-        val decayLifespan: Long = when (block.type) {
-            Material.BRICKS -> MHConst.Spawns.LootCrates.BRICK_LIFESPAN
-            Material.COBWEB -> MHConst.Spawns.LootCrates.COBWEB_LIFESPAN
-            else -> {0L}
-        }
-
-        if (decayLifespan == 0L) return
-
-        block.breakGradually(decayLifespan)
-    }
-
-    @EventHandler
-    private fun onLootCrateBreak(event: BlockBreakEvent) {
-        if (event.block.hasMetadata("isALootCrate").not())
-            return
-
-        val metaList = event.block.getMetadata("isALootCrate")
-
-        val typeName = metaList.first { it.owningPlugin == plugin }.asString()
-
-        // convert string back to enum
-        val crateType = valueOf(typeName)
-
-        // Now you have the enum instance and can access its pool.
-
-        // Poll n number of rolls from the pool
-        val itemsInside: List<ItemStack> = List(crateType.rolls.random()) { crateType.lootTable.getWeightedRandom() }
-
-        val quantityOfEachItem = itemsInside.returnQuantityOfEach()
-
-        // Combine all the same items into 1 item -
-        // Let's say I have 3 ItemStack, each containing 4 apples -> return 1 ItemStack of 12 apples
-        // Let's also say I have 2 ItemStacks of an Iron Helmet -> return 1 itemstack of the helmet where its durability is the combined durability of both helmets.
-        val condensedItems: List<ItemStack> = quantityOfEachItem.map { collectionOfSameItemStack ->
-            val itemStack = collectionOfSameItemStack.key
-            val amountOfAllCopies = collectionOfSameItemStack.value * itemStack.amount
-
-            if (itemStack.hasDurability()) {
-                collectionOfSameItemStack.toPair().applyRandomDurability()
-            } else {
-                itemStack.clone().apply { amount = amountOfAllCopies }
-            }
-        }
-
-
-        // add to the player the loot from the loot crate
-        for (itemToAdd in condensedItems) {
-            val inventory = event.player.inventory
-
-
-            //Look for existing equipment and combine the existing equipment's dura with the added equipment's dura
-
-            //if the item doesn't already exist in the player's inventory, just add the itemstack in
-            if (!inventory.fullyContains(itemToAdd.type)) {
-                inventory.addItem(itemToAdd)
-            // otherwise, let's combine the added item to the existing one - combine the amounts or the durability
-            } else {
-                val itemStackAlreadyIn: ItemStack = inventory.getItemStackByMaterial(itemToAdd.type)!!
-
-                //check if the item has dura or not
-                if (itemStackAlreadyIn.hasDurability())  {
-                    itemStackAlreadyIn modifyDuraBy itemToAdd.remainingDurability!!
-                } else {
-                    itemStackAlreadyIn.apply {
-                        this.amount += itemToAdd.amount
-                    }
-                }
-            }
-
-        }
-
-        // We'll delete the metadata to not accidentally think later on that there's still loot to obtain from a place where there isn't a loot crate
-        event.block.removeMetadata("isALootCrate",plugin)
-
-        // disable the block drop so that the physical block won't be used/exploited
-        event.isDropItems = false
-    }
-
-    @EventHandler
-    private fun onMobDeath(event: EntityDeathEvent) {
-        event.drops.clear()
-        event.droppedExp = 0
+        chainElements.activateChain(pausableRunnables)
     }
 
     @CalledByCommand
@@ -454,14 +301,6 @@ class MazeHunt(val plugin: Plugin) : MinigameSkeleton() , Listener {
         }
     }
 
-    /** Disable mobs getting burned by the sun while Maze Hunt is running*/
-    @EventHandler
-    private fun onEntityCombust(event: EntityCombustEvent) {
-        if (!guardAlreadyRunning) return
-
-        event.isCancelled = true
-    }
-
 
     private val _TRUE = 1.toByte()
     private val _FALSE = 0.toByte()
@@ -477,14 +316,12 @@ class MazeHunt(val plugin: Plugin) : MinigameSkeleton() , Listener {
             WORLD
         )
 
-
-        pausableRunnables += PausableBukkitRunnable(plugin as JavaPlugin, MHConst.STARTING_PLATFORM_LIFESPAN) {
+        // Delete the initial floor later on
+        pausableRunnables += PausableBukkitRunnable(plugin, remainingTicks = MHConst.STARTING_PLATFORM_LIFESPAN) {
             deleteStartingPlatform()
-        }.apply { this.start() }
-
+        }.apply { start() }
 
         //Code that creates the maze area
-
         20L delayTheFollowing {
             //reset the global tracker of physical bits generated, since this method is called multiple times, each time creating a new maze
             generatedBitsIndexes.clear()
@@ -631,7 +468,7 @@ class MazeHunt(val plugin: Plugin) : MinigameSkeleton() , Listener {
      * @param radius The radius of the bit in blocks. The size of the bit will be (radius * 2 + 1) x (radius * 2 + 1)
      * Made from a predefined block type
      */
-    private fun physicallyCreateBit(bitIndexX: Int, bitIndexZ: Int, @Suppress("SameParameterValue") radius: Int) {1
+    private fun physicallyCreateBit(bitIndexX: Int, bitIndexZ: Int, @Suppress("SameParameterValue") radius: Int) {
         val center = getBitLocation(bitIndexX, bitIndexZ)
 
         for (x in -radius..radius) {
@@ -652,4 +489,3 @@ class MazeHunt(val plugin: Plugin) : MinigameSkeleton() , Listener {
         return center
     }
 }
-

@@ -33,11 +33,19 @@ class MinigamePlugin : JavaPlugin() {
     override fun onEnable() {
         plugin = this
 
+        var listOfMinigames: MutableList<MinigameSkeleton> = mutableListOf()
+
         discoMayhem = DiscoMayhem(this)
         blueprintBazaar= BlueprintBazaar(this)
         holeInTheWall = HoleInTheWall(this)
         mazeHunt = MazeHunt(this)
         parkourDash = ParkourDash(this)
+
+        listOfMinigames.addAll(listOf(discoMayhem, blueprintBazaar, holeInTheWall, mazeHunt, parkourDash))
+
+        listOfMinigames.forEach {
+            it.configMinigame()
+        }
 
         world = server.getWorld("world")!! // Initialize the world object
 

@@ -34,19 +34,19 @@ class DiscoMayhemCommands(private val discoMayhem: DiscoMayhem) : MinigameComman
     override fun handleCommand(sender: Player, command: Command, label: String, args: Array<String>): Boolean {
      when (SubCommands.fromString(args[0])) {
             SubCommands.START -> {
-                if (discoMayhem.guardAlreadyRunning()) return false
+                if (discoMayhem.isAlreadyRunning()) return false
                 discoMayhem.start(sender)
             }
             SubCommands.START_HARD_MODE -> {
-                if (discoMayhem.guardAlreadyRunning()) return false
+                if (discoMayhem.isAlreadyRunning()) return false
                 discoMayhem.startFastMode(sender)
             }
             SubCommands.PAUSE -> {
-                if (discoMayhem.guardAlreadyPaused()) return false
+                if (discoMayhem.isAlreadyPaused()) return false
                 discoMayhem.pauseGame()
             }
             SubCommands.RESUME -> {
-                if (discoMayhem.guardNotPaused()) return false
+                if (discoMayhem.isNotPaused()) return false
                 discoMayhem.resumeGame()
             }
             SubCommands.END -> {

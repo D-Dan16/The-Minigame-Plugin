@@ -1,12 +1,8 @@
 package base.utils.additions
 
 import base.MinigamePlugin
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import org.bukkit.Bukkit
-import org.bukkit.plugin.java.JavaPlugin
+import org.bukkit.plugin.Plugin
 import org.bukkit.scheduler.BukkitRunnable
 import org.bukkit.scheduler.BukkitTask
 import kotlin.math.max
@@ -15,10 +11,11 @@ import kotlin.math.max
 infix fun Long.delayTheFollowing(runnable: ()-> Unit) {
     Bukkit.getScheduler().runTaskLater(MinigamePlugin.plugin,runnable,this)
 }
+
 /**
  * A [BukkitRunnable] that can be paused and resumed. When paused, it keeps track of the remaining time until the next execution. When resumed, it continues from where it left off.
  *
- * If added to the [base.minigames.MinigameSkeleton.pausableRunnables] list, the runnable will be automatically stopped on [base.minigames.MinigameSkeleton.pauseGame].
+ * If added to the [base.minigames.MinigameSkeleton.pausableRunnables] list, the runnable will be automatically stopped on [base.minigames.MinigameSkeleton.pauseGame], and started upon [base.minigames.MinigameSkeleton.resumeGame] and [base.minigames.MinigameSkeleton.start].
  *
  * @param plugin The JavaPlugin instance.
  * @param periodTicks The period in ticks between each execution of the action. If null, the action will be executed only once after the initial delay.
@@ -26,10 +23,10 @@ infix fun Long.delayTheFollowing(runnable: ()-> Unit) {
  * @param action The action to execute.
  */
 class PausableBukkitRunnable(
-    private val plugin: JavaPlugin,
-    var remainingTicks: Long = 0L,
-    val periodTicks: Long? = null,
-    val action: () -> Unit
+    private val plugin: Plugin,
+    private var remainingTicks: Long = 0L,
+    private val periodTicks: Long? = null,
+    private val action: () -> Unit
 ) {
     private var task: BukkitTask? = null
     private var lastStartTime: Long = 0L // in system ms
@@ -61,7 +58,6 @@ class PausableBukkitRunnable(
                 }
             }.runTaskTimer(plugin, remainingTicks, periodTicks)
         } else {
-
             object : BukkitRunnable() {
                 override fun run() {
                     action()
@@ -103,20 +99,31 @@ class PausableBukkitRunnable(
 
         remainingTicks = max(0, remainingTicks - elapsedTicksInCycle)
     }
+
+    /**
+     * Resets the runnable to its initial state.
+     * This cancels any running task and resets all internal state variables to their initial values.
+     */
+    fun reset() {
+        task?.cancel()
+        task = null
+        isPaused = true
+        shouldNotBeUsed = false
+        lastStartTime = 0L
+    }
 }
 
-// Me when i make this then figure that coroutines exist ......
 fun Collection<PausableBukkitRunnable>.activateChain(
     listOfRunnablesToStoreAt: MutableCollection<PausableBukkitRunnable>? = null,
-    stopCondition: () -> Boolean
+    stopCondition: (() -> Boolean)? = null
 ) {
+    listOfRunnablesToStoreAt?.addAll(this)
+
     val iterator = this.iterator()
     fun runNext() {
-        if (stopCondition() || !iterator.hasNext()) return
+        if (stopCondition?.invoke() == true || !iterator.hasNext()) return
 
         val runnable: PausableBukkitRunnable = iterator.next()
-
-        listOfRunnablesToStoreAt?.add(runnable)
 
         runnable.start()
 
@@ -196,39 +203,3 @@ fun activateTaskAfterConditionIsMet(
 
     return runnable
 }
-
-
-fun CoroutineScope.doTaskWithIncreasingDelay(
-    initialDelayMillis: Long,
-    delayIncrementMillis: Long,
-    iterations: Int,
-    action: suspend () -> Unit
-): Job {
-    return launch {
-        var delayTime = initialDelayMillis
-        repeat(iterations) {
-            action()
-            delay(delayTime)
-            delayTime += delayIncrementMillis
-        }
-    }
-}
-
-fun CoroutineScope.doTaskWithIncreasingDelay(
-    initialDelayMillis: Long,
-    delayIncrementMillis: Long,
-    conditionToStop: () -> Boolean,
-    action: suspend () -> Unit
-): Job {
-    return launch {
-        var delayTime = initialDelayMillis
-        while (conditionToStop().not()) {
-            action()
-            delay(delayTime)
-            delayTime += delayIncrementMillis
-        }
-    }
-}
-
-
-

@@ -39,19 +39,19 @@ class BlueprintBazaarCommands(private val blueprintbazaar: BlueprintBazaar) : Mi
     override fun handleCommand(sender: Player, command: Command, label: String, args: Array<String>): Boolean {
         when (SubCommands.fromString(args[0])) {
             SubCommands.START -> {
-                if (blueprintbazaar.guardAlreadyRunning()) return false
+                if (blueprintbazaar.isAlreadyRunning()) return false
                 blueprintbazaar.start(sender)
             }
             SubCommands.START_HARD_MODE -> {
-                if (blueprintbazaar.guardAlreadyRunning()) return false
+                if (blueprintbazaar.isAlreadyRunning()) return false
                 blueprintbazaar.startFastMode(sender)
             }
             SubCommands.PAUSE -> {
-                if (blueprintbazaar.guardAlreadyPaused()) return false
+                if (blueprintbazaar.isAlreadyPaused()) return false
                 blueprintbazaar.pauseGame()
             }
             SubCommands.RESUME -> {
-                if (blueprintbazaar.guardNotPaused()) return false
+                if (blueprintbazaar.isNotPaused()) return false
                 blueprintbazaar.resumeGame()
             }
             SubCommands.END -> {

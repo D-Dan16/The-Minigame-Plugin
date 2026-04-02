@@ -36,7 +36,7 @@ class BlueprintBazaar(plugin: Plugin) : MinigameSkeleton() {
 
 
     //region vars
-    val plugin: MinigamePlugin
+    val plugin: MinigamePlugin = plugin as MinigamePlugin
     /** The builds.*/
     private lateinit var allSchematics: Array<File>
     /** The list of available builds. When a build is chosen, it is removed from this list*/
@@ -52,31 +52,12 @@ class BlueprintBazaar(plugin: Plugin) : MinigameSkeleton() {
 
     //endregion
 
-    init {
-        if (plugin !is MinigamePlugin) throw IllegalArgumentException("Plugin must be an instance of MinigamePlugin")
-        this.plugin = plugin
-    }
-
     @Throws(InterruptedException::class)
     @CalledByCommand
     override fun start(sender: Player) {
         initSchematics()
 
         super.start(sender)
-
-        // EXPERIMENTAL
-//        run {
-//            //Construct the scoreboard info for the minigame.
-//            timeElapsedForBuild.displaySlot = DisplaySlot.SIDEBAR
-//            // Initial entry line
-//            timeElapsedForBuild.getScore("${ChatColor.YELLOW}Time Elapsed:").score = 2
-//            timeElapsedForBuild.getScore("${ChatColor.WHITE}$timeElapsedForBuild s").score = 1
-//
-//            // display the minigame's scoreboard to the players.
-//            for (player in players)
-//                player.scoreboard = scoreboard
-//            //TODO: finish with scoreboard
-//        }
 
         // start the cycle of builds
         prepareNewBuild()
@@ -154,7 +135,7 @@ class BlueprintBazaar(plugin: Plugin) : MinigameSkeleton() {
      */
     @CalledByCommand
     fun initSchematics() {
-        if (guardAlreadyRunning) {
+        if (isAlreadyRunning()) {
             sender!!.sendMessage("Cannot initialize schematics while the game is running.")
             return
         }
@@ -279,7 +260,7 @@ class BlueprintBazaar(plugin: Plugin) : MinigameSkeleton() {
 
     @CalledByCommand
     fun skipToNextBuild() {
-        if (!guardAlreadyRunning) {
+        if (!isAlreadyRunning()) {
             sender!!.sendMessage("can't execute this if the game isn't running.")
             return
         }
@@ -319,7 +300,7 @@ class BlueprintBazaar(plugin: Plugin) : MinigameSkeleton() {
 
     @CalledByCommand
     fun cycleThroughSchematics() {
-        if (!guardAlreadyRunning || guardAlreadyPaused) {
+        if (!isAlreadyRunning() || isAlreadyPaused()) {
             sender!!.sendMessage("Game is not currently alive to do this.")
             return
         }

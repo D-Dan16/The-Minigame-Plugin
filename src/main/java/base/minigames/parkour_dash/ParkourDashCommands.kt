@@ -55,7 +55,7 @@ class ParkourDashCommands(val parkourDash: ParkourDash) : MinigameCommandsSkelet
 
         when (argZeroCommand) {
             SubCommands.START -> {
-                if (parkourDash.guardAlreadyRunning()) return false
+                if (parkourDash.isAlreadyRunning()) return false
                 if (args.size < 2) return error(sender, "Please provide a mode: ${Modes.entries.joinToString { it.name.lowercase() }}")
                 val mode = Modes.fromString(args[1])
                     ?: return error(sender, "Unknown mode. Use one of: ${Modes.entries.joinToString { it.name.lowercase() }}")
@@ -64,11 +64,11 @@ class ParkourDashCommands(val parkourDash: ParkourDash) : MinigameCommandsSkelet
                 parkourDash.start(sender)
             }
             SubCommands.PAUSE -> {
-                if (parkourDash.guardAlreadyPaused()) return false
+                if (parkourDash.isAlreadyPaused()) return false
                 parkourDash.pauseGame()
             }
             SubCommands.RESUME -> {
-                if (parkourDash.guardNotPaused()) return false
+                if (parkourDash.isNotPaused()) return false
                 parkourDash.resumeGame()
             }
             SubCommands.END -> {
@@ -103,7 +103,7 @@ class ParkourDashCommands(val parkourDash: ParkourDash) : MinigameCommandsSkelet
             }
 
             SubCommands.GENERATE -> {
-                if (parkourDash.guardAlreadyRunning()) return false
+                if (parkourDash.isAlreadyRunning()) return false
                 parkourDash.prepareArea()
             }
         }

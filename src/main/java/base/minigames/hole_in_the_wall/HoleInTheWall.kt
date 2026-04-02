@@ -180,7 +180,7 @@ class HoleInTheWall (val plugin: Plugin) : MinigameSkeleton() {
         if (mode == "Alternating") {
             alternatingWallSpawnerModeRunnable = object : BukkitRunnable() {
                 override fun run() {
-                    if (guardAlreadyPaused) return
+                    if (isAlreadyPaused()) return
 
                     // refill the list of modes to alternate to with all the modes that are available to play
                     if (currentAvailableListOfModesToAlternateTo.isEmpty()) {
@@ -194,7 +194,7 @@ class HoleInTheWall (val plugin: Plugin) : MinigameSkeleton() {
 
             // only start alternating wall spawner mode when the game is running
             activateTaskAfterConditionIsMet(
-                condition = { guardAlreadyRunning && !guardAlreadyPaused },
+                condition = { isAlreadyRunning() && !isAlreadyPaused() },
                 action = {alternatingWallSpawnerModeRunnable?.runTaskTimer(plugin,0L,Timers.ALTERNATING_WALL_SPAWNER_MODES_DELAY)}
             )
 
@@ -279,7 +279,7 @@ class HoleInTheWall (val plugin: Plugin) : MinigameSkeleton() {
     }
 
     private fun startRepeatingGameLoop() {
-        if (!this.guardAlreadyRunning || guardAlreadyPaused) {
+        if (!this.isAlreadyRunning() || isAlreadyPaused()) {
             logger().warn("HITW: Game is not running, cannot start periodic task")
             return
         }
@@ -485,7 +485,7 @@ class HoleInTheWall (val plugin: Plugin) : MinigameSkeleton() {
         // The State Evaluator.
         when (stateOfWallSpawner) {
             WallSpawnerState.IDLE -> { //region IDLE
-                if (!guardAlreadyRunning) return
+                if (!isAlreadyRunning()) return
 
                 val wantedState = when (wallSpawningMode!!) {
                     WallSpawnerMode.WALL_CHAINER -> {

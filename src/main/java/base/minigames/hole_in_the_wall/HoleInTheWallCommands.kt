@@ -36,7 +36,7 @@ class HoleInTheWallCommands(private val holeInTheWall: HoleInTheWall) : Minigame
     override fun handleCommand(sender: Player, command: Command, label: String, args: Array<String>): Boolean {
         when (SubCommands.fromString(args[0])) {
             SubCommands.START -> {
-                if (holeInTheWall.guardAlreadyRunning()) return false
+                if (holeInTheWall.isAlreadyRunning()) return false
 
                 when (args.size) {
                     1 -> return  error(sender, "Please specify a map name to start the game.")
@@ -58,15 +58,15 @@ class HoleInTheWallCommands(private val holeInTheWall: HoleInTheWall) : Minigame
                 }
             }
             SubCommands.START_HARD_MODE -> {
-                if (holeInTheWall.guardAlreadyRunning()) return false
+                if (holeInTheWall.isAlreadyRunning()) return false
                 holeInTheWall.startFastMode(sender)
             }
             SubCommands.PAUSE -> {
-                if (holeInTheWall.guardAlreadyPaused()) return false
+                if (holeInTheWall.isAlreadyPaused()) return false
                 holeInTheWall.pauseGame()
             }
             SubCommands.RESUME -> {
-                if (holeInTheWall.guardNotPaused()) return false
+                if (holeInTheWall.isNotPaused()) return false
                 holeInTheWall.resumeGame()
             }
             SubCommands.END -> {

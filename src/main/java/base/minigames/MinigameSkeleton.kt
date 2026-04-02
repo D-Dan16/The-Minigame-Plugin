@@ -23,11 +23,18 @@ import org.bukkit.scoreboard.Objective
 import org.bukkit.scoreboard.Team
 import java.time.Duration
 
+/**
+ * Represents the base structure for a minigame within the system.
+ * This class provides core functionality for managing game states,
+ * players, scoreboard interactions, and other game-related operations.
+ *
+ * The class includes abstract and open methods that should be implemented
+ * or overridden in subclasses to define game-specific behavior, such as
+ * area preparation, game rule setup, and event handling.
+ *
+ */
 @Suppress("NOTHING_TO_INLINE")
-abstract class MinigameSkeleton
-
-protected constructor() {
-
+abstract class MinigameSkeleton {
     //region Fields
     var isGameRunning: Boolean = false
     var isGamePaused: Boolean = false
@@ -104,6 +111,69 @@ protected constructor() {
     //endregion
 
     /**
+     * Configures the initial state of the minigame, setting up the scoreboard and related elements.
+     *
+     * This method initializes the scoreboard display by resetting and allocating slots
+     * for specific minigame-related information, such as the name of the minigame and
+     * the time elapsed since the game started. It uses helper methods like
+     * [registerScoreboardLine] to define and bind specific entries on the scoreboard.
+     *
+     * Additionally, it invokes [addScoreboardElements], which can be overridden by
+     * subclasses to include more detailed or customized scoreboard lines.
+     *
+     * Typical usage involves calling this method during the preparation phase of the
+     * minigame lifecycle, ensuring a clean and organized scoreboard state when the game starts.
+     */
+    fun configMinigame() {
+        //Construct the scoreboard info for the minigame.
+        scoreboardObjective.displaySlot = DisplaySlot.SIDEBAR
+
+        // reset the slot allocator for a fresh sidebar
+        nextScoreSlot = 15
+
+        // Add the minigame name and elapsed timelines using the helper API
+        registerScoreboardLine(
+            key = "minigameName",
+            entryText = "${ChatColor.YELLOW}Name: $minigameName"
+        )
+        registerScoreboardLine(
+            key = "timeElapsed",
+            entryText = "Time Elapsed: ",
+            suffix = gameTimeElapsed
+        )
+
+        addScoreboardElements()
+    }
+
+    /**
+     * Defines and registers minigame-related events that are based on the progression of time.
+     *
+     * This method is intended to be overridden by subclasses to implement game-specific logic
+     * for responding to time intervals or elapsed time.
+     *
+     * Typical use cases can include periodic behavior such as triggering events, updating scoreboard
+     * elements, spawning game entities, or providing other time-sensitive game mechanics.
+     *
+     * It is called during [start], allowing subclasses to set up custom
+     * time-based logic that contributes to the overall gameplay experience.
+     */
+    open fun addTimeBasedEvents() {}
+
+
+    /**
+     * Defines and registers the scoreboard elements required for the minigame.
+     *
+     * This method is a placeholder and should be overridden by subclasses to implement
+     * minigame-specific scoreboard setup logic, such as registering additional lines or teams.
+     *
+     * It is called during the minigame's initialization process in [configMinigame].
+     *
+     * Subclasses must use helper methods such as [registerScoreboardLine] and
+     * [updateScoreboardLineSuffix] to streamline the creation and updating of scoreboard entries.
+     */
+    open fun addScoreboardElements() {}
+
+    /**
      * Starts the minigame.
      * If the game is already running, it should not start the game again.
      *
@@ -120,42 +190,28 @@ protected constructor() {
         isGamePaused = false
 
 
-        //Construct the scoreboard info for the minigame.
-        scoreboardObjective.displaySlot = DisplaySlot.SIDEBAR
-
-        //<editor-fold desc="ScoreBoard init">
-        // reset slot allocator for a fresh sidebar
-        nextScoreSlot = 15
-
-        // Add the minigame name and elapsed time lines using the helper API
-        registerScoreboardLine(
-            key = "minigameName",
-            entryText = "${ChatColor.YELLOW}Name: $minigameName"
-        )
-        registerScoreboardLine(
-            key = "timeElapsed",
-            entryText = "Time Elapsed: ",
-            suffix = gameTimeElapsed
-        )
-
-        // display the minigame's scoreboard to the players.
-        players.forEach { it.scoreboard = scoreboard }
-        //</editor-fold>
+        //----- List Of Actions To Be Done When The Game Starts -----//
+        prepareArea()
+        prepareGameSetting()
+        addTimeBasedEvents()
 
         // Keep track of the timer for the length of the game and display it in the scoreboard
         pausableRunnables += PausableBukkitRunnable(plugin as JavaPlugin, remainingTicks = 20L, periodTicks = 20L) {
             gameTimeElapsed++
             updateScoreboardLineSuffix("timeElapsed", gameTimeElapsed)
-        }.apply { this.start() }
+        }
+        //----------------------------------------------------------------//
+
+        // display the minigame's scoreboard to the players.
+        scoreboardObjective.displaySlot = DisplaySlot.SIDEBAR
+        players.forEach { it.scoreboard = scoreboard }
+
+
+        for (runnable in pausableRunnables) {
+            runnable.start()
+        }
 
         announceMessage("Minigame $minigameName started!", "Good Luck", LIME_GREEN)
-
-
-        //----- List Of Actions To Be Done When The Game Starts -----//
-        prepareArea()
-        prepareGameSetting()
-
-        //----------------------------------------------------------------//
     }
 
     /**
@@ -212,7 +268,12 @@ protected constructor() {
      */
     @CalledByCommand
     open fun endGame() {
-        pauseGame()
+        pausableRunnables.removeIf { it.shouldNotBeUsed }
+        pausableRunnables.forEach { runnable ->
+            runnable.reset()
+        }
+        pausableRunnables.clear()
+
         // copy the list so that we don't get ConcurrentModificationException via adding new runnables to the list while iterating over it
         runnables.toList().forEach { it.cancel()}
         runnables.clear()
@@ -237,7 +298,7 @@ protected constructor() {
      * @return True if the player is in the minigame, false otherwise
      */
     fun isPlayerInGame(player: Player?): Boolean {
-        return guardAlreadyRunning && players.contains(player)
+        return isAlreadyRunning() && players.contains(player)
     }
 
     /**
@@ -249,7 +310,7 @@ protected constructor() {
         // Delete the surrounding area.
         nukeGameArea(center, radius)
 
-//        announceMessage("Area nuked!", "hope everyone's safe...", Colors.TitleColors.RED)
+        //        announceMessage("Area nuked!", "hope everyone's safe...", Colors.TitleColors.RED)
     }
     /**
      * Prepares the area. Should be followed with code that prepares the physical area. Typically, it should be called in [start].
@@ -332,11 +393,6 @@ protected constructor() {
     //region Game State Guards
     val commandNotExecutedMessage = "Command has not been executed"
 
-    // Convenience boolean properties so callers can use simple boolean checks (without parentheses)
-    val guardAlreadyRunning: Boolean
-        get() = isGameRunning
-    val guardAlreadyPaused: Boolean
-        get() = isGamePaused
 
     /**
      *  Guard clause for executing the method that the command called.
@@ -346,7 +402,7 @@ protected constructor() {
      *
      *  @return true if the guard has stopped the command from calling the [start] method, otherwise, false.
      *  */
-    fun guardAlreadyRunning() : Boolean {
+    fun isAlreadyRunning() : Boolean {
         if (isGameRunning) {
             announceMessage(
                 "Minigame is already running!",
@@ -367,7 +423,7 @@ protected constructor() {
      *
      *  @return true if the guard has stopped the command from calling the [resumeGame] method, otherwise, false.
      *  */
-    fun guardNotPaused() : Boolean {
+    fun isNotPaused() : Boolean {
         if (!isGameRunning || !isGamePaused ) {
             announceMessage(
                 "Minigame is not paused!",
@@ -389,7 +445,7 @@ protected constructor() {
      *
      *  @return true if the guard has stopped the command from calling the [pauseGame] method, otherwise, false.
      *  */
-    fun guardAlreadyPaused() : Boolean {
+    fun isAlreadyPaused() : Boolean {
         if (!isGameRunning || isGamePaused) {
             announceMessage(
                 "Minigame already paused!",
@@ -426,3 +482,5 @@ protected constructor() {
     }
     //endregion
 }
+
+
