@@ -91,7 +91,7 @@ object Utils {
      */
     fun successChance(chance: Double): Boolean {
         require(chance in 0.0..1.0) { "Chance must be between 0.0 and 1.0" }
-        return Random.Default.nextDouble() < chance
+        return Random.nextDouble() < chance
     }
 
     inline fun doActionByChance(probability: Double, action: () -> Unit) {

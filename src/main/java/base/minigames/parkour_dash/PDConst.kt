@@ -2,8 +2,8 @@
 
 package base.minigames.parkour_dash
 
-import base.MinigamePlugin.Companion.world
 import base.annotations.OptionalFeature
+import base.utils.additions.Direction
 import com.sk89q.worldedit.math.BlockVector3
 import org.bukkit.Bukkit
 import org.bukkit.Location
@@ -16,42 +16,51 @@ object PDConst {
 
 
     object FilePaths {
-        const val COURSES_FILE_PATH = "parkourdash-courses.json"
+        const val COURSES_METADATA = "parkourdash-courses.json"
+        const val SCHEMATICS_FOLDER = "courses-schematics"
     }
 
     object Locations {
-        val PIVOT = Location(WORLD, 0.0, 100.0, 0.0)
-
+        val PIVOT = Location(WORLD, 0.0, 250.0, 0.0)
         /** Starting location for players */
-        val START_LOCATION = Location(
-            WORLD,
-            PIVOT.x + 20,
-            PIVOT.y,
-            PIVOT.z
-        )
+        val START_LOCATION = PIVOT.clone().add(0.0, 30.0, 0.0)
+
+        val START_LOCATION_OF_MIDDLE_PATH: Location = PIVOT.clone()
+        val START_LOCATION_OF_LEFT_PATH: Location = START_LOCATION_OF_MIDDLE_PATH.clone().add(0.0, 0.0, -40.0)
+        val START_LOCATION_OF_RIGHT_PATH: Location = START_LOCATION_OF_MIDDLE_PATH.clone().add(0.0, 0.0, 40.0)
     }
 
     object CourseBoundaries {
-        enum class Directions {
-            /** Left */ NEG_Z,
-            /** Right */ POS_Z,
-            /** Backwards */ NEG_X,
-            /** Forwards */ POS_X,
-            /** Down */ NEG_Y,
-            /** Up  */ POS_Y
+        enum class CourseDirections {
+            LEFT,
+            RIGHT,
+            BACKWARDS,
+            FORWARDS,
+            DOWN,
+            UP;
+
+            fun toCardinalDirection(): Direction {
+                return when (this) {
+                    LEFT -> Direction.NORTH
+                    RIGHT -> Direction.SOUTH
+                    BACKWARDS -> Direction.WEST
+                    FORWARDS -> Direction.EAST
+                    else -> {throw IllegalStateException("Invalid direction")}
+                }
+            }
         }
 
         /**
          * These are offsets from the pivot point of a parkour course [the gold block].
          * These offsets help us to know and assess where courses can generate so we won't overlap with those already generated
          */
-        val COURSE_BOUNDARIES: Map<Directions, BlockVector3> = mapOf(
-            Directions.NEG_Z to BlockVector3.at(0, 0, -10),
-            Directions.POS_Z to BlockVector3.at(0, 0, 10),
-            Directions.NEG_X to BlockVector3.at(0, 0, 0), //This overlaps with the pivot point
-            Directions.POS_X to BlockVector3.at(45, 0, 0),
-            Directions.NEG_Y to BlockVector3.at(0, -12, 0),
-            Directions.POS_Y to BlockVector3.at(0, 16, 0)
+        val COURSE_BOUNDARIES: Map<CourseDirections, BlockVector3> = mapOf(
+            CourseDirections.LEFT to BlockVector3.at(0, 0, -10),
+            CourseDirections.RIGHT to BlockVector3.at(0, 0, 10),
+            CourseDirections.BACKWARDS to BlockVector3.at(0, 0, 0), //This overlaps with the pivot point
+            CourseDirections.FORWARDS to BlockVector3.at(45, 0, 0),
+            CourseDirections.DOWN to BlockVector3.at(0, -12, 0),
+            CourseDirections.UP to BlockVector3.at(0, 16, 0)
         )
     }
 
@@ -105,4 +114,49 @@ object PDConst {
         /** Bonus points for completing without falling */
         const val POINTS_MULTIPLIER_FOR_FLAWLESS_COMPLETION = 1.5
     }
+
+    /** Configuration for a specific path (Left, Middle, Right) in the parkour course */
+    object NormalMode {
+        /** The configurations for each path in Normal mode */
+        val pathsConfig = listOf(
+            CoursePathConfig(25..45, 1..6),
+            CoursePathConfig(66..86, 7..12),
+            CoursePathConfig(99..119, 13..18)
+        )
+    }
+
+    /** Configuration for a specific path (Left, Middle, Right) in the parkour course */
+    object HardMode {
+        /** The configurations for each path in Hard mode */
+        val pathsConfig = listOf(
+            CoursePathConfig(65..85, 5..10),
+            CoursePathConfig(98..118, 11..16),
+            CoursePathConfig(137..157, 17..25)
+        )
+    }
+
+    /** Configuration for a specific path (Left, Middle, Right) in the parkour course */
+    object ExtremeMode {
+        /** The configurations for each path in Extreme mode */
+        val pathsConfig = listOf(
+            CoursePathConfig(100..120, 8..14),
+            CoursePathConfig(138..158, 15..22),
+            CoursePathConfig(176..196, 23..30)
+        )
+    }
+
+    data class CoursePathConfig(
+        /**
+         * The sum of Difficulty Tokens the path has.
+         * Let's say the path has 3 parkour courses
+         * A -> 5, B -> 10, C -> 15
+         * The sum of these 3 courses is 25 Difficulty Tokens => this value.
+         */
+        val difficultyTokensRange: IntRange,
+        /**
+         * The difficulty each course can have in this path is inside this range.
+         * If this range is (1..3), then the individual course difficulty can be 1, 2, or 3 Difficulty Tokens.
+         */
+        val individualCourseDifficultyRange: IntRange
+    )
 }

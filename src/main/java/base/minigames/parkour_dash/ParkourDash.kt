@@ -7,27 +7,25 @@ import base.minigames.MinigameSkeleton
 import base.utils.additions.PausableBukkitRunnable
 import org.bukkit.entity.Player
 import org.bukkit.plugin.java.JavaPlugin
-import java.io.File
-import java.io.IOException
 
 class ParkourDash(val plugin: MinigamePlugin) : MinigameSkeleton() {
     override val minigameName: String = this::class.simpleName ?: "Unknown"
-    //<editor-fold desc="Properties"> --------------------------------------------------------
+    //<editor-fold desc="Properties"> ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    //<editor-fold desc="Game Modifiers"> ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    //<editor-fold desc="Game Modifiers">
     var difficulty: ParkourDashCommands.Modes = ParkourDashCommands.Modes.NORMAL
+        @CalledByCommand(Mode.EXCLUSIVE)
+        set
 
     var courseLength: Int = 0
     //</editor-fold>
-    //</editor-fold> ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     //<editor-fold desc="Timers">
     private var remainingTimeSeconds: Long = PDConst.Times.GAME_DURATION
-
-    //<editor-fold desc="Files">
-    lateinit var coursesFile: File
     //</editor-fold>
-    //</editor-fold> --------------------------------------------------------
+
+    //</editor-fold> ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    
 
     override fun addScoreboardElements() {
         // Add Parkour Dash specific scoreboard line: Time Remaining
@@ -54,21 +52,6 @@ class ParkourDash(val plugin: MinigamePlugin) : MinigameSkeleton() {
     }
 
     @CalledByCommand(Mode.EXCLUSIVE)
-    override fun start(sender: Player) {
-        super.start(sender)
-    }
-
-    @CalledByCommand(Mode.EXCLUSIVE)
-    override fun pauseGame() {
-        super.pauseGame()
-    }
-
-    @CalledByCommand(Mode.EXCLUSIVE)
-    override fun resumeGame() {
-        super.resumeGame()
-    }
-
-    @CalledByCommand(Mode.EXCLUSIVE)
     override fun endGame() {
         super.endGame()
         // Reset timer for the next round
@@ -80,36 +63,13 @@ class ParkourDash(val plugin: MinigamePlugin) : MinigameSkeleton() {
 //        TODO("Not yet implemented")
     }
 
-    fun generateCourse() {
-//        TODO("Not yet implemented")
-    }
-
     override fun prepareGameSetting() {
         super.prepareGameSetting()
     }
 
     @CalledByCommand(Mode.NON_EXCLUSIVE)
     override fun prepareArea() {
-        //<editor-fold desc="obtain courses file">
-        if (this::coursesFile.isInitialized.not()) {
-            val baseFolder = plugin.getSchematicsBaseFolder(MinigamePlugin.Companion.MinigameType.PARKOUR_DASH)
-            coursesFile = File(baseFolder, PDConst.FilePaths.COURSES_FILE_PATH)
-
-            if (coursesFile.exists().not())
-                throw IOException("Parkour Dash Courses file does not exist")
-        }
-        //</editor-fold>
-
-        generateCourses()
-    }
-
-    private fun generateCourses() {
-//        TODO("Not yet implemented")
-    }
-
-    @CalledByCommand(Mode.EXCLUSIVE)
-    fun setDifficultyMode(mode: ParkourDashCommands.Modes) {
-//        TODO("Not yet implemented")
+        createCoursePaths(this)
     }
 
     @CalledByCommand(Mode.NON_EXCLUSIVE)

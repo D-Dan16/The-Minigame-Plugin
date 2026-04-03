@@ -60,7 +60,7 @@ class ParkourDashCommands(val parkourDash: ParkourDash) : MinigameCommandsSkelet
                 val mode = Modes.fromString(args[1])
                     ?: return error(sender, "Unknown mode. Use one of: ${Modes.entries.joinToString { it.name.lowercase() }}")
 
-                parkourDash.setDifficultyMode(mode)
+                parkourDash.difficulty = mode
                 parkourDash.start(sender)
             }
             SubCommands.PAUSE -> {

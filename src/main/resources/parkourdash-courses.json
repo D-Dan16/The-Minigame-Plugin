@@ -7,7 +7,7 @@
       "name": "Freeform 1",
       "theme": "Freeform",
       "variants": [
-        { "path": "DirtyDan16_-pkw-course.schem", "difficulty": 5 }
+        { "path": "DirtyDan16_-pkw-course.schem", "difficulty": 6 }
       ]
     },
     {
@@ -23,7 +23,7 @@
       "name": "Freeform 3",
       "theme": "Freeform",
       "variants": [
-        { "path": "DirtyDan16_-pkw-course-3.schem", "difficulty": 5 }
+        { "path": "DirtyDan16_-pkw-course-3.schem", "difficulty": 14 }
       ]
     },
     {
@@ -31,7 +31,7 @@
       "name": "Freeform 4",
       "theme": "Freeform",
       "variants": [
-        { "path": "DirtyDan16_-pkw-course-4.schem", "difficulty": 5 }
+        { "path": "DirtyDan16_-pkw-course-4.schem", "difficulty": 9 }
       ]
     },
     {
@@ -39,7 +39,7 @@
       "name": "Freeform 5",
       "theme": "Freeform",
       "variants": [
-        { "path": "DirtyDan16_-pkw-course-5.schem", "difficulty": 5 }
+        { "path": "DirtyDan16_-pkw-course-5.schem", "difficulty": 7 }
       ]
     },
     {
@@ -47,7 +47,7 @@
       "name": "Freeform 6",
       "theme": "Freeform",
       "variants": [
-        { "path": "DirtyDan16_-pkw-course-6.schem", "difficulty": 5 }
+        { "path": "DirtyDan16_-pkw-course-6.schem", "difficulty": 16 }
       ]
     },
     {
@@ -55,7 +55,7 @@
       "name": "Freeform 7",
       "theme": "Freeform",
       "variants": [
-        { "path": "DirtyDan16_-pkw-course-7.schem", "difficulty": 5 }
+        { "path": "DirtyDan16_-pkw-course-7.schem", "difficulty": 11 }
       ]
     },
     {
@@ -63,7 +63,7 @@
       "name": "Freeform 8",
       "theme": "Freeform",
       "variants": [
-        { "path": "DirtyDan16_-pkw-course-8.schem", "difficulty": 5 }
+        { "path": "DirtyDan16_-pkw-course-8.schem", "difficulty": 3 }
       ]
     },
     {
@@ -71,7 +71,7 @@
       "name": "Freeform 9",
       "theme": "Freeform",
       "variants": [
-        { "path": "DirtyDan16_-pkw-course-9.schem", "difficulty": 5 }
+        { "path": "DirtyDan16_-pkw-course-9.schem", "difficulty": 10 }
       ]
     },
     {
@@ -79,7 +79,7 @@
       "name": "Freeform 10",
       "theme": "Freeform",
       "variants": [
-        { "path": "DirtyDan16_-pkw-course-10.schem", "difficulty": 5 }
+        { "path": "DirtyDan16_-pkw-course-10.schem", "difficulty": 15 }
       ]
     },
     {
@@ -87,7 +87,7 @@
       "name": "Freeform 11",
       "theme": "Freeform",
       "variants": [
-        { "path": "DirtyDan16_-pkw-course-11.schem", "difficulty": 5 }
+        { "path": "DirtyDan16_-pkw-course-11.schem", "difficulty": 3 }
       ]
     },
     {
@@ -95,7 +95,7 @@
       "name": "Freeform 12",
       "theme": "Freeform",
       "variants": [
-        { "path": "DirtyDan16_-pkw-course-12.schem", "difficulty": 5 }
+        { "path": "DirtyDan16_-pkw-course-12.schem", "difficulty": 4 }
       ]
     },
     {
@@ -103,7 +103,7 @@
       "name": "Freeform 13",
       "theme": "Freeform",
       "variants": [
-        { "path": "DirtyDan16_-pkw-course-13.schem", "difficulty": 5 }
+        { "path": "DirtyDan16_-pkw-course-13.schem", "difficulty": 4 }
       ]
     },
     {
@@ -111,7 +111,7 @@
       "name": "Freeform 14",
       "theme": "Freeform",
       "variants": [
-        { "path": "DirtyDan16_-pkw-course-14.schem", "difficulty": 5 }
+        { "path": "DirtyDan16_-pkw-course-14.schem", "difficulty": 11 }
       ]
     },
     {
@@ -119,7 +119,7 @@
       "name": "Freeform 15",
       "theme": "Freeform",
       "variants": [
-        { "path": "DirtyDan16_-pkw-course-15.schem", "difficulty": 5 }
+        { "path": "DirtyDan16_-pkw-course-15.schem", "difficulty": 13 }
       ]
     },
     {
@@ -127,7 +127,7 @@
       "name": "Freeform 16",
       "theme": "Freeform",
       "variants": [
-        { "path": "DirtyDan16_-pkw-course-16.schem", "difficulty": 5 }
+        { "path": "DirtyDan16_-pkw-course-16.schem", "difficulty": 4 }
       ]
     },
     {
@@ -135,7 +135,7 @@
       "name": "Freeform 17",
       "theme": "Freeform",
       "variants": [
-        { "path": "DirtyDan16_-pkw-course-17.schem", "difficulty": 5 }
+        { "path": "DirtyDan16_-pkw-course-17.schem", "difficulty": 20 }
       ]
     },
     {
@@ -143,7 +143,7 @@
       "name": "Freeform 18",
       "theme": "Freeform",
       "variants": [
-        { "path": "DirtyDan16_-pkw-course-18.schem", "difficulty": 5 }
+        { "path": "DirtyDan16_-pkw-course-18.schem", "difficulty": 8 }
       ]
     },
     {
@@ -151,7 +151,7 @@
       "name": "Freeform 19",
       "theme": "Freeform",
       "variants": [
-        { "path": "DirtyDan16_-pkw-course-19.schem", "difficulty": 5 }
+        { "path": "DirtyDan16_-pkw-course-19.schem", "difficulty": 2 }
       ]
     },
     {
@@ -159,7 +159,7 @@
       "name": "Freeform 20",
       "theme": "Freeform",
       "variants": [
-        { "path": "DirtyDan16_-pkw-course-20.schem", "difficulty": 5 }
+        { "path": "DirtyDan16_-pkw-course-20.schem", "difficulty": 7 }
       ]
     },
     {
@@ -167,7 +167,7 @@
       "name": "Freeform 21",
       "theme": "Freeform",
       "variants": [
-        { "path": "DirtyDan16_-pkw-course-21.schem", "difficulty": 5 }
+        { "path": "DirtyDan16_-pkw-course-21.schem", "difficulty": 12 }
       ]
     },
     {
@@ -175,7 +175,7 @@
       "name": "Freeform 22",
       "theme": "Freeform",
       "variants": [
-        { "path": "DirtyDan16_-pkw-course-22.schem", "difficulty": 5 }
+        { "path": "DirtyDan16_-pkw-course-22.schem", "difficulty": 7 }
       ]
     },
     {
@@ -183,7 +183,7 @@
       "name": "Freeform 23",
       "theme": "Freeform",
       "variants": [
-        { "path": "DirtyDan16_-pkw-course-23.schem", "difficulty": 5 }
+        { "path": "DirtyDan16_-pkw-course-23.schem", "difficulty": 8 }
       ]
     },
     {
@@ -191,7 +191,7 @@
       "name": "Freeform 24",
       "theme": "Freeform",
       "variants": [
-        { "path": "DirtyDan16_-pkw-course-24.schem", "difficulty": 5 }
+        { "path": "DirtyDan16_-pkw-course-24.schem", "difficulty": 20 }
       ]
     },
     {
@@ -199,7 +199,7 @@
       "name": "Freeform 25",
       "theme": "Freeform",
       "variants": [
-        { "path": "DirtyDan16_-pkw-course-25.schem", "difficulty": 5 }
+        { "path": "DirtyDan16_-pkw-course-25.schem", "difficulty": 13 }
       ]
     },
     {
@@ -207,7 +207,7 @@
       "name": "Freeform 26",
       "theme": "Freeform",
       "variants": [
-        { "path": "DirtyDan16_-pkw-course-26.schem", "difficulty": 5 }
+        { "path": "DirtyDan16_-pkw-course-26.schem", "difficulty": 17 }
       ]
     },
     {
@@ -215,7 +215,7 @@
       "name": "Freeform 27",
       "theme": "Freeform",
       "variants": [
-        { "path": "DirtyDan16_-pkw-course-27.schem", "difficulty": 5 }
+        { "path": "DirtyDan16_-pkw-course-27.schem", "difficulty": 16 }
       ]
     },
     {
@@ -223,7 +223,7 @@
       "name": "Freeform 28",
       "theme": "Freeform",
       "variants": [
-        { "path": "DirtyDan16_-pkw-course-28.schem", "difficulty": 5 }
+        { "path": "DirtyDan16_-pkw-course-28.schem", "difficulty": 7 }
       ]
     },
 

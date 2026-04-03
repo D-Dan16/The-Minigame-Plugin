@@ -61,7 +61,7 @@ class Wall(
             BuildLoader.applyDirectionToClipboardHolder(holder, directionWallIsFacing)
 
             // Create the wall region based on the clipboard's dimensions.
-            wallRegion = BuildLoader.getRotatedRegion(holder, spawnLocation, directionWallIsFacing)
+            wallRegion = BuildLoader.getRotatedRegion(holder)
         }
     private lateinit var directionWallIsFacing: Direction
     private var spawnLocation: Location = when (directionWallComesFrom) {
