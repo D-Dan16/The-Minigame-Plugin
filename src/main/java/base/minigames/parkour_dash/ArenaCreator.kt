@@ -7,6 +7,7 @@ import base.utils.extensions_for_classes.getBlockAt
 import base.utils.extensions_for_classes.getMaterialAt
 import base.utils.other.BuildLoader
 import com.google.gson.Gson
+import com.sk89q.worldedit.math.BlockVector3
 import com.sk89q.worldedit.regions.CuboidRegion
 import org.bukkit.Location
 import org.bukkit.Material
@@ -15,19 +16,21 @@ import java.io.IOException
 import kotlin.math.abs
 import kotlin.random.Random
 
-lateinit var coursesFile: File
+private lateinit var coursesFile: File
 private var activeCoursePool: MutableList<CourseVariantContainer> = mutableListOf()
 private var locationToGenerateLeftCourse: Location = PDConst.Locations.START_LOCATION_OF_LEFT_PATH
 private var locationToGenerateMiddleCourse: Location = PDConst.Locations.START_LOCATION_OF_MIDDLE_PATH
 private var locationToGenerateRightCourse: Location = PDConst.Locations.START_LOCATION_OF_RIGHT_PATH
-val baseFolder = MinigamePlugin.plugin.getSchematicsBaseFolder(MinigamePlugin.Companion.MinigameType.PARKOUR_DASH)
+private val baseFolder = MinigamePlugin.plugin.getSchematicsBaseFolder(MinigamePlugin.Companion.MinigameType.PARKOUR_DASH)
 
+internal val courseRegions: MutableList<CuboidRegion> = mutableListOf()
 
 fun createCoursePaths(parkourDash: ParkourDash) {
     fetchCourses(parkourDash)
     prepareGeneratingCourses(parkourDash)
 }
-fun fetchCourses(parkourDash: ParkourDash) {
+
+private fun fetchCourses(parkourDash: ParkourDash) {
     //<editor-fold desc="obtain courses file">
     if (!baseFolder.exists()) baseFolder.mkdirs()
     coursesFile = File(baseFolder, PDConst.FilePaths.COURSES_METADATA)
@@ -49,7 +52,7 @@ fun fetchCourses(parkourDash: ParkourDash) {
     //</editor-fold>
 }
 
-fun prepareGeneratingCourses(parkourDash: ParkourDash) {
+private fun prepareGeneratingCourses(parkourDash: ParkourDash) {
     // 1. Get the path configurations (ranges) based on the selected game difficulty
     val configs: List<PDConst.CoursePathConfig> = when (parkourDash.difficulty) {
         ParkourDashCommands.Modes.NORMAL -> PDConst.NormalMode.pathsConfig
@@ -68,10 +71,13 @@ fun prepareGeneratingCourses(parkourDash: ParkourDash) {
 
         // Distribute the total budget into individual courses until the budget is empty
         while (pathDifficultyTokens > 0) {
-            // Pick a random difficulty for the next course, ensuring it doesn't exceed the remaining budget
-            val difficultyTokensOfCourse = it.individualCourseDifficultyRange.random().coerceAtMost(pathDifficultyTokens)
-            pathDifficultyTokens -= difficultyTokensOfCourse
+            // Pick a random difficulty for the next course
+            val difficultyTokensOfCourse = it.individualCourseDifficultyRange.random()
 
+            // If the difficulty of the next course exceeds the remaining budget, stop distributing
+            if (difficultyTokensOfCourse > pathDifficultyTokens) break
+
+            pathDifficultyTokens -= difficultyTokensOfCourse
             courseDifficulties += difficultyTokensOfCourse
         }
 
@@ -86,28 +92,56 @@ fun prepareGeneratingCourses(parkourDash: ParkourDash) {
         var currentCourseLocation = pathStartLocation
         for (difficulty in listOfDifficulties) {
             val chosenCourse = pickCourse(difficulty, currentCourseLocation)
+
             val courseBoundaries = generateCourse(chosenCourse)
+
+            removeRedstoneCorners(courseBoundaries)
             currentCourseLocation = updateLocationPointer(courseBoundaries)
         }
     }
 }
 
-fun generateCourse(chosenCourse: Course): CuboidRegion {
+private fun generateCourse(chosenCourse: Course): CuboidRegion {
     val courseClipboard = BuildLoader.getClipboardHolderFromFile(
         chosenCourse.file,
         chosenCourse.startPos
     )
-
     if (chosenCourse.shouldBeMirrored) {
-        BuildLoader.mirrorClipboardHolder(courseClipboard, FORWARDS.toCardinalDirection())
+        BuildLoader.mirrorClipboardHolder(
+            courseClipboard,
+            PDConst.CourseBoundaries.CourseDirections.FORWARDS.toCardinalDirection()
+        )
     }
+    val courseBoundaries = BuildLoader.getRotatedRegion(courseClipboard)
+    courseRegions += courseBoundaries
 
     BuildLoader.loadSchematic(courseClipboard)
-
-    return BuildLoader.getRotatedRegion(courseClipboard)
+    return courseBoundaries
 }
 
-fun pickCourse(
+private fun removeRedstoneCorners(courseBoundaries: CuboidRegion) {
+    // Get the 8 corner blocks of the course and set them all to air (those blocks are redstone blocks)
+    val min = courseBoundaries.minimumPoint
+    val max = courseBoundaries.maximumPoint
+
+    val corners = listOf(
+        min,
+        max,
+        BlockVector3.at(min.x(), min.y(), max.z()),
+        BlockVector3.at(min.x(), max.y(), min.z()),
+        BlockVector3.at(max.x(), min.y(), min.z()),
+        BlockVector3.at(min.x(), max.y(), max.z()),
+        BlockVector3.at(max.x(), min.y(), max.z()),
+        BlockVector3.at(max.x(), max.y(), min.z())
+    )
+
+    corners.forEach { corner ->
+        WORLD.getBlockAt(corner).type = Material.AIR
+    }
+}
+
+
+private fun pickCourse(
     difficultyTokensOfCourse: Int, locationToGenerateCourse: Location
 ) : Course {
     val allAvailableDifficulties =
@@ -142,13 +176,13 @@ fun pickCourse(
         ),
         selectedVariant.difficulty,
         shouldBeMirrored = Random.nextBoolean(),
-        locationToGenerateCourse
+        locationToGenerateCourse.apply { y++ }
     )
 
     return course
 }
 
-fun updateLocationPointer(boundingBox: CuboidRegion): Location {
+private fun updateLocationPointer(boundingBox: CuboidRegion): Location {
     // Locate the diamond block of the schematic - this is the indicator of the course's end.
     val diamondBlockLocation = boundingBox.firstOrNull { WORLD.getMaterialAt(it) == Material.DIAMOND_BLOCK }?.let {
         WORLD.getBlockAt(it).location

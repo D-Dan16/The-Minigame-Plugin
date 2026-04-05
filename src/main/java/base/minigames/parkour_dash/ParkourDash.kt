@@ -5,6 +5,7 @@ import base.annotations.CalledByCommand
 import base.annotations.Mode
 import base.minigames.MinigameSkeleton
 import base.utils.additions.PausableBukkitRunnable
+import base.utils.other.BuildLoader
 import org.bukkit.entity.Player
 import org.bukkit.plugin.java.JavaPlugin
 
@@ -54,13 +55,19 @@ class ParkourDash(val plugin: MinigamePlugin) : MinigameSkeleton() {
     @CalledByCommand(Mode.EXCLUSIVE)
     override fun endGame() {
         super.endGame()
+
+        nukeArea()
+
         // Reset timer for the next round
         remainingTimeSeconds = PDConst.Times.GAME_DURATION
     }
 
     @CalledByCommand(Mode.NON_EXCLUSIVE)
     fun nukeArea() {
-//        TODO("Not yet implemented")
+        courseRegions.forEach {
+            BuildLoader.deleteSchematic(it)
+        }
+        courseRegions.clear()
     }
 
     override fun prepareGameSetting() {

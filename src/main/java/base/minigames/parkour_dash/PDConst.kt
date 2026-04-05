@@ -21,7 +21,7 @@ object PDConst {
     }
 
     object Locations {
-        val PIVOT = Location(WORLD, 0.0, 250.0, 0.0)
+        val PIVOT = Location(WORLD, 0.0, 200.0, 0.0)
         /** Starting location for players */
         val START_LOCATION = PIVOT.clone().add(0.0, 30.0, 0.0)
 
