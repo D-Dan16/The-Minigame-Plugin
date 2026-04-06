@@ -38,7 +38,7 @@ class BlueprintBazaar(plugin: Plugin) : MinigameSkeleton() {
     //region vars
     val plugin: MinigamePlugin = plugin as MinigamePlugin
     /** The builds.*/
-    private lateinit var allSchematics: Array<File>
+    private lateinit var allSchematics: Array<out File>
     /** The list of available builds. When a build is chosen, it is removed from this list*/
     private val availableSchematics: MutableSet<File?> = mutableSetOf()
 
@@ -145,9 +145,9 @@ class BlueprintBazaar(plugin: Plugin) : MinigameSkeleton() {
 
         schematicsFolder.listFiles().forEach { path ->
             when (path.name.substringBefore('.')) {
-                "BlueprintBazaarBuilds" -> this.allSchematics = path.listFiles()
+                "BlueprintBazaarBuilds" -> this.allSchematics = path.listFiles() ?: throw IOException("no builds found in schematics folder")
                 "arena" -> arena = path
-                else -> IOException("can't find file in blueprint bazaar")
+                else -> throw IOException("can't find file in blueprint bazaar")
             }
         }
 
@@ -217,14 +217,14 @@ class BlueprintBazaar(plugin: Plugin) : MinigameSkeleton() {
 
         //copy the floor from the displayed build plot to the build plot the player is gonna recreate the build at. also clear any blocks in the area of the recreated plot.
         for (vector in region) {
-            when (vector.y) {
-                minP.y -> WORLD.getBlockAt(vector + Locations.CENTER_BUILD_PLOT_OFFSET).type = WORLD.getMaterialAt(vector)
+            when (vector.y()) {
+                minP.y() -> WORLD.getBlockAt(vector + Locations.CENTER_BUILD_PLOT_OFFSET).type = WORLD.getMaterialAt(vector)
                 else -> WORLD.getBlockAt(vector + Locations.CENTER_BUILD_PLOT_OFFSET).type = Material.AIR
             }
         }
 
         val buildRegion = CuboidRegion(
-            BlockVector3.at(minP.x,minP.y+1,minP.z),
+            BlockVector3.at(minP.x(),minP.y()+1,minP.z()),
             maxP
         )
 
@@ -273,10 +273,9 @@ class BlueprintBazaar(plugin: Plugin) : MinigameSkeleton() {
      */
     @CalledByCommand
     fun loadAllSchematics() {
-        var index = 0
         // Load all the builds in the schematics folder
         // Load the schematic relative to the center build plot. The x and z coordinates are Modified in a way that makes the builds appear in a grid.
-        for (schematic in allSchematics) {
+        for ((index, schematic) in allSchematics.withIndex()) {
             // Calculate the x, y, and z coordinates for the build
             val curX = Locations.CENTER_BUILD_SHOWCASE_PLOT.x().toInt() + (10 * (index % 6))
             val curY = (Locations.CENTER_BUILD_SHOWCASE_PLOT.y()).toInt()
@@ -293,7 +292,6 @@ class BlueprintBazaar(plugin: Plugin) : MinigameSkeleton() {
             loadSchematicByFileAndCoordinates(schematic, curX, curY, curZ)
 
             // Increment the index for the position of the next build
-            index++
         }
     }
 

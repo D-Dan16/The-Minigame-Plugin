@@ -8,7 +8,6 @@ package base.annotations
 @MustBeDocumented
 annotation class CalledByCommand(
     val mode: Mode = Mode.UNSPECIFIED
-) {
-}
+)
 
 enum class Mode { UNSPECIFIED, EXCLUSIVE, NON_EXCLUSIVE }

@@ -10,7 +10,6 @@ import base.minigames.disco_mayhem.DiscoMayhemCommands
 import base.minigames.hole_in_the_wall.HoleInTheWall
 import base.minigames.hole_in_the_wall.HoleInTheWallCommands
 import base.minigames.MinigameSkeleton
-import base.commands.MiscCommands
 import base.minigames.maze_hunt.MazeHunt
 import base.minigames.maze_hunt.MazeHuntCommands
 import base.minigames.parkour_dash.ParkourDash

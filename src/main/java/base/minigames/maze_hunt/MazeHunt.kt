@@ -182,7 +182,7 @@ class MazeHunt(val plugin: Plugin) : MinigameSkeleton() , Listener {
                         it.health = 0.0
                 }
             }
-        }.apply { runTaskTimer(MinigamePlugin.Companion.plugin, 0L, 10L) }
+        }.apply { runTaskTimer(MinigamePlugin.plugin, 0L, 10L) }
 
         // Start game loop
         countDownToNewMazeGeneration(curTimeLeftTillNewMaze)

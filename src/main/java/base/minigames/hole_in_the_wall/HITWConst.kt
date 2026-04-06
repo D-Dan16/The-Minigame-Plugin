@@ -6,7 +6,7 @@ import org.bukkit.World
 
 
 object HITWConst {
-    const val isInDevelopment: Boolean = false // If the plugin is in development mode, some features may be disabled or behave differently. this is so that the plugin can be tested easily without constantly tempering with the code.
+    const val IS_IN_DEVELOPMENT: Boolean = false // If the plugin is in development mode, some features may be disabled or behave differently. this is so that the plugin can be tested easily without constantly tempering with the code.
     const val PLATFORMS_FOLDER: String = "platforms"
 
 
@@ -89,13 +89,13 @@ object HITWConst {
     }
 
     object WallSpawnerModes {
-        object WALL_CHAINER {
+        object WallChainer {
             const val MIN_AMOUNT_OF_SPAWNS_TILL_CHANGING_DIRECTIONS: Int = 5 // How many walls must be spawned before the direction is allowed to change
         }
-        object WALLS_FROM_ALL_DIRECTIONS {
+        object WallsFromAllDirections {
             const val CHANCE_THAT_PSYCH_WALL_WILL_GET_REMOVED: Int = (0.66 * 100).toInt()
         }
-        object WALLS_FROM_2_OPPOSITE_DIRECTIONS {
+        object WallsFrom2OppositeDirections {
             const val CHANCE_OF_CHANGING_DIRECTIONS: Int = (0.15 * 100).toInt() //0.2 regularly
             const val CHANCE_OF_CONSIDERING_TO_SWAP_REAL_WALL_DIRECTION: Int = (0.4 * 100).toInt() // 0.4 regularly
             const val MINIMUM_SPACE_BETWEEN_2_WALLS_FROM_THE_SAME_DIRECTION: Int = HITWConst.MINIMUM_SPACE_BETWEEN_2_WALLS_FROM_THE_SAME_DIRECTION

@@ -96,7 +96,7 @@ fun Direction.toYaw(): Float {
 }
 
 inline fun <reified T: Number> T.randomlyFlipSign(): T {
-    if (Random.Default.nextBoolean()) return this
+    if (Random.nextBoolean()) return this
 
     return when (this) {
         is Int -> -this as T
@@ -123,7 +123,7 @@ fun Block.breakGradually(decayDuration: Long) {
         stand.setAI(false)
     }
 
-    getScheduler().runTaskTimer(MinigamePlugin.Companion.plugin, Runnable {
+    getScheduler().runTaskTimer(MinigamePlugin.plugin, Runnable {
         // Block already gone, stop animation
         if (type.isAir) { return@Runnable }
 

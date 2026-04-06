@@ -84,9 +84,9 @@ class BuildBlueprint(
 
             // If the block is not air and not already in the material list, add it
             val blockMaterial = WORLD.getBlockAt(
-                block.x,
-                block.y,
-                block.z
+                block.x(),
+                block.y(),
+                block.z()
             ).type
 
             if (blockMaterial != Material.AIR && !materialList.contains(blockMaterial)) {

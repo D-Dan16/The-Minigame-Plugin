@@ -462,7 +462,7 @@ class HoleInTheWall (val plugin: Plugin) : MinigameSkeleton() {
                 )
 
                 WallSpawnerState.SWAPPING_TO_IDLE_WHEN_THERE_ARE_NO_EXISTING_WALLS -> wantedState in setOf(
-                            WallSpawnerState.SWAPPING_TO_IDLE_WHEN_THERE_ARE_NO_EXISTING_WALLS,  //THIS IS CRITICAL TO HAVE SINCE WHEN CHANGING MODES, we might try to change states to this state multiple times, from the condition that is called when the runable is cancelled which are canceled when the mode is changed
+                            WallSpawnerState.SWAPPING_TO_IDLE_WHEN_THERE_ARE_NO_EXISTING_WALLS,  //THIS IS CRITICAL TO HAVE, SINCE WHEN CHANGING MODES, we might try to change states to this state multiple times, from the condition that is called when the runable is cancelled which are canceled when the mode is changed
                             WallSpawnerState.IDLE
                 )
 
@@ -517,8 +517,7 @@ class HoleInTheWall (val plugin: Plugin) : MinigameSkeleton() {
                 bringWallToLife(upcomingWalls[0]) // Make the wall exist in the world by loading the schematic
                 upcomingWalls.clear()
 
-                val mode = wallSpawningMode!!
-                when (mode) {
+                when (val mode = wallSpawningMode!!) {
                     WallSpawnerMode.WALL_CHAINER -> {
                         // increment the amount of spawn since direction change for the current mode
                         amountOfSpawnsSinceDirectionChange.let {
@@ -537,8 +536,7 @@ class HoleInTheWall (val plugin: Plugin) : MinigameSkeleton() {
                 upcomingWalls.clear()
 
                 // Do extra logic depending on the mode we're at
-                val mode = wallSpawningMode!!
-                when (mode) {
+                when (val mode = wallSpawningMode!!) {
                     WallSpawnerMode.WALLS_FROM_2_OPPOSITE_DIRECTIONS -> {
                         // Increment the counters that keep track of how many walls have been spawned since the vars' states were checked
                         amountOfSpawnsSinceSwitchedTheRealDirection++
@@ -564,7 +562,7 @@ class HoleInTheWall (val plugin: Plugin) : MinigameSkeleton() {
                 // Assign weights to each direction based on the mode we're at
                 when (wallSpawningMode) {
                     WallSpawnerMode.WALL_CHAINER -> {
-                        if (amountOfSpawnsSinceDirectionChange[WallSpawnerMode.WALL_CHAINER]!! >= HITWConst.WallSpawnerModes.WALL_CHAINER.MIN_AMOUNT_OF_SPAWNS_TILL_CHANGING_DIRECTIONS) {
+                        if (amountOfSpawnsSinceDirectionChange[WallSpawnerMode.WALL_CHAINER]!! >= HITWConst.WallSpawnerModes.WallChainer.MIN_AMOUNT_OF_SPAWNS_TILL_CHANGING_DIRECTIONS) {
                             // If we have spawned enough walls, we can change the direction of the wall
                             weightsOfDirections[directionOfLastWall] = 3
                             weightsOfDirections[directionOfLastWall.getClockwise()] = 1
@@ -615,7 +613,7 @@ class HoleInTheWall (val plugin: Plugin) : MinigameSkeleton() {
                             // Randomly decide if the wall should be removed or not.
                             // 66% - to get removed, 34% - to stay.
                             val chosenToBeRemoved =
-                                (0..100).random() <= HITWConst.WallSpawnerModes.WALLS_FROM_ALL_DIRECTIONS.CHANCE_THAT_PSYCH_WALL_WILL_GET_REMOVED
+                                (0..100).random() <= HITWConst.WallSpawnerModes.WallsFromAllDirections.CHANCE_THAT_PSYCH_WALL_WILL_GET_REMOVED
 
                             createNewWall(direction, isPsych, chosenToBeRemoved)
                         }
@@ -625,7 +623,7 @@ class HoleInTheWall (val plugin: Plugin) : MinigameSkeleton() {
                     } //endregion
 
                     WallSpawnerMode.WALLS_FROM_2_OPPOSITE_DIRECTIONS -> { //region WALLS_FROM_2_OPPOSITE_DIRECTIONS
-                        val const = HITWConst.WallSpawnerModes.WALLS_FROM_2_OPPOSITE_DIRECTIONS
+                        val const = HITWConst.WallSpawnerModes.WallsFrom2OppositeDirections
 
                         val rndShouldSwapDirections =
                                 amountOfSpawnsSinceDirectionChange[WallSpawnerMode.WALLS_FROM_2_OPPOSITE_DIRECTIONS]!! > const.MIN_AMOUNT_OF_SPAWNS_TILL_CHANGING_DIRECTIONS_FOR_DUO &&
@@ -713,7 +711,7 @@ class HoleInTheWall (val plugin: Plugin) : MinigameSkeleton() {
 
                             conditionToSwapState = r@{
                                 // If we have decided to swap directions of the walls, we will need to wait more time compared to the case when we aren't swapping directions. So let's divide the cases so that as soon as we can spawn the wall without collision, we will spawn it.
-                                if ({rndShouldSwapDirections}.invoke()) {
+                                if (rndShouldSwapDirections) {
 
                                     val lastReal = getLastRealWall()
                                     // If there are no real walls, we can spawn the walls immediately
@@ -728,7 +726,7 @@ class HoleInTheWall (val plugin: Plugin) : MinigameSkeleton() {
                             }
                         }
                         // Make it so that when the lifespan of any of those walls has reached 0, they'll immediately be removed, instead of just stopping in place.
-                        upcomingWalls.forEach { it -> it.shouldBeRemoved = true}
+                        upcomingWalls.forEach { it.shouldBeRemoved = true}
 
                     } //endregion
 
@@ -775,12 +773,13 @@ class HoleInTheWall (val plugin: Plugin) : MinigameSkeleton() {
                 .filter { file: File -> file.isDirectory() && file.getName() == mapName }
                 .findFirst()
                 .orElse(null)
+            ?: throw IOException("No map schematics found in base folder named ${baseFolder.name} with map name $mapName")
         }
 
         fun processMapComponents() {
-            val mapComponents: Array<File> = selectedMapBaseFile.listFiles()
+            val mapComponents: Array<out File?> = selectedMapBaseFile.listFiles() ?: throw IOException("No files found in map base folder named ${selectedMapBaseFile.name}")
             for (component in mapComponents) {
-                when (component.getName()) {
+                when (component?.getName()) {
                     HITWConst.PLATFORMS_FOLDER -> {
                         platformSchematics = component.listFiles() ?: throw IOException("No platform schematics found in ${component.name}")
                     }
@@ -818,9 +817,9 @@ class HoleInTheWall (val plugin: Plugin) : MinigameSkeleton() {
 
     override fun prepareGameSetting() {
         fun preparePlayer(player: Player) {
-            player.gameMode = if (HITWConst.isInDevelopment) GameMode.CREATIVE else GameMode.ADVENTURE
+            player.gameMode = if (HITWConst.IS_IN_DEVELOPMENT) GameMode.CREATIVE else GameMode.ADVENTURE
 
-            if (!HITWConst.isInDevelopment) {
+            if (!HITWConst.IS_IN_DEVELOPMENT) {
                 player.teleport(HITWConst.Locations.SPAWN)
             }
 

@@ -56,7 +56,7 @@ private fun onBlockPlace(event: BlockPlaceEvent) {
 internal val mobsToDisableContactDamage: MutableList<Mob> = mutableListOf()
 
 @EventHandler
-fun ignoreContactDamageOfSlimes(mazeHunt: MazeHunt, event: EntityDamageByEntityEvent) {
+fun ignoreContactDamageOfSlimes(event: EntityDamageByEntityEvent) {
     if (event.damager in mobsToDisableContactDamage) {
         event.isCancelled = true
     }

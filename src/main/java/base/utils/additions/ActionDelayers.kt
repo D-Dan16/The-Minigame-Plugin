@@ -174,7 +174,7 @@ fun activateTaskAfterConditionIsMet(
                 conditionToCancel?.invoke() == true -> cancel()
                 condition.invoke() -> {
                     if (delayAfterConditionMet > 0L) {
-                        Bukkit.getScheduler().runTaskLater(MinigamePlugin.Companion.plugin, action, delayAfterConditionMet)
+                        Bukkit.getScheduler().runTaskLater(MinigamePlugin.plugin, action, delayAfterConditionMet)
                     } else {
                         action.run()
                     }
@@ -197,7 +197,7 @@ fun activateTaskAfterConditionIsMet(
         }
     }
 
-    runnable.runTaskTimer(MinigamePlugin.Companion.plugin, 0L, checkInterval)
+    runnable.runTaskTimer(MinigamePlugin.plugin, 0L, checkInterval)
 
     listOfRunnablesToAddTo?.add(runnable)
 
