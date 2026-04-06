@@ -2,7 +2,6 @@ package base.listeners
 
 import base.minigames.parkour_dash.ParkourDash
 import base.minigames.parkour_dash.courseRegions
-import com.sk89q.worldedit.extent.transform.BlockTransformExtent
 import com.sk89q.worldedit.math.BlockVector3
 import org.bukkit.Material
 import org.bukkit.event.EventHandler
@@ -12,7 +11,7 @@ import org.bukkit.event.block.BlockPhysicsEvent
 import org.bukkit.event.block.LeavesDecayEvent
 import org.bukkit.event.entity.EntityChangeBlockEvent
 
-class PhysicsListener(private val parkourDash: ParkourDash) : Listener {
+class ParkourDashListener(private val parkourDash: ParkourDash) : Listener {
     @EventHandler
     fun onEntityChangeBlock(event: EntityChangeBlockEvent) {
         if (!parkourDash.isGameRunning && courseRegions.isEmpty()) return

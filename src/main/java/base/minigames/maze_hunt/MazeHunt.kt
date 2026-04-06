@@ -73,6 +73,13 @@ class MazeHunt(val plugin: Plugin) : MinigameSkeleton() , Listener {
     @ShouldBeReset
     var curTimeLeftTillNewMaze = MazeGen.REGENERATE_MAZE_INITIAL_COOLDOWN
 
+    /**
+     * List used for newly created mobs that trigger on contact with a player.
+     * Each mob in this list will not trigger their action while on there.
+     * Should include: Slimes, Magma Cubes
+     */
+    internal val mobsToDisableContactDamage: MutableList<Mob> = mutableListOf()
+
     override fun addScoreboardElements() {
         // Register Maze Hunt specific scoreboard line: Time Remaining Till New Maze (in seconds)
         registerScoreboardLine(
@@ -284,6 +291,7 @@ class MazeHunt(val plugin: Plugin) : MinigameSkeleton() , Listener {
         }
     }
 
+
     override fun prepareGameSetting() {
         super.prepareGameSetting()
 
@@ -299,10 +307,9 @@ class MazeHunt(val plugin: Plugin) : MinigameSkeleton() , Listener {
             player.clearActivePotionEffects()
         }
     }
-
-
     private val _TRUE = 1.toByte()
     private val _FALSE = 0.toByte()
+
     override fun prepareArea() {
         nukeArea()
 
@@ -476,7 +483,6 @@ class MazeHunt(val plugin: Plugin) : MinigameSkeleton() , Listener {
             }
         }
     }
-
     private fun getBitLocation(bitIndexX: Int, bitIndexZ: Int): Location {
         val center = Location(
             WORLD,

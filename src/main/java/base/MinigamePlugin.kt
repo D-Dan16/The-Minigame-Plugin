@@ -1,7 +1,7 @@
 package base
 
 import base.listeners.ItemClickListener
-import base.listeners.PhysicsListener
+import base.listeners.ParkourDashListener
 import base.listeners.PlayerDeathListener
 import base.minigames.blueprint_bazaar.BlueprintBazaar
 import base.minigames.blueprint_bazaar.BlueprintBazaarCommands
@@ -12,6 +12,7 @@ import base.minigames.hole_in_the_wall.HoleInTheWallCommands
 import base.minigames.MinigameSkeleton
 import base.minigames.maze_hunt.MazeHunt
 import base.minigames.maze_hunt.MazeHuntCommands
+import base.minigames.maze_hunt.MazeHuntEventHandlers
 import base.minigames.parkour_dash.ParkourDash
 import base.minigames.parkour_dash.ParkourDashCommands
 import org.bukkit.Bukkit
@@ -21,7 +22,6 @@ import org.bukkit.GameRule
 import org.bukkit.World
 import org.bukkit.plugin.java.JavaPlugin
 import java.io.File
-import java.util.Locale.getDefault
 
 class MinigamePlugin : JavaPlugin() {
 
@@ -61,10 +61,10 @@ class MinigamePlugin : JavaPlugin() {
 
         //<editor-fold desc="Register the event listeners">
         server.pluginManager.let {
-            it.registerEvents(PlayerDeathListener(discoMayhem, holeInTheWall,mazeHunt), this)
-            it.registerEvents(PhysicsListener(parkourDash), this)
             it.registerEvents(ItemClickListener(), this)
-            it.registerEvents(mazeHunt,this)
+            it.registerEvents(PlayerDeathListener(discoMayhem, holeInTheWall, mazeHunt), this)
+            it.registerEvents(ParkourDashListener(parkourDash), this)
+            it.registerEvents(MazeHuntEventHandlers(mazeHunt),this)
         }
         //</editor-fold>
 

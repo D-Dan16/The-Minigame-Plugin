@@ -38,9 +38,9 @@ class ParkourDash(val plugin: MinigamePlugin) : MinigameSkeleton() {
     //</editor-fold>
 
     //<editor-fold desc="Teleporters">
-    private val rightPathLastCheckpoint: HashMap<Player, Location> = _root_ide_package_.java.util.HashMap()
-    private val middlePathLastCheckpoint: HashMap<Player, Location> = _root_ide_package_.java.util.HashMap()
-    private val leftPathLastCheckpoint: HashMap<Player, Location> = _root_ide_package_.java.util.HashMap()
+    private val rightPathLastCheckpoint: HashMap<Player, Location> = HashMap()
+    private val middlePathLastCheckpoint: HashMap<Player, Location> = HashMap()
+    private val leftPathLastCheckpoint: HashMap<Player, Location> = HashMap()
     //</editor-fold>
 
     //</editor-fold> ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
