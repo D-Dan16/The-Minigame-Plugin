@@ -9,15 +9,15 @@ import org.bukkit.Bukkit
 import org.bukkit.Location
 import org.bukkit.Material
 import org.bukkit.World
+import org.bukkit.inventory.ItemStack
 
 object PDConst {
-    const val TIME_OF_DAY = 1000L
     val WORLD: World = Bukkit.getWorld("world") ?: throw IllegalStateException("World 'world' not found")
-
 
     object FilePaths {
         const val COURSES_METADATA = "parkourdash-courses.json"
         const val SCHEMATICS_FOLDER = "courses-schematics"
+        const val TRANSITION_HALLWAYS = "transition-hallways"
     }
 
     object Locations {
@@ -25,19 +25,33 @@ object PDConst {
         /** Starting location for players */
         val START_LOCATION = PIVOT.clone().add(0.0, 30.0, 0.0)
 
-        val START_LOCATION_OF_MIDDLE_PATH: Location = PIVOT.clone()
-        val START_LOCATION_OF_LEFT_PATH: Location = START_LOCATION_OF_MIDDLE_PATH.clone().add(0.0, 0.0, -40.0)
-        val START_LOCATION_OF_RIGHT_PATH: Location = START_LOCATION_OF_MIDDLE_PATH.clone().add(0.0, 0.0, 40.0)
+        val START_GENERATION_LOCATION_OF_MIDDLE_PATH: Location = PIVOT.clone()
+        val START_GENERATION_LOCATION_OF_LEFT_PATH: Location = START_GENERATION_LOCATION_OF_MIDDLE_PATH.clone().add(0.0, 0.0, -40.0)
+        val START_GENERATION_LOCATION_OF_RIGHT_PATH: Location = START_GENERATION_LOCATION_OF_MIDDLE_PATH.clone().add(0.0, 0.0, 40.0)
+
+        /*
+        The Y coordinate is offset by +1 because new parkour courses are generated
+        one block above the diamond block of the previous course to keep everything aligned.
+        This means the first segment of each path [the starter hallways] would otherwise be too low,
+        so we compensate here by raising the starting location by one block.
+        */
+        val START_LOCATION_OF_MIDDLE_PATH: Location = START_GENERATION_LOCATION_OF_MIDDLE_PATH.clone().add(-11.0,1.0,0.0)
+        val START_LOCATION_OF_LEFT_PATH: Location = START_GENERATION_LOCATION_OF_LEFT_PATH.clone().add(-11.0,1.0,0.0)
+        val START_LOCATION_OF_RIGHT_PATH: Location = START_GENERATION_LOCATION_OF_RIGHT_PATH.clone().add(-11.0,1.0,0.0)
+
+        val START_LOCATION_OF_PLAYER_MIDDLE_PATH = START_LOCATION_OF_MIDDLE_PATH.clone().add(1.5,2.0,0.5)
+        val START_LOCATION_OF_PLAYER_LEFT_PATH = START_LOCATION_OF_LEFT_PATH.clone().add(1.5,2.0,0.5)
+        val START_LOCATION_OF_PLAYER_RIGHT_PATH = START_LOCATION_OF_RIGHT_PATH.clone().add(1.5,2.0,0.5)
     }
 
     object CourseBoundaries {
         enum class CourseDirections {
-            LEFT,
-            RIGHT,
-            BACKWARDS,
-            FORWARDS,
-            DOWN,
-            UP;
+            /** neg - z*/ LEFT,
+            /** pos - z*/ RIGHT,
+            /** neg - x*/ BACKWARDS,
+            /** pos - x*/ FORWARDS,
+            /** neg - y*/ DOWN,
+            /** pos - y*/ UP;
 
             fun toCardinalDirection(): Direction {
                 return when (this) {
@@ -99,7 +113,7 @@ object PDConst {
     }
 
     object Points {
-        /** Points awarded for completing a level. looks at the difficulty rating of the level */
+        /** Points awarded for completing a level. Looks at the difficulty rating of the level */
         val POINTS_FOR_LEVEL_COMPLETION = listOf(
             (1..2) to 10,
             (3..4) to 20,
@@ -143,6 +157,12 @@ object PDConst {
             CoursePathConfig(138..158, 15..22),
             CoursePathConfig(176..196, 23..30)
         )
+    }
+
+    object Items {
+        val LEFT_PATH_TELEPORTER_ICON: ItemStack = ItemStack(Material.GREEN_WOOL)
+        val MIDDLE_PATH_TELEPORTER_ICON: ItemStack = ItemStack(Material.YELLOW_WOOL)
+        val RIGHT_PATH_TELEPORTER_ICON: ItemStack = ItemStack(Material.RED_WOOL)
     }
 
     data class CoursePathConfig(

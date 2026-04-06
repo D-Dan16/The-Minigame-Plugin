@@ -3,7 +3,7 @@ package base.minigames.disco_mayhem
 
 import base.minigames.MinigameSkeleton
 import base.utils.extensions_for_classes.getBlockAt
-import base.utils.additions.Utils.initFloor
+import base.utils.additions.initFloor
 import com.sk89q.worldedit.math.BlockVector3
 import com.sk89q.worldedit.regions.CuboidRegion
 import net.kyori.adventure.text.Component
@@ -147,14 +147,13 @@ class DiscoMayhem (val plugin: Plugin) : MinigameSkeleton() {
             7,
             7,
             Material.GLASS,
-            floorCenter,
-            DiscoMayhemConst.WORLD
+            floorCenter
         ) // Initialize the floor under the player to glass
 
         // Wait a lil before removing the initial floor.
         object : BukkitRunnable() {
             override fun run() {
-                initFloor(7, 7, Material.AIR, floorCenter, DiscoMayhemConst.WORLD)
+                initFloor(7, 7, Material.AIR, floorCenter)
             }
         }.runTaskLater(plugin, 100)
     }
@@ -178,7 +177,7 @@ class DiscoMayhem (val plugin: Plugin) : MinigameSkeleton() {
      * @param referenceLocation The location to reference for the new floor. This is the location of the last floor. This location will be used to calculate the new floor's center.
      */
     private fun preppingForAFloorCycle(referenceLocation: Location) {
-        if (!isAlreadyRunning() || isAlreadyPaused()) {
+        if (!isGameRunning || isGamePaused) {
             return
         }
         Bukkit.getServer().broadcast(Component.text("prepping for change floor").color(NamedTextColor.DARK_AQUA))
@@ -265,7 +264,7 @@ class DiscoMayhem (val plugin: Plugin) : MinigameSkeleton() {
         xRad: Int,
         zRad: Int
     ) {
-        if (!isAlreadyRunning() || isAlreadyPaused()) {
+        if (!isGameRunning || isGamePaused) {
             return
         }
 
@@ -326,14 +325,14 @@ class DiscoMayhem (val plugin: Plugin) : MinigameSkeleton() {
         set(value) = TODO()
 
     private fun decreaseStartingIntervalForChangingFloorTimer() {
-        if (!isAlreadyRunning() || isAlreadyPaused()) {
+        if (!isGameRunning || isGamePaused) {
             return
         }
 
         // Decrease the interval for changing the floor as time goes on. The interval is decreased by 2 every a certain amount of time seconds.
         intervalTask = object : BukkitRunnable() {
             override fun run() {
-                if (!isAlreadyRunning() || isAlreadyPaused()) {
+                if (!isGameRunning || isGamePaused) {
                     cancel()
                     return
                 }
@@ -379,7 +378,7 @@ class DiscoMayhem (val plugin: Plugin) : MinigameSkeleton() {
         zLengthRad: Int,
         materialToKeep: Material?
     ) {
-        if (!isAlreadyRunning() || isAlreadyPaused()) {
+        if (!isGameRunning || isGamePaused) {
             return
         }
 
@@ -402,10 +401,10 @@ class DiscoMayhem (val plugin: Plugin) : MinigameSkeleton() {
 
         // Remove the remaining parts of the floor after a certain amount of time. This is the time the player has to go from the old floor to the new floor.
         //fixme: if the new floor is too close to the old one, this runnable will remove blocks from the new floor that their material is the same
-        // as the old chosen material from , if they are in the bounds of the old floor.
+        // as the old chosen material from, if they are in the bounds of the old floor.
         object : BukkitRunnable() {
             override fun run() {
-                if (!isAlreadyRunning() || isAlreadyPaused()) {
+                if (!isGameRunning || isGamePaused) {
                     cancel()
                     return
                 }

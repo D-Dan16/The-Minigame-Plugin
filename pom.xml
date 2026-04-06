@@ -6,7 +6,7 @@
 
     <groupId>me.dirtydan16</groupId>
     <artifactId>MinigamePlugin</artifactId>
-    <version>1.0.0</version>
+    <version>5.2.0</version>
     <packaging>jar</packaging>
 
     <name>MinigamePlugin</name>

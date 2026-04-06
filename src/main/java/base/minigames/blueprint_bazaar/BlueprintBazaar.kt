@@ -11,7 +11,7 @@ import base.utils.other.BuildLoader
 import base.utils.other.BuildLoader.loadSchematicByFileAndCoordinates
 import base.utils.other.BuildLoader.loadSchematicByFileAndDirection
 import base.utils.additions.Direction
-import base.utils.additions.Utils.initFloor
+import base.utils.additions.initFloor
 import base.utils.extensions_for_classes.*
 import com.sk89q.worldedit.math.BlockVector3
 import com.sk89q.worldedit.regions.CuboidRegion
@@ -135,7 +135,7 @@ class BlueprintBazaar(plugin: Plugin) : MinigameSkeleton() {
      */
     @CalledByCommand
     fun initSchematics() {
-        if (isAlreadyRunning()) {
+        if (isGameRunning) {
             sender!!.sendMessage("Cannot initialize schematics while the game is running.")
             return
         }
@@ -260,7 +260,7 @@ class BlueprintBazaar(plugin: Plugin) : MinigameSkeleton() {
 
     @CalledByCommand
     fun skipToNextBuild() {
-        if (!isAlreadyRunning()) {
+        if (!isGameRunning) {
             sender!!.sendMessage("can't execute this if the game isn't running.")
             return
         }
@@ -288,7 +288,6 @@ class BlueprintBazaar(plugin: Plugin) : MinigameSkeleton() {
                 6,
                 Material.RED_WOOL,
                 Location(WORLD, (curX - 3).toDouble(), (curY - 2).toDouble(), curZ.toDouble()),
-                WORLD
             )
             // Load the schematic
             loadSchematicByFileAndCoordinates(schematic, curX, curY, curZ)
@@ -300,7 +299,7 @@ class BlueprintBazaar(plugin: Plugin) : MinigameSkeleton() {
 
     @CalledByCommand
     fun cycleThroughSchematics() {
-        if (!isAlreadyRunning() || isAlreadyPaused()) {
+        if (!isGameRunning || isGamePaused) {
             sender!!.sendMessage("Game is not currently alive to do this.")
             return
         }

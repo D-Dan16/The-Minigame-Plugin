@@ -33,26 +33,26 @@ fun <Type> Random.getNextWeighted(weights: Map<Type, Int>): Type {
 }
 
 fun World.getBlockAt(vector: BlockVector3): Block {
-    return this.getBlockAt(vector.x,vector.y, vector.z)
+    return this.getBlockAt(vector.x(),vector.y(), vector.z())
 }
 
 fun World.getMaterialAt(vector: BlockVector3): Material {
-    return this.getBlockAt(vector.x,vector.y, vector.z).type
+    return this.getBlockAt(vector.x(),vector.y(), vector.z()).type
 }
 
 operator fun BlockVector3.plus(other: BlockVector3): BlockVector3 {
     return BlockVector3.at(
-        this.x + other.x,
-        this.y + other.y,
-        this.z + other.z
+        this.x() + other.x(),
+        this.y() + other.y(),
+        this.z() + other.z()
     )
 }
 
 operator fun BlockVector3.minus(other: BlockVector3): BlockVector3 {
     return BlockVector3.at(
-        this.x - other.x,
-        this.y - other.y,
-        this.z - other.z
+        this.x() - other.x(),
+        this.y() - other.y(),
+        this.z() - other.z()
     )
 }
 

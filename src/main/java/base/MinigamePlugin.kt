@@ -1,5 +1,6 @@
 package base
 
+import base.listeners.ItemClickListener
 import base.listeners.PhysicsListener
 import base.listeners.PlayerDeathListener
 import base.minigames.blueprint_bazaar.BlueprintBazaar
@@ -63,6 +64,7 @@ class MinigamePlugin : JavaPlugin() {
         server.pluginManager.let {
             it.registerEvents(PlayerDeathListener(discoMayhem, holeInTheWall,mazeHunt), this)
             it.registerEvents(PhysicsListener(parkourDash), this)
+            it.registerEvents(ItemClickListener(), this)
             it.registerEvents(mazeHunt,this)
         }
         //</editor-fold>

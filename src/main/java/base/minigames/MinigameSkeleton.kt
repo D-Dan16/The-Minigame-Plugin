@@ -33,7 +33,6 @@ import java.time.Duration
  * area preparation, game rule setup, and event handling.
  *
  */
-@Suppress("NOTHING_TO_INLINE")
 abstract class MinigameSkeleton {
     //region Fields
     var isGameRunning: Boolean = false
@@ -118,8 +117,7 @@ abstract class MinigameSkeleton {
      * the time elapsed since the game started. It uses helper methods like
      * [registerScoreboardLine] to define and bind specific entries on the scoreboard.
      *
-     * Additionally, it invokes [addScoreboardElements], which can be overridden by
-     * subclasses to include more detailed or customized scoreboard lines.
+     * Additionally, it invokes [addScoreboardElements], which subclasses can override to include more detailed or customized scoreboard lines.
      *
      * Typical usage involves calling this method during the preparation phase of the
      * minigame lifecycle, ensuring a clean and organized scoreboard state when the game starts.
@@ -249,7 +247,7 @@ abstract class MinigameSkeleton {
     }
 
     /**
-     * Resumes the game. Resumed games should be able to continue from where they were paused. should be overridden and followed with code that resumes the game, like starting timers, unfreezing entities...
+     * Resumes the game. Resumed games should be able to continue from where they were paused. Should be overridden and followed with code that resumes the game, like starting timers, unfreezing entities...
      */
     @CalledByCommand
     open fun resumeGame() {
@@ -298,7 +296,7 @@ abstract class MinigameSkeleton {
      * @return True if the player is in the minigame, false otherwise
      */
     fun isPlayerInGame(player: Player?): Boolean {
-        return isAlreadyRunning() && players.contains(player)
+        return isGameRunning && players.contains(player)
     }
 
     /**
@@ -353,7 +351,7 @@ abstract class MinigameSkeleton {
      * - Stay time: 3000 milliseconds (3 seconds)
      * - Fade out: 500 milliseconds
      */
-    protected fun announceMessage(
+    fun announceMessage(
         content: String = "",
         subContent: String = "",
         color: String,
@@ -441,7 +439,7 @@ abstract class MinigameSkeleton {
      *  Guard clause for executing the method that the command called.
      *  Used for when wanting to call [pauseGame].
      *
-     *  if the clause is stopping the exception, the game will notify that the command has not been expected.
+     *  If the clause is stopping the exception, the game will notify that the command has not been expected.
      *
      *  @return true if the guard has stopped the command from calling the [pauseGame] method, otherwise, false.
      *  */

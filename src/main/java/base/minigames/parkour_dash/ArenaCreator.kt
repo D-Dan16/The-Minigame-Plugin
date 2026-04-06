@@ -1,8 +1,8 @@
 package base.minigames.parkour_dash
 
 import base.MinigamePlugin
-import base.minigames.parkour_dash.PDConst.CourseBoundaries.CourseDirections.FORWARDS
 import base.minigames.parkour_dash.PDConst.WORLD
+import base.resources.Colors
 import base.utils.extensions_for_classes.getBlockAt
 import base.utils.extensions_for_classes.getMaterialAt
 import base.utils.other.BuildLoader
@@ -13,21 +13,34 @@ import org.bukkit.Location
 import org.bukkit.Material
 import java.io.File
 import java.io.IOException
+import kotlin.apply
 import kotlin.math.abs
 import kotlin.random.Random
 
 private lateinit var coursesFile: File
 private var activeCoursePool: MutableList<CourseVariantContainer> = mutableListOf()
-private var locationToGenerateLeftCourse: Location = PDConst.Locations.START_LOCATION_OF_LEFT_PATH
-private var locationToGenerateMiddleCourse: Location = PDConst.Locations.START_LOCATION_OF_MIDDLE_PATH
-private var locationToGenerateRightCourse: Location = PDConst.Locations.START_LOCATION_OF_RIGHT_PATH
 private val baseFolder = MinigamePlugin.plugin.getSchematicsBaseFolder(MinigamePlugin.Companion.MinigameType.PARKOUR_DASH)
 
+internal var locationToGenerateLeftCourse: Location = PDConst.Locations.START_GENERATION_LOCATION_OF_LEFT_PATH.clone()
+internal var locationToGenerateMiddleCourse: Location = PDConst.Locations.START_GENERATION_LOCATION_OF_MIDDLE_PATH.clone()
+internal var locationToGenerateRightCourse: Location = PDConst.Locations.START_GENERATION_LOCATION_OF_RIGHT_PATH.clone()
+internal var hallwaysRegions: MutableList<CuboidRegion> = mutableListOf()
 internal val courseRegions: MutableList<CuboidRegion> = mutableListOf()
 
 fun createCoursePaths(parkourDash: ParkourDash) {
-    fetchCourses(parkourDash)
-    prepareGeneratingCourses(parkourDash)
+    try {
+        fetchCourses(parkourDash)
+        createStartingHallways()
+        prepareGeneratingCourses(parkourDash)
+    } catch (e: Exception) {
+        parkourDash.announceMessage(
+            content = "Error in arena creation",
+            color = Colors.TitleColors.RED,
+            duration = 2000,
+        )
+
+        print(e)
+    }
 }
 
 private fun fetchCourses(parkourDash: ParkourDash) {
@@ -50,6 +63,38 @@ private fun fetchCourses(parkourDash: ParkourDash) {
     activeCoursePool = courseData.courses.toMutableList()
     reader.close()
     //</editor-fold>
+}
+
+fun createStartingHallways() {
+    val hallwaysFolder = File(baseFolder, PDConst.FilePaths.TRANSITION_HALLWAYS)
+
+    if (hallwaysFolder.exists().not())
+        throw IllegalStateException("Parkour Dash transition hallways folder not found")
+
+    if (hallwaysFolder.listFiles()!!.isEmpty())
+        throw IllegalStateException("Parkour Dash transition hallways folder is empty")
+
+    fun createHallway(pathToGenerate: Location): CuboidRegion {
+        val hallwayClipboard = BuildLoader.getClipboardHolderFromFile(
+            hallwaysFolder.listFiles()!!.random(),
+            pathToGenerate
+        )
+
+        if (Random.nextBoolean()) {
+            BuildLoader.mirrorClipboardHolder(
+                hallwayClipboard,
+                PDConst.CourseBoundaries.CourseDirections.FORWARDS.toCardinalDirection()
+            )
+        }
+
+        BuildLoader.loadSchematic(hallwayClipboard)
+
+        return BuildLoader.getRotatedRegion(hallwayClipboard)
+    }
+
+    hallwaysRegions += createHallway(PDConst.Locations.START_LOCATION_OF_LEFT_PATH.clone())
+    hallwaysRegions += createHallway(PDConst.Locations.START_LOCATION_OF_MIDDLE_PATH.clone())
+    hallwaysRegions += createHallway(PDConst.Locations.START_LOCATION_OF_RIGHT_PATH.clone())
 }
 
 private fun prepareGeneratingCourses(parkourDash: ParkourDash) {
@@ -176,7 +221,7 @@ private fun pickCourse(
         ),
         selectedVariant.difficulty,
         shouldBeMirrored = Random.nextBoolean(),
-        locationToGenerateCourse.apply { y++ }
+        locationToGenerateCourse
     )
 
     return course
@@ -184,8 +229,12 @@ private fun pickCourse(
 
 private fun updateLocationPointer(boundingBox: CuboidRegion): Location {
     // Locate the diamond block of the schematic - this is the indicator of the course's end.
-    val diamondBlockLocation = boundingBox.firstOrNull { WORLD.getMaterialAt(it) == Material.DIAMOND_BLOCK }?.let {
-        WORLD.getBlockAt(it).location
-    } ?: throw IllegalStateException("No diamond block found in the course")
+    val diamondBlockLocation = boundingBox.firstOrNull {
+        WORLD.getMaterialAt(it) == Material.DIAMOND_BLOCK
+    }?.let {
+        // This is incremented because when the schematic is saved, the player is standing *ON TOP* of the gold block, not inside it.
+        WORLD.getBlockAt(it).location.apply { y++ }
+    }?: throw IllegalStateException("No diamond block found in the course")
+
     return diamondBlockLocation
 }

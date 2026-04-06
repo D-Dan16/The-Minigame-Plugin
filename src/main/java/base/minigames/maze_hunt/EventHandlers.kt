@@ -71,7 +71,7 @@ private fun onMobDeath(event: EntityDeathEvent) {
 /** Disable mobs getting burned by the sun while Maze Hunt is running*/
 @EventHandler
 private fun onEntityCombust(mazeHunt: MazeHunt, event: EntityCombustEvent) {
-    if (!mazeHunt.isAlreadyRunning()) return
+    if (!mazeHunt.isGameRunning) return
 
     event.isCancelled = true
 }

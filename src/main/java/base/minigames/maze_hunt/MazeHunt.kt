@@ -32,7 +32,7 @@ import base.minigames.maze_hunt.MHConst.Spawns.Mobs.MOBS_BEING_PASSIVE_DURATION
 import base.resources.Colors
 import base.utils.additions.PausableBukkitRunnable
 import base.utils.extensions_for_classes.getWeightedRandom
-import base.utils.additions.Utils.initFloor
+import base.utils.additions.initFloor
 import base.utils.additions.Utils.successChance
 import base.utils.additions.activateChain
 import base.utils.additions.delayTheFollowing
@@ -242,8 +242,6 @@ class MazeHunt(val plugin: Plugin) : MinigameSkeleton() , Listener {
 
     @CalledByCommand
     override fun endGame() {
-        super.endGame()
-
         nukeArea()
         deleteStartingPlatform()// delete the starting platform for cases where it is still there
 
@@ -261,6 +259,8 @@ class MazeHunt(val plugin: Plugin) : MinigameSkeleton() , Listener {
             player.inventory.clear()
             player.gameMode = GameMode.ADVENTURE
         }
+
+        super.endGame()
     }
 
     private fun deleteStartingPlatform() {
@@ -269,7 +269,6 @@ class MazeHunt(val plugin: Plugin) : MinigameSkeleton() , Listener {
             MHConst.STARTING_PLATFORM_RADIUS,
             Material.AIR,
             Locations.START_LOCATION_PLATFORM,
-            WORLD
         )
     }
 
@@ -313,7 +312,6 @@ class MazeHunt(val plugin: Plugin) : MinigameSkeleton() , Listener {
             MHConst.STARTING_PLATFORM_RADIUS,
             Material.GLASS,
             Locations.START_LOCATION_PLATFORM,
-            WORLD
         )
 
         // Delete the initial floor later on
