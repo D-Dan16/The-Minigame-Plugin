@@ -1,3 +1,7 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import xyz.jpenilla.runtask.task.AbstractRun
+
 plugins {
     `java-library`
     `maven-publish`
@@ -35,7 +39,8 @@ dependencies {
     api(libs.org.jetbrains.kotlinx.multik.core)
     api(libs.org.jetbrains.kotlinx.multik.kotlin.jvm)
     api(libs.org.jetbrains.kotlinx.kotlinx.coroutines.core)
-    testImplementation(libs.org.jetbrains.kotlin.kotlin.test)
+    testImplementation(kotlin("test"))
+    compileOnly(libs.com.sk89q.worldedit.worldedit.bukkit)
     compileOnly(libs.com.sk89q.worldedit.worldedit.bukkit)
     compileOnly(libs.io.papermc.paper.paper.api)
 }
@@ -50,9 +55,9 @@ java {
     }
 }
 
-tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+tasks.withType<KotlinCompile>().configureEach {
     compilerOptions {
-        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21)
+        jvmTarget.set(JvmTarget.JVM_21)
     }
 }
 
@@ -64,7 +69,7 @@ tasks.withType<Javadoc>().configureEach {
     options.encoding = "UTF-8"
 }
 
-tasks.withType<xyz.jpenilla.runtask.task.AbstractRun>().configureEach {
+tasks.withType<AbstractRun>().configureEach {
     javaLauncher = javaToolchains.launcherFor {
         vendor = JvmVendorSpec.JETBRAINS
         languageVersion = JavaLanguageVersion.of(25)
@@ -84,7 +89,6 @@ tasks.processResources {
 tasks {
     runServer {
         minecraftVersion("1.21.11")
-        downloadPlugins {}
     }
 }
 
