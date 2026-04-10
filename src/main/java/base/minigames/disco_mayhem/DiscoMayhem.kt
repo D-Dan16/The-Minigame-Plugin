@@ -24,12 +24,11 @@ import kotlin.math.max
 class DiscoMayhem (val plugin: Plugin) : MinigameSkeleton() {
     override val minigameName: String = "DiscoMayhem"
 
-
     //--Game Modifiers that change as the game progresses to scale difficulty-//
-    private var upperBound__startingIntervalForChangingFloor = 0
-    private var lowerBound__startingIntervalForChangingFloor = 0
-    private var upperBound__stopChangingFloorInterval = 0
-    private var lowerBound__stopChangingFloorInterval = 0
+    private var upperBound__startingIntervalForChangingFloor = DiscoMayhemConst.FloorLogic.ChangingFloor.UPPER_BOUND_START_INTERVAL
+    private var lowerBound__startingIntervalForChangingFloor = DiscoMayhemConst.FloorLogic.ChangingFloor.LOWER_BOUND_START_INTERVAL
+    private var upperBound__stopChangingFloorInterval = DiscoMayhemConst.FloorLogic.ChangingFloor.UPPER_BOUND_STOP_INTERVAL
+    private var lowerBound__stopChangingFloorInterval = DiscoMayhemConst.FloorLogic.ChangingFloor.LOWER_BOUND_STOP_INTERVAL
 
     /**
      * Starts the minigame. The player is teleported to the starting location, and the game is initialized.
@@ -39,8 +38,6 @@ class DiscoMayhem (val plugin: Plugin) : MinigameSkeleton() {
     @Throws(InterruptedException::class)
     override fun start(sender: Player) {
         super.start(sender)
-
-        initModifiers() // Initialize the modifiers for the game
 
         // Wait a lil before starting game events.
         object : BukkitRunnable() {
@@ -86,6 +83,15 @@ class DiscoMayhem (val plugin: Plugin) : MinigameSkeleton() {
         // Add more actions here
     }
 
+    override fun resetState() {
+        super.resetState()
+
+        upperBound__startingIntervalForChangingFloor = DiscoMayhemConst.FloorLogic.ChangingFloor.UPPER_BOUND_START_INTERVAL
+        lowerBound__startingIntervalForChangingFloor = DiscoMayhemConst.FloorLogic.ChangingFloor.LOWER_BOUND_START_INTERVAL
+        upperBound__stopChangingFloorInterval = DiscoMayhemConst.FloorLogic.ChangingFloor.UPPER_BOUND_STOP_INTERVAL
+        lowerBound__stopChangingFloorInterval = DiscoMayhemConst.FloorLogic.ChangingFloor.LOWER_BOUND_STOP_INTERVAL
+    }
+
     /**
      * Ends the minigame. The game is ended and the player is notified. The area is cleared.
      */
@@ -94,26 +100,10 @@ class DiscoMayhem (val plugin: Plugin) : MinigameSkeleton() {
 
         nukeArea(DiscoMayhemConst.GAME_START_LOCATION, DiscoMayhemConst.NUKE_AREA_RADIUS)
 
-        initModifiers() // Reset the modifiers for the game
-
         if (intervalTask != null && !intervalTask!!.isCancelled) intervalTask!!.cancel() // Cancel the task that decreases the interval for changing the floor as time goes on
 
 
         //player.teleport(MinigameConstants.GAME_START_LOCATION.clone().add(0, -70, 0));
-    }
-
-    /**
-     * Initializes the modifiers that CAN be tempered with for the game.
-     * Modifiers change throughout the game to scale difficulty.
-     * This method is called when the game starts and when the game ends.
-     */
-    fun initModifiers() {
-        upperBound__startingIntervalForChangingFloor =
-            DiscoMayhemConst.FloorLogic.ChangingFloor.UPPER_BOUND_START_INTERVAL
-        lowerBound__startingIntervalForChangingFloor =
-            DiscoMayhemConst.FloorLogic.ChangingFloor.LOWER_BOUND_START_INTERVAL
-        upperBound__stopChangingFloorInterval = DiscoMayhemConst.FloorLogic.ChangingFloor.UPPER_BOUND_STOP_INTERVAL
-        lowerBound__stopChangingFloorInterval = DiscoMayhemConst.FloorLogic.ChangingFloor.LOWER_BOUND_STOP_INTERVAL
     }
 
     /**

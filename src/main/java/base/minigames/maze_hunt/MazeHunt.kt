@@ -80,6 +80,14 @@ class MazeHunt(val plugin: Plugin) : MinigameSkeleton() , Listener {
      */
     internal val mobsToDisableContactDamage: MutableList<Mob> = mutableListOf()
 
+    override fun resetState() {
+        super.resetState()
+        generatedBitsIndexes.clear()
+        amountOfMobsToSpawnPerInterval = Mobs.INITIAL_AMOUNTS_OF_MOBS_TO_SPAWN_IN_A_CYCLE
+        amountOfCratesToSpawnPerInterval = MHConst.Spawns.LootCrates.INITIAL_AMOUNTS_OF_CRATES_TO_SPAWN_IN_A_CYCLE
+        curTimeLeftTillNewMaze = MazeGen.REGENERATE_MAZE_INITIAL_COOLDOWN
+    }
+
     override fun addScoreboardElements() {
         // Register Maze Hunt specific scoreboard line: Time Remaining Till New Maze (in seconds)
         registerScoreboardLine(
@@ -90,6 +98,16 @@ class MazeHunt(val plugin: Plugin) : MinigameSkeleton() , Listener {
     }
 
     override fun addTimeBasedEvents() {
+        // keep track of if players have fallen of the arena based on their Y level and kill them because they can cheat fall damage via slow-falling potions
+        runnables += object : BukkitRunnable() {
+            override fun run() {
+                players.forEach {
+                    if (it.location.y < Locations.MIN_LEGAL_Y_LEVEL && it.gameMode !in listOf(GameMode.CREATIVE, GameMode.SPECTATOR))
+                        it.health = 0.0
+                }
+            }
+        }.apply { runTaskTimer(MinigamePlugin.plugin, 0L, 10L) }
+
         // Delete the initial floor later on
         pausableRunnables += PausableBukkitRunnable(plugin, remainingTicks = MHConst.STARTING_PLATFORM_LIFESPAN) {
             deleteStartingPlatform()
@@ -180,16 +198,6 @@ class MazeHunt(val plugin: Plugin) : MinigameSkeleton() , Listener {
     @CalledByCommand
     override fun start(sender: Player) {
         super.start(sender)
-
-        // keep track of if players have fallen of the arena based on their Y level and kill them because they can cheat fall damage via slow-falling potions
-        runnables += object : BukkitRunnable() {
-            override fun run() {
-                players.forEach {
-                    if (it.location.y < Locations.MIN_LEGAL_Y_LEVEL && it.gameMode !in listOf(GameMode.CREATIVE, GameMode.SPECTATOR))
-                        it.health = 0.0
-                }
-            }
-        }.apply { runTaskTimer(MinigamePlugin.plugin, 0L, 10L) }
 
         // Start game loop
         countDownToNewMazeGeneration(curTimeLeftTillNewMaze)

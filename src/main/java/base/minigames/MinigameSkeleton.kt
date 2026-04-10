@@ -143,6 +143,21 @@ abstract class MinigameSkeleton {
         addScoreboardElements()
     }
 
+    //endregion
+
+    /**
+     * Resets all the game state defined in both superclass and subclass.
+     * Is called automatically in [endGame], however, could be called elsewhere if needed.
+     *
+     * When overridden, *MUST* call its super method.
+     */
+    open fun resetState() {
+        isGameRunning = false
+        isGamePaused = false
+        sender = null
+        players.clear()
+    }
+
     /**
      * Defines and registers minigame-related events that are based on the progression of time.
      *
@@ -156,7 +171,6 @@ abstract class MinigameSkeleton {
      * time-based logic that contributes to the overall gameplay experience.
      */
     open fun addTimeBasedEvents() {}
-
 
     /**
      * Defines and registers the scoreboard elements required for the minigame.
@@ -205,8 +219,8 @@ abstract class MinigameSkeleton {
         players.forEach { it.scoreboard = scoreboard }
 
 
-        for (runnable in pausableRunnables) {
-            runnable.start()
+        pausableRunnables.forEach { pausableRunnable ->
+            pausableRunnable.start()
         }
 
         announceMessage("Minigame $minigameName started!", "Good Luck", LIME_GREEN)
@@ -261,11 +275,16 @@ abstract class MinigameSkeleton {
     }
 
     /**
-     * Ends the game. Should be overridden and followed with code that cleans up the arena, the gamerules... Should also be called when the game is interrupted.
-     * Should also call [endGame] at the start of it
+     * Ends the game. Should be overridden and followed with code that cleans up the arena, the gamerules...
+     * Should be called when the game is interrupted or when the game has reached its end.
+     *
+     * Delegates game state resetter to [resetState].
+     * Advised to call the super method at the very end of the overridden method
      */
     @CalledByCommand
     open fun endGame() {
+        resetState()
+
         pausableRunnables.removeIf { it.shouldNotBeUsed }
         pausableRunnables.forEach { runnable ->
             runnable.reset()
@@ -284,12 +303,8 @@ abstract class MinigameSkeleton {
         announceMessage("Game over!", "Duration: ${gameTimeElapsed}s", Colors.TitleColors.CYAN)
 
         gameTimeElapsed = 0
-
-        isGameRunning = false
-        isGamePaused = false
-        sender = null
-        players.clear()
     }
+
     /**
      * Checks if a player is in the minigame. This will be used for event handling, such as player death.
      * @param player The player to check
@@ -298,7 +313,6 @@ abstract class MinigameSkeleton {
     fun isPlayerInGame(player: Player?): Boolean {
         return isGameRunning && players.contains(player)
     }
-
     /**
      * Nukes an area. Should be overridden and followed with code that clears the physical area. Typically, it should be called in [endGame].
      * @param center the center of the nuke
@@ -310,6 +324,7 @@ abstract class MinigameSkeleton {
 
         //        announceMessage("Area nuked!", "hope everyone's safe...", Colors.TitleColors.RED)
     }
+
     /**
      * Prepares the area. Should be followed with code that prepares the physical area. Typically, it should be called in [start].
      */
@@ -388,9 +403,9 @@ abstract class MinigameSkeleton {
         }
     }
 
+
     //region Game State Guards
     val commandNotExecutedMessage = "Command has not been executed"
-
 
     /**
      *  Guard clause for executing the method that the command called.
@@ -456,7 +471,6 @@ abstract class MinigameSkeleton {
         }
         return false
     }
-
     /**
      *  Guard clause for executing the method that the command called.
      *  Used for when wanting to call [endGame].
@@ -478,7 +492,6 @@ abstract class MinigameSkeleton {
         }
         return false
     }
-    //endregion
 }
 
 

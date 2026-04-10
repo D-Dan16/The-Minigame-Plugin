@@ -100,10 +100,35 @@ class HoleInTheWall (val plugin: Plugin) : MinigameSkeleton() {
     // A runnable that is used to change the wall spawning mode every so often when the mode is set to Alternating.
     private var alternatingWallSpawnerModeRunnable: BukkitRunnable? = null
     private var currentAvailableListOfModesToAlternateTo: MutableList<WallSpawnerMode> = mutableListOf() // A list of modes that the wall spawner can alternate to when the mode is set to Alternating. When a mode is set, it will be taken out of the list, and when the list is empty, it will be refilled with all the modes that are available to play.
-
-
-
     //endregion
+
+    override fun resetState() {
+        super.resetState()
+        timeLeft = Timers.GAME_DURATION.toDouble()
+        timeElapsed = 0.0
+        wallSpeed = Timers.WALL_SPEED[0]
+        wallSpeedIndex = 0
+        curWallDifficultyInPack = HITWConst.WallDifficulty.EASY
+        existingWallsList.clear()
+        wallsToDelete.clear()
+        stateOfWallSpawner = WallSpawnerState.DO_NO_ACTION
+        wallSpawningMode = null
+        currentAvailableListOfModesToAlternateTo.clear()
+        upcomingWalls.clear()
+        atTheProcessOfConsideringSwappingRealWallDirection = false
+        amountOfSpawnsSinceSwitchedTheRealDirection = 0
+        amountOfSpawnsSinceDirectionChange = mutableMapOf(
+            WallSpawnerMode.WALL_CHAINER to 0,
+            WallSpawnerMode.WALLS_FROM_2_OPPOSITE_DIRECTIONS to 0
+        )
+        tickCount = 0
+
+        gameEvents?.cancel()
+        gameEvents = null
+
+        alternatingWallSpawnerModeRunnable?.cancel()
+        alternatingWallSpawnerModeRunnable = null
+    }
 
     @Throws(InterruptedException::class)
     fun start(player: Player, mapName: String, wantedWallSpawnerMode: String? = null) {
@@ -216,37 +241,6 @@ class HoleInTheWall (val plugin: Plugin) : MinigameSkeleton() {
 
     override fun endGame() {
         super.endGame()
-
-        // -------------------------- INITIALIZATION --------------------------
-
-        gameEvents?.cancel()
-        gameEvents = null
-
-        alternatingWallSpawnerModeRunnable?.cancel()
-        alternatingWallSpawnerModeRunnable = null
-
-        stateOfWallSpawner = WallSpawnerState.DO_NO_ACTION // Reset the state of the wall spawner
-        wallSpawningMode = null // Reset the wall spawning mode
-        currentAvailableListOfModesToAlternateTo.clear() // Clear the list of modes that are available to alternate to
-
-        // Clear the list of alive walls
-        existingWallsList.clear()
-        // Clear the walls that were planned to be pasted into existence
-        upcomingWalls.clear()
-
-        atTheProcessOfConsideringSwappingRealWallDirection = false // Reset the flag that is used to prevent multiple direction changes in a row
-        amountOfSpawnsSinceSwitchedTheRealDirection = 0
-
-
-        for (entry in amountOfSpawnsSinceDirectionChange.entries) {
-            entry.setValue(0)
-        }
-
-        tickCount = 0 // Reset the tick count
-
-        // -------------------------- END INITIALIZATION --------------------------
-
-        // Clear the area around the spawn point
         nukeArea()
     }
 

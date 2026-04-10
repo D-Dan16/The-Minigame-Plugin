@@ -74,14 +74,15 @@ object BPBConst {
         val CENTER_BUILD_SHOWCASE_PLOT = Location(WORLD, GAME_START_LOCATION.x + 20, GAME_START_LOCATION.y + 1, GAME_START_LOCATION.z)
         val CENTER_BUILD_PLOT_OFFSET: BlockVector3 = BlockVector3.at(-10.0, 0.0, 0.0)
 
-        val MIN_CORNER_OF_GAME_AREA: Location = Location(WORLD, -GAME_AREA_RADIUS.toDouble(), 150.0, -GAME_AREA_RADIUS.toDouble())
-        val MAX_CORNER_OF_GAME_AREA: Location = Location(WORLD, GAME_AREA_RADIUS.toDouble(), 160.0, GAME_AREA_RADIUS.toDouble())
+        const val GAME_AREA_RADIUS: Int = 30
 
+        val MIN_CORNER_OF_GAME_AREA: Location = Location(WORLD, -GAME_AREA_RADIUS.toDouble(), 150.0, -GAME_AREA_RADIUS.toDouble())
+
+        val MAX_CORNER_OF_GAME_AREA: Location = Location(WORLD, GAME_AREA_RADIUS.toDouble(), 160.0, GAME_AREA_RADIUS.toDouble())
         val ARENA_REGION = BoundingBox.of(
             MIN_CORNER_OF_GAME_AREA,
             MAX_CORNER_OF_GAME_AREA
         )
-        const val GAME_AREA_RADIUS: Int = 30
     }
 
     object Timers {

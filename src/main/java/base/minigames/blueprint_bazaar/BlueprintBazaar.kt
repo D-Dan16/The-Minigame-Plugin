@@ -63,6 +63,13 @@ class BlueprintBazaar(plugin: Plugin) : MinigameSkeleton() {
         prepareNewBuild()
     }
 
+    override fun resetState() {
+        super.resetState()
+        availableSchematics.clear()
+        availableSchematics.addAll(allSchematics)
+        curBuild = null
+    }
+
     @CalledByCommand
     override fun endGame() {
         super.endGame()
@@ -77,8 +84,6 @@ class BlueprintBazaar(plugin: Plugin) : MinigameSkeleton() {
                 player.isFlying = false
             }
         }
-
-        curBuild = null
 
         nukeArea(Locations.GAME_START_LOCATION,25)
     }
