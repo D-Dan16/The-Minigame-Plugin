@@ -5,10 +5,13 @@ package base.minigames.parkour_dash
 import base.annotations.OptionalFeature
 import base.utils.additions.Direction
 import com.sk89q.worldedit.math.BlockVector3
+import net.kyori.adventure.text.Component
 import org.bukkit.Bukkit
 import org.bukkit.Location
 import org.bukkit.Material
 import org.bukkit.World
+import org.bukkit.enchantments.Enchantment
+import org.bukkit.inventory.ItemFlag
 import org.bukkit.inventory.ItemStack
 
 object PDConst {
@@ -22,13 +25,15 @@ object PDConst {
 
     object Locations {
         val PIVOT = Location(WORLD, 0.0, 200.0, 0.0)
+
         /** Starting location for players */
         val START_LOCATION = PIVOT.clone().add(0.0, 30.0, 0.0)
 
+
         val START_GENERATION_LOCATION_OF_MIDDLE_PATH: Location = PIVOT.clone()
+
         val START_GENERATION_LOCATION_OF_LEFT_PATH: Location = START_GENERATION_LOCATION_OF_MIDDLE_PATH.clone().add(0.0, 0.0, -40.0)
         val START_GENERATION_LOCATION_OF_RIGHT_PATH: Location = START_GENERATION_LOCATION_OF_MIDDLE_PATH.clone().add(0.0, 0.0, 40.0)
-
         /*
         The Y coordinate is offset by +1 because new parkour courses are generated
         one block above the diamond block of the previous course to keep everything aligned.
@@ -42,6 +47,9 @@ object PDConst {
         val START_LOCATION_OF_PLAYER_MIDDLE_PATH = START_LOCATION_OF_MIDDLE_PATH.clone().add(1.5,2.0,0.5)
         val START_LOCATION_OF_PLAYER_LEFT_PATH = START_LOCATION_OF_LEFT_PATH.clone().add(1.5,2.0,0.5)
         val START_LOCATION_OF_PLAYER_RIGHT_PATH = START_LOCATION_OF_RIGHT_PATH.clone().add(1.5,2.0,0.5)
+
+
+        val MIN_LEGAL_Y_LEVEL = START_LOCATION_OF_MIDDLE_PATH.y - 100
     }
 
     object CourseBoundaries {
@@ -160,9 +168,24 @@ object PDConst {
     }
 
     object Items {
-        val LEFT_PATH_TELEPORTER_ICON: ItemStack = ItemStack(Material.GREEN_WOOL)
-        val MIDDLE_PATH_TELEPORTER_ICON: ItemStack = ItemStack(Material.YELLOW_WOOL)
-        val RIGHT_PATH_TELEPORTER_ICON: ItemStack = ItemStack(Material.RED_WOOL)
+        val LEFT_PATH_TELEPORTER_ICON: ItemStack = glintedNamedItem(Material.GREEN_WOOL,"Left Route TP")
+        val MIDDLE_PATH_TELEPORTER_ICON: ItemStack = glintedNamedItem(Material.YELLOW_WOOL,"Middle Route TP")
+        val RIGHT_PATH_TELEPORTER_ICON: ItemStack = glintedNamedItem(Material.RED_WOOL,"Right Route TP")
+
+        val SET_CUSTOM_CHECKPOINT = glintedNamedItem(Material.EMERALD,"Set Checkpoint")
+        val REMOVE_LATEST_CHECKPOINT = glintedNamedItem(Material.REDSTONE,"Remove Latest Checkpoint")
+        val GO_BACK_TO_LATEST_CHECKPOINT = glintedNamedItem(Material.LAPIS_LAZULI,"Go Back To Latest Checkpoint")
+
+        fun glintedNamedItem(material: Material, nameForItem: String): ItemStack {
+            return ItemStack(material).apply {
+                itemMeta = itemMeta.apply {
+                    addItemFlags(ItemFlag.HIDE_ENCHANTS)
+                    addEnchant(Enchantment.MENDING, 1, true)
+
+                    itemName(Component.text(nameForItem))
+                }
+            }
+        }
     }
 
     data class CoursePathConfig(
@@ -179,4 +202,11 @@ object PDConst {
          */
         val individualCourseDifficultyRange: IntRange
     )
+
+    enum class ParkourPath {
+        LEFT,
+        MIDDLE,
+        RIGHT,
+        UNDECIDED
+    }
 }

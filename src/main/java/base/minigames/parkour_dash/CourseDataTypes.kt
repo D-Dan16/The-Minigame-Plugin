@@ -27,3 +27,12 @@ data class Course(
     val shouldBeMirrored: Boolean,
     val startPos: Location
 )
+
+/**
+ * Aids for generating courses for a parkour path and tracking checkpoints for the path
+ */
+data class ParkourPathConstructor(
+    val difficultiesOfCourses: List<Int>,
+    var currentCourseLocation: Location,
+    val checkpointTrackerOfPath: MutableList<Location>?
+)

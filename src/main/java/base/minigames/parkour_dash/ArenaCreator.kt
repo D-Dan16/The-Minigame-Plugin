@@ -1,6 +1,7 @@
 package base.minigames.parkour_dash
 
 import base.MinigamePlugin
+import base.minigames.parkour_dash.PDConst.ParkourPath
 import base.minigames.parkour_dash.PDConst.WORLD
 import base.resources.Colors
 import base.utils.extensions_for_classes.getBlockAt
@@ -13,7 +14,6 @@ import org.bukkit.Location
 import org.bukkit.Material
 import java.io.File
 import java.io.IOException
-import kotlin.apply
 import kotlin.math.abs
 import kotlin.random.Random
 
@@ -21,16 +21,10 @@ private lateinit var coursesFile: File
 private var activeCoursePool: MutableList<CourseVariantContainer> = mutableListOf()
 private val baseFolder = MinigamePlugin.plugin.getSchematicsBaseFolder(MinigamePlugin.Companion.MinigameType.PARKOUR_DASH)
 
-internal var locationToGenerateLeftCourse: Location = PDConst.Locations.START_GENERATION_LOCATION_OF_LEFT_PATH.clone()
-internal var locationToGenerateMiddleCourse: Location = PDConst.Locations.START_GENERATION_LOCATION_OF_MIDDLE_PATH.clone()
-internal var locationToGenerateRightCourse: Location = PDConst.Locations.START_GENERATION_LOCATION_OF_RIGHT_PATH.clone()
-internal var hallwaysRegions: MutableList<CuboidRegion> = mutableListOf()
-internal val courseRegions: MutableList<CuboidRegion> = mutableListOf()
-
 fun createCoursePaths(parkourDash: ParkourDash) {
     try {
         fetchCourses(parkourDash)
-        createStartingHallways()
+        createStartingHallways(parkourDash.hallwaysRegions)
         prepareGeneratingCourses(parkourDash)
     } catch (e: Exception) {
         parkourDash.announceMessage(
@@ -65,7 +59,7 @@ private fun fetchCourses(parkourDash: ParkourDash) {
     //</editor-fold>
 }
 
-fun createStartingHallways() {
+private fun createStartingHallways(hallwaysRegions: MutableList<CuboidRegion>) {
     val hallwaysFolder = File(baseFolder, PDConst.FilePaths.TRANSITION_HALLWAYS)
 
     if (hallwaysFolder.exists().not())
@@ -92,23 +86,21 @@ fun createStartingHallways() {
         return BuildLoader.getRotatedRegion(hallwayClipboard)
     }
 
+
     hallwaysRegions += createHallway(PDConst.Locations.START_LOCATION_OF_LEFT_PATH.clone())
     hallwaysRegions += createHallway(PDConst.Locations.START_LOCATION_OF_MIDDLE_PATH.clone())
     hallwaysRegions += createHallway(PDConst.Locations.START_LOCATION_OF_RIGHT_PATH.clone())
 }
 
 private fun prepareGeneratingCourses(parkourDash: ParkourDash) {
-    // 1. Get the path configurations (ranges) based on the selected game difficulty
+    // Get the path configurations (ranges) based on the selected game difficulty
     val configs: List<PDConst.CoursePathConfig> = when (parkourDash.difficulty) {
         ParkourDashCommands.Modes.NORMAL -> PDConst.NormalMode.pathsConfig
         ParkourDashCommands.Modes.HARD -> PDConst.HardMode.pathsConfig
         ParkourDashCommands.Modes.EXTREME -> PDConst.ExtremeMode.pathsConfig
     }
 
-    // 2. Define the starting locations for the three paths
-    val locations: List<Location> = listOf(locationToGenerateLeftCourse, locationToGenerateMiddleCourse, locationToGenerateRightCourse)
-
-    // 3. For each path, determine the difficulty level of each course it will contain
+    // For each path, determine the difficulty level of each course it will contain
     val difficultiesOfCourses: List<List<Int>> = configs.map {
         // Randomly pick the total difficulty budget for this specific path
         var pathDifficultyTokens = it.difficultyTokensRange.random()
@@ -129,24 +121,31 @@ private fun prepareGeneratingCourses(parkourDash: ParkourDash) {
         return@map courseDifficulties
     }
 
-    // 4. Pair each path's course difficulty list with its starting location
-    val difficultiesAndLocations = difficultiesOfCourses.zip(locations)
+    // Create a constructor for each path, which will aid for generating courses for that path and tracking checkpoints for the path
+    val parkourPathConstructors = mutableListOf(
+        ParkourPathConstructor(difficultiesOfCourses[0], parkourDash.locationToGeneratePath[ParkourPath.LEFT]!!, parkourDash.pathCheckpointsNoter[ParkourPath.LEFT]),
+        ParkourPathConstructor(difficultiesOfCourses[1], parkourDash.locationToGeneratePath[ParkourPath.MIDDLE]!!, parkourDash.pathCheckpointsNoter[ParkourPath.MIDDLE]),
+        ParkourPathConstructor(difficultiesOfCourses[2], parkourDash.locationToGeneratePath[ParkourPath.RIGHT]!!, parkourDash.pathCheckpointsNoter[ParkourPath.RIGHT])
+    )
 
-    // 5. Generate the courses for each path, updating the location pointer after each generation
-    difficultiesAndLocations.forEach { (listOfDifficulties, pathStartLocation) ->
-        var currentCourseLocation = pathStartLocation
-        for (difficulty in listOfDifficulties) {
-            val chosenCourse = pickCourse(difficulty, currentCourseLocation)
+    // Generate the courses for each path, updating the location pointer after each generation
+    parkourPathConstructors.forEach {
+        for (difficulty in it.difficultiesOfCourses) {
+            val chosenCourse = pickCourse(difficulty, it.currentCourseLocation)
 
-            val courseBoundaries = generateCourse(chosenCourse)
+            val courseBoundaries = generateCourse(chosenCourse,parkourDash.courseRegions)
 
             removeRedstoneCorners(courseBoundaries)
-            currentCourseLocation = updateLocationPointer(courseBoundaries)
+            val endOfGeneratedCourse = updateLocationPointer(courseBoundaries)
+            it.currentCourseLocation = endOfGeneratedCourse.clone()
+
+            // Let's add this to the list of checkpoints of the path
+            it.checkpointTrackerOfPath?.plusAssign(endOfGeneratedCourse.clone().apply { y++ })
         }
     }
 }
 
-private fun generateCourse(chosenCourse: Course): CuboidRegion {
+private fun generateCourse(chosenCourse: Course, courseRegions: MutableList<CuboidRegion>): CuboidRegion {
     val courseClipboard = BuildLoader.getClipboardHolderFromFile(
         chosenCourse.file,
         chosenCourse.startPos
@@ -232,7 +231,7 @@ private fun updateLocationPointer(boundingBox: CuboidRegion): Location {
     val diamondBlockLocation = boundingBox.firstOrNull {
         WORLD.getMaterialAt(it) == Material.DIAMOND_BLOCK
     }?.let {
-        // This is incremented because when the schematic is saved, the player is standing *ON TOP* of the gold block, not inside it.
+        // This is increased because when the schematic is saved, the player is standing *ON TOP* of the gold block, not inside it.
         WORLD.getBlockAt(it).location.apply { y++ }
     }?: throw IllegalStateException("No diamond block found in the course")
 
