@@ -257,7 +257,7 @@ class MazeHunt(val plugin: Plugin) : MinigameSkeleton() , Listener {
 
     @CalledByCommand
     override fun endGame() {
-        nukeArea()
+        nukeArena()
         deleteStartingPlatform()// delete the starting platform for cases where it is still there
 
         WORLD.difficulty = Difficulty.PEACEFUL
@@ -288,7 +288,7 @@ class MazeHunt(val plugin: Plugin) : MinigameSkeleton() , Listener {
     }
 
     @CalledByCommand
-    fun nukeArea() {
+    override fun nukeArena() {
         // Nuke the game area
         for (vector in Locations.MAZE_REGION) {
             var blockAt = WORLD.getBlockAt(vector)
@@ -319,7 +319,7 @@ class MazeHunt(val plugin: Plugin) : MinigameSkeleton() , Listener {
     private val _FALSE = 0.toByte()
 
     override fun prepareArea() {
-        nukeArea()
+        nukeArena()
 
         // Create the starting platform for the players to stand on. It'll be deleted momentarily.
         initFloor(

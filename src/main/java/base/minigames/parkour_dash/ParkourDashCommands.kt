@@ -75,7 +75,7 @@ class ParkourDashCommands(val parkourDash: ParkourDash) : MinigameCommandsSkelet
                 if (parkourDash.isGameNotRunning()) return false
                 parkourDash.endGame()
             }
-            SubCommands.NUKE_ARENA -> parkourDash.nukeArea()
+            SubCommands.NUKE_ARENA -> parkourDash.nukeArena()
             SubCommands.NEXT_LEVEL -> {
                 if (parkourDash.isGameNotRunning()) return false
                 if (args.size < 2) return error(sender, "Please specify target: ${Targets.entries.joinToString { it.name.lowercase() }}")
@@ -99,12 +99,21 @@ class ParkourDashCommands(val parkourDash: ParkourDash) : MinigameCommandsSkelet
 
             SubCommands.RESET -> {
                 if (parkourDash.isGameNotRunning()) return false
-                parkourDash.reset()
+                parkourDash.endGame()
+                parkourDash.start(sender)
             }
 
             SubCommands.GENERATE -> {
                 if (parkourDash.isAlreadyRunning()) return false
-                parkourDash.prepareArea()
+
+                parkourDash.generatePreviewCourse()
+
+                if (parkourDash.hasSetUpArena.not()) {
+                    parkourDash.setGeneralPlayerSettings()
+                    parkourDash.generateStartingBox()
+                }
+
+                parkourDash.hasSetUpArena = true
             }
         }
 

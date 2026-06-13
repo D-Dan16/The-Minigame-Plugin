@@ -11,6 +11,7 @@ import base.utils.other.BuildLoader
 import base.utils.other.BuildLoader.loadSchematicByFileAndCoordinates
 import base.utils.other.BuildLoader.loadSchematicByFileAndDirection
 import base.utils.additions.Direction
+import base.utils.additions.Utils
 import base.utils.additions.initFloor
 import base.utils.extensions_for_classes.*
 import com.sk89q.worldedit.math.BlockVector3
@@ -85,11 +86,11 @@ class BlueprintBazaar(plugin: Plugin) : MinigameSkeleton() {
             }
         }
 
-        nukeArea(Locations.GAME_START_LOCATION,25)
+        nukeArena()
     }
 
     override fun prepareArea() {
-        nukeArea(Locations.GAME_START_LOCATION, Locations.GAME_AREA_RADIUS)
+        nukeArena()
         val arenaRegion: CuboidRegion = BuildLoader.loadSchematicByFile(arena!!, Locations.GAME_START_LOCATION) as CuboidRegion
 
         // put in furnaces, Coal blocks, and in chests axes to strip logs
@@ -112,6 +113,10 @@ class BlueprintBazaar(plugin: Plugin) : MinigameSkeleton() {
             }
 
         }
+    }
+
+    override fun nukeArena() {
+        Utils.nukeGameArea(Locations.CENTER_LOCATION, Locations.GAME_AREA_RADIUS)
     }
 
     override fun prepareGameSetting() {

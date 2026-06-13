@@ -49,7 +49,6 @@ enum class Direction {
 }
 
 object Utils {
-
     fun nukeGameArea(center: Location, radius: Int) {
         for (x in -radius..radius) {
             for (y in -radius..radius) {

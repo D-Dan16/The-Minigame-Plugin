@@ -75,7 +75,7 @@ class DiscoMayhem (val plugin: Plugin) : MinigameSkeleton() {
     /**
      * Resumes the minigame. The game is resumed and the player is notified.
      */
-    //fixme: some parts of the game are not resumed- the game is not resumed, but the floor is not changed nor old floors aren't removed.
+    //fixme: some parts of the game are not resumed - the game is not resumed, but the floor is not changed nor old floors aren't removed.
     override fun resumeGame() {
         super.resumeGame()
 
@@ -98,7 +98,7 @@ class DiscoMayhem (val plugin: Plugin) : MinigameSkeleton() {
     override fun endGame() {
         super.endGame()
 
-        nukeArea(DiscoMayhemConst.GAME_START_LOCATION, DiscoMayhemConst.NUKE_AREA_RADIUS)
+        nukeArena()
 
         if (intervalTask != null && !intervalTask!!.isCancelled) intervalTask!!.cancel() // Cancel the task that decreases the interval for changing the floor as time goes on
 
@@ -106,12 +106,10 @@ class DiscoMayhem (val plugin: Plugin) : MinigameSkeleton() {
         //player.teleport(MinigameConstants.GAME_START_LOCATION.clone().add(0, -70, 0));
     }
 
-    /**
-     * Removes all blocks in a radius around a location.
-     * @param center The center of the area to nuke
-     * @param radius The radius of the area
-     */
-    override fun nukeArea(center: Location, radius: Int) {
+    override fun nukeArena() {
+        val center = DiscoMayhemConst.GAME_START_LOCATION
+        val radius = DiscoMayhemConst.NUKE_AREA_RADIUS
+
         val minX: Int = center.blockX - radius
         val maxX: Int = center.blockX + radius
         val minY: Int = center.blockY - radius/3
@@ -130,7 +128,7 @@ class DiscoMayhem (val plugin: Plugin) : MinigameSkeleton() {
     }
 
     override fun prepareArea() {
-        nukeArea(DiscoMayhemConst.GAME_START_LOCATION, DiscoMayhemConst.NUKE_AREA_RADIUS) // Clear the area before starting the game
+        nukeArena()
 
         val floorCenter = DiscoMayhemConst.INIT_FLOOR_LOCATION // The center of the floor
         initFloor(

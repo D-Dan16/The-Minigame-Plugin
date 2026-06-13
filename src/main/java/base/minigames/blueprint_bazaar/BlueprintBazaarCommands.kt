@@ -62,7 +62,7 @@ class BlueprintBazaarCommands(private val blueprintbazaar: BlueprintBazaar) : Mi
             SubCommands.SPAWN_BUILD -> blueprintbazaar.skipToNextBuild()
             SubCommands.SHOWCASE_ALL_BUILDS -> blueprintbazaar.loadAllSchematics()
             SubCommands.CYCLE_THROUGH_SCHEMATICS -> blueprintbazaar.cycleThroughSchematics()
-            SubCommands.NUKE_ARENA -> blueprintbazaar.nukeArea(BPBConst.Locations.GAME_START_LOCATION, BPBConst.Locations.GAME_AREA_RADIUS)
+            SubCommands.NUKE_ARENA -> blueprintbazaar.nukeArena()
 
             else -> return error(sender, "Unknown command.")
         }

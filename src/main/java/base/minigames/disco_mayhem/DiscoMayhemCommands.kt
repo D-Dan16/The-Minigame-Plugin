@@ -53,7 +53,7 @@ class DiscoMayhemCommands(private val discoMayhem: DiscoMayhem) : MinigameComman
                 if (discoMayhem.isGameNotRunning()) return false
                 discoMayhem.endGame()
             }
-            SubCommands.NUKE_ARENA -> discoMayhem.nukeArea(DiscoMayhemConst.GAME_START_LOCATION,DiscoMayhemConst.NUKE_AREA_RADIUS)
+            SubCommands.NUKE_ARENA -> discoMayhem.nukeArena()
             else -> return error(sender, "Unknown command.")
         }
 

@@ -73,7 +73,7 @@ class HoleInTheWallCommands(private val holeInTheWall: HoleInTheWall) : Minigame
                 if (holeInTheWall.isGameNotRunning()) return false
                 holeInTheWall.endGame()
             }
-            SubCommands.NUKE_ARENA -> holeInTheWall.nukeArea()
+            SubCommands.NUKE_ARENA -> holeInTheWall.nukeArena()
             SubCommands.SET -> {
                 if (args.size == 1) return error(sender, "Please specify a setting to change.")
 

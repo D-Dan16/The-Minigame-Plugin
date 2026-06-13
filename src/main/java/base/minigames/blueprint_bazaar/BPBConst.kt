@@ -70,11 +70,12 @@ object BPBConst {
     )
 
     object Locations {
-        val GAME_START_LOCATION: Location = Location(WORLD, 0.0, 150.0, 0.0)
+        val GAME_START_LOCATION: Location = Location(WORLD, 0.0, 160.0, 0.0)
+        val CENTER_LOCATION: Location = GAME_START_LOCATION.clone().add(20.0, 0.0, 0.0)
         val CENTER_BUILD_SHOWCASE_PLOT = Location(WORLD, GAME_START_LOCATION.x + 20, GAME_START_LOCATION.y + 1, GAME_START_LOCATION.z)
         val CENTER_BUILD_PLOT_OFFSET: BlockVector3 = BlockVector3.at(-10.0, 0.0, 0.0)
 
-        const val GAME_AREA_RADIUS: Int = 30
+        const val GAME_AREA_RADIUS: Int = 25
 
         val MIN_CORNER_OF_GAME_AREA: Location = Location(WORLD, -GAME_AREA_RADIUS.toDouble(), 150.0, -GAME_AREA_RADIUS.toDouble())
 

@@ -1,4 +1,4 @@
-package base.minigames.parkour_dash
+package base.minigames.parkour_dash.types
 
 import org.bukkit.Location
 import java.io.File
@@ -6,10 +6,10 @@ import java.io.File
 data class CoursePoolData(
     val version: Int,
     val schematicsBase: String,
-    val courses: List<CourseVariantContainer>
+    val courses: List<CourseGroup>
 )
 
-data class CourseVariantContainer(
+data class CourseGroup(
     val id: String,
     val name: String,
     val theme: String,
@@ -29,10 +29,10 @@ data class Course(
 )
 
 /**
- * Aids for generating courses for a parkour path and tracking checkpoints for the path
+ * Tracks mutable generation state for a single parkour path
  */
-data class ParkourPathConstructor(
-    val difficultiesOfCourses: List<Int>,
+data class PathGenerator(
+    val courseDifficulties: List<Int>,
     var currentCourseLocation: Location,
-    val checkpointTrackerOfPath: MutableList<Location>?
+    val checkpoints: MutableList<Location>
 )

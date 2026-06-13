@@ -47,9 +47,6 @@ object PDConst {
         val START_LOCATION_OF_PLAYER_MIDDLE_PATH = START_LOCATION_OF_MIDDLE_PATH.clone().add(1.5,2.0,0.5)
         val START_LOCATION_OF_PLAYER_LEFT_PATH = START_LOCATION_OF_LEFT_PATH.clone().add(1.5,2.0,0.5)
         val START_LOCATION_OF_PLAYER_RIGHT_PATH = START_LOCATION_OF_RIGHT_PATH.clone().add(1.5,2.0,0.5)
-
-
-        val MIN_LEGAL_Y_LEVEL = START_LOCATION_OF_MIDDLE_PATH.y - 100
     }
 
     object CourseBoundaries {
@@ -135,6 +132,11 @@ object PDConst {
 
         /** Bonus points for completing without falling */
         const val POINTS_MULTIPLIER_FOR_FLAWLESS_COMPLETION = 1.5
+
+        /** Look up the points awarded for a course based on its difficulty */
+        fun pointsForDifficulty(difficulty: Int): Int {
+            return POINTS_FOR_LEVEL_COMPLETION.firstOrNull { (range, _) -> difficulty in range }?.second ?: 0
+        }
     }
 
     /** Configuration for a specific path (Left, Middle, Right) in the parkour course */

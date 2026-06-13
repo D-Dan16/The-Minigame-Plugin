@@ -41,12 +41,11 @@ dependencies {
     api(libs.org.jetbrains.kotlinx.kotlinx.coroutines.core)
     testImplementation(kotlin("test"))
     compileOnly(libs.com.sk89q.worldedit.worldedit.bukkit)
-    compileOnly(libs.com.sk89q.worldedit.worldedit.bukkit)
     compileOnly(libs.io.papermc.paper.paper.api)
 }
 
 group = "me.dirtydan16"
-version = "5.3.0"
+version = "5.4.0"
 description = "MinigamePlugin"
 
 java {

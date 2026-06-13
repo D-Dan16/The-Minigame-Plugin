@@ -3,6 +3,10 @@ package base.minigames.parkour_dash
 import base.MinigamePlugin
 import base.minigames.parkour_dash.PDConst.ParkourPath
 import base.minigames.parkour_dash.PDConst.WORLD
+import base.minigames.parkour_dash.types.Course
+import base.minigames.parkour_dash.types.CoursePoolData
+import base.minigames.parkour_dash.types.CourseGroup
+import base.minigames.parkour_dash.types.PathGenerator
 import base.resources.Colors
 import base.utils.extensions_for_classes.getBlockAt
 import base.utils.extensions_for_classes.getMaterialAt
@@ -12,28 +16,34 @@ import com.sk89q.worldedit.math.BlockVector3
 import com.sk89q.worldedit.regions.CuboidRegion
 import org.bukkit.Location
 import org.bukkit.Material
+import org.bukkit.event.EventHandler
+import org.bukkit.event.Listener
+import org.bukkit.event.block.BlockFromToEvent
+import org.bukkit.event.block.BlockPhysicsEvent
+import org.bukkit.event.block.LeavesDecayEvent
+import org.bukkit.event.entity.EntityChangeBlockEvent
+import org.bukkit.event.entity.ItemSpawnEvent
 import java.io.File
 import java.io.IOException
 import kotlin.math.abs
 import kotlin.random.Random
 
 private lateinit var coursesFile: File
-private var activeCoursePool: MutableList<CourseVariantContainer> = mutableListOf()
+private var activeCoursePool: MutableList<CourseGroup> = mutableListOf()
 private val baseFolder = MinigamePlugin.plugin.getSchematicsBaseFolder(MinigamePlugin.Companion.MinigameType.PARKOUR_DASH)
 
-fun createCoursePaths(parkourDash: ParkourDash) {
+fun ParkourDash.createCoursePaths() {
     try {
-        fetchCourses(parkourDash)
-        createStartingHallways(parkourDash.hallwaysRegions)
-        prepareGeneratingCourses(parkourDash)
+        fetchCourses(this)
+        createStartingHallways(hallwaysRegions)
+        prepareGeneratingCourses(this)
     } catch (e: Exception) {
-        parkourDash.announceMessage(
+        announceMessage(
             content = "Error in arena creation",
             color = Colors.TitleColors.RED,
             duration = 2000,
         )
-
-        print(e)
+        e.printStackTrace()
     }
 }
 
@@ -121,31 +131,44 @@ private fun prepareGeneratingCourses(parkourDash: ParkourDash) {
         return@map courseDifficulties
     }
 
-    // Create a constructor for each path, which will aid for generating courses for that path and tracking checkpoints for the path
-    val parkourPathConstructors = mutableListOf(
-        ParkourPathConstructor(difficultiesOfCourses[0], parkourDash.locationToGeneratePath[ParkourPath.LEFT]!!, parkourDash.pathCheckpointsNoter[ParkourPath.LEFT]),
-        ParkourPathConstructor(difficultiesOfCourses[1], parkourDash.locationToGeneratePath[ParkourPath.MIDDLE]!!, parkourDash.pathCheckpointsNoter[ParkourPath.MIDDLE]),
-        ParkourPathConstructor(difficultiesOfCourses[2], parkourDash.locationToGeneratePath[ParkourPath.RIGHT]!!, parkourDash.pathCheckpointsNoter[ParkourPath.RIGHT])
+    // Create a PathGenerator for each path to track course difficulties, generation position, and checkpoints
+    val pathGenerators = mutableListOf(
+        PathGenerator(
+            difficultiesOfCourses[0],
+            parkourDash.locationToGeneratePath[ParkourPath.LEFT]!!,
+            parkourDash.endOfCourses[ParkourPath.LEFT]!!
+        ),
+        PathGenerator(
+            difficultiesOfCourses[1],
+            parkourDash.locationToGeneratePath[ParkourPath.MIDDLE]!!,
+            parkourDash.endOfCourses[ParkourPath.MIDDLE]!!
+        ),
+        PathGenerator(
+            difficultiesOfCourses[2],
+            parkourDash.locationToGeneratePath[ParkourPath.RIGHT]!!,
+            parkourDash.endOfCourses[ParkourPath.RIGHT]!!
+        )
     )
 
     // Generate the courses for each path, updating the location pointer after each generation
-    parkourPathConstructors.forEach {
-        for (difficulty in it.difficultiesOfCourses) {
-            val chosenCourse = pickCourse(difficulty, it.currentCourseLocation)
+    pathGenerators.forEachIndexed { pathIndex, gen ->
+        val path = ParkourPath.entries.filter { it != ParkourPath.UNDECIDED }[pathIndex]
+        for (difficulty in gen.courseDifficulties) {
+            val chosenCourse = pickCourse(difficulty, gen.currentCourseLocation)
 
-            val courseBoundaries = generateCourse(chosenCourse,parkourDash.courseRegions)
+            val courseBoundaries = generatePreviewCourse(chosenCourse, parkourDash.courseRegions)
 
             removeRedstoneCorners(courseBoundaries)
             val endOfGeneratedCourse = updateLocationPointer(courseBoundaries)
-            it.currentCourseLocation = endOfGeneratedCourse.clone()
+            gen.currentCourseLocation = endOfGeneratedCourse.clone()
 
-            // Let's add this to the list of checkpoints of the path
-            it.checkpointTrackerOfPath?.plusAssign(endOfGeneratedCourse.clone().apply { y++ })
+            gen.checkpoints += endOfGeneratedCourse.clone().apply { y++ }
+            parkourDash.pointsForCourse[path]!! += PDConst.Points.pointsForDifficulty(chosenCourse.difficulty)
         }
     }
 }
 
-private fun generateCourse(chosenCourse: Course, courseRegions: MutableList<CuboidRegion>): CuboidRegion {
+private fun generatePreviewCourse(chosenCourse: Course, courseRegions: MutableList<CuboidRegion>): CuboidRegion {
     val courseClipboard = BuildLoader.getClipboardHolderFromFile(
         chosenCourse.file,
         chosenCourse.startPos
@@ -191,7 +214,7 @@ private fun pickCourse(
     val allAvailableDifficulties =
         activeCoursePool.asSequence().flatMap { container -> container.variants.map { it.difficulty } }.distinct().toList()
 
-    var courseContainer: CourseVariantContainer? = null
+    var courseContainer: CourseGroup? = null
     var targetDifficulty: Int? = null
 
     // pick a course with the closest possible difficulty to the wanted difficulty
@@ -215,7 +238,7 @@ private fun pickCourse(
 
     val course = Course(
         File(
-            File(baseFolder,PDConst.FilePaths.SCHEMATICS_FOLDER),
+            File(baseFolder, PDConst.FilePaths.SCHEMATICS_FOLDER),
             selectedVariant.path
         ),
         selectedVariant.difficulty,
@@ -236,4 +259,63 @@ private fun updateLocationPointer(boundingBox: CuboidRegion): Location {
     }?: throw IllegalStateException("No diamond block found in the course")
 
     return diamondBlockLocation
+}
+
+//Listeners to make sure nothing breaks on creation
+class ParkourDashCourseCreatorListener(private val parkourDash: ParkourDash) : Listener {
+    //<editor-fold desc="Course Generation helpers">
+    @EventHandler
+    fun onGeneralItemDrop(event: ItemSpawnEvent) {
+        if (!parkourDash.isGameRunning) return
+
+        event.isCancelled = true
+    }
+
+
+    @EventHandler
+    fun onEntityChangeBlock(event: EntityChangeBlockEvent) {
+        if (!parkourDash.isGameRunning && parkourDash.courseRegions.isEmpty()) return
+        if (isInCourse(event.block.x, event.block.y, event.block.z)) {
+            event.isCancelled = true
+        }
+    }
+
+    @EventHandler
+    fun onBlockPhysics(event: BlockPhysicsEvent) {
+        if (!parkourDash.isGameRunning && parkourDash.courseRegions.isEmpty()) return
+
+        if (isInCourse(event.block.x, event.block.y, event.block.z)) {
+            // Allow bubble columns and water/bubble-related updates, but cancel general physics
+            val type = event.block.type
+            if (type == Material.BUBBLE_COLUMN || type == Material.WATER ||
+                type == Material.SOUL_SAND || type == Material.MAGMA_BLOCK
+            ) {
+                return
+            }
+            event.isCancelled = true
+            return
+        }
+    }
+
+    @EventHandler
+    // Cancel water/lava spreading
+    fun onBlockFromTo(event: BlockFromToEvent) {
+        if (!parkourDash.isGameRunning && parkourDash.courseRegions.isEmpty()) return
+        if (isInCourse(event.block.x, event.block.y, event.block.z)) {
+            event.isCancelled = true
+        }
+    }
+
+    @EventHandler
+    fun onLeavesDecay(event: LeavesDecayEvent) {
+        if (!parkourDash.isGameRunning && parkourDash.courseRegions.isEmpty()) return
+        if (isInCourse(event.block.x, event.block.y, event.block.z)) {
+            event.isCancelled = true
+        }
+    }
+
+    private fun isInCourse(x: Int, y: Int, z: Int): Boolean {
+        val vector = BlockVector3.at(x, y, z)
+        return parkourDash.courseRegions.any { it.contains(vector) }
+    }
 }

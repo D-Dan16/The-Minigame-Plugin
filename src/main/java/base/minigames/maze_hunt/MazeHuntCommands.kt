@@ -58,7 +58,7 @@ class MazeHuntCommands(val mazeHunt: MazeHunt) : MinigameCommandsSkeleton() {
                 if (mazeHunt.isGameNotRunning()) return false
                 mazeHunt.endGame()
             }
-            SubCommands.NUKE_ARENA -> mazeHunt.nukeArea()
+            SubCommands.NUKE_ARENA -> mazeHunt.nukeArena()
             else -> return error(sender, "Unknown command.")
         }
 

@@ -8,13 +8,11 @@ import base.annotations.ShouldBeReset
 import base.resources.Colors
 import base.resources.Colors.TitleColors.LIME_GREEN
 import base.utils.additions.PausableBukkitRunnable
-import base.utils.additions.Utils.nukeGameArea
 import net.kyori.adventure.text.Component.*
 import net.kyori.adventure.text.format.TextColor
 import net.kyori.adventure.title.Title
 import org.bukkit.Bukkit
 import org.bukkit.ChatColor
-import org.bukkit.Location
 import org.bukkit.entity.Player
 import org.bukkit.plugin.java.JavaPlugin
 import org.bukkit.scheduler.BukkitRunnable
@@ -24,13 +22,6 @@ import org.bukkit.scoreboard.Team
 import java.time.Duration
 
 /**
- * Represents the base structure for a minigame within the system.
- * This class provides core functionality for managing game states,
- * players, scoreboard interactions, and other game-related operations.
- *
- * The class includes abstract and open methods that should be implemented
- * or overridden in subclasses to define game-specific behavior, such as
- * area preparation, game rule setup, and event handling.
  *
  */
 abstract class MinigameSkeleton {
@@ -74,7 +65,7 @@ abstract class MinigameSkeleton {
     }
 
     /** Updates only the suffix of a previously registered scoreboard line */
-    protected fun updateScoreboardLineSuffix(key: String, newSuffix: Any) {
+    fun updateScoreboardLineSuffix(key: String, newSuffix: Any) {
         val team = scoreboard.getTeam(key) ?: return
         team.suffix(text(newSuffix.toString()))
     }
@@ -173,6 +164,13 @@ abstract class MinigameSkeleton {
     open fun addTimeBasedEvents() {}
 
     /**
+     * Init state that its initial data is dependent on knowing stuff only disclosed upon game start, such as Players.
+     *
+     * Is called at [start], and shouldn't be called manually
+     */
+    open fun initState() {}
+
+    /**
      * Defines and registers the scoreboard elements required for the minigame.
      *
      * This method is a placeholder and should be overridden by subclasses to implement
@@ -206,6 +204,7 @@ abstract class MinigameSkeleton {
         prepareArea()
         prepareGameSetting()
         addTimeBasedEvents()
+        initState()
 
         // Keep track of the timer for the length of the game and display it in the scoreboard
         pausableRunnables += PausableBukkitRunnable(plugin as JavaPlugin, remainingTicks = 20L, periodTicks = 20L) {
@@ -283,8 +282,6 @@ abstract class MinigameSkeleton {
      */
     @CalledByCommand
     open fun endGame() {
-        resetState()
-
         pausableRunnables.removeIf { it.shouldNotBeUsed }
         pausableRunnables.forEach { runnable ->
             runnable.reset()
@@ -303,8 +300,9 @@ abstract class MinigameSkeleton {
         announceMessage("Game over!", "Duration: ${gameTimeElapsed}s", Colors.TitleColors.CYAN)
 
         gameTimeElapsed = 0
-    }
 
+        resetState()
+    }
     /**
      * Checks if a player is in the minigame. This will be used for event handling, such as player death.
      * @param player The player to check
@@ -313,17 +311,11 @@ abstract class MinigameSkeleton {
     fun isPlayerInGame(player: Player?): Boolean {
         return isGameRunning && players.contains(player)
     }
-    /**
-     * Nukes an area. Should be overridden and followed with code that clears the physical area. Typically, it should be called in [endGame].
-     * @param center the center of the nuke
-     * @param radius the radius of the nuke
-     */
-    open fun nukeArea(center: Location, radius: Int) {
-        // Delete the surrounding area.
-        nukeGameArea(center, radius)
 
-        //        announceMessage("Area nuked!", "hope everyone's safe...", Colors.TitleColors.RED)
-    }
+    /**
+     * Nukes the game arena. Should be overridden and followed with code that clears the physical area. Typically, it should be called in [endGame].
+     */
+    open fun nukeArena() {}
 
     /**
      * Prepares the area. Should be followed with code that prepares the physical area. Typically, it should be called in [start].
@@ -352,6 +344,7 @@ abstract class MinigameSkeleton {
         }
     }
 
+
     /**
      * Broadcasts a message and displays a [Title] to either all players or just the game sender.
      *
@@ -371,7 +364,7 @@ abstract class MinigameSkeleton {
         subContent: String = "",
         color: String,
         duration: Long = 3000,
-        toGameSender: Boolean = false
+        toGameSender: Boolean = false,
     ) {
         val isContentNotEmpty = content.isEmpty().not()
 
@@ -402,7 +395,6 @@ abstract class MinigameSkeleton {
             }
         }
     }
-
 
     //region Game State Guards
     val commandNotExecutedMessage = "Command has not been executed"
@@ -449,7 +441,6 @@ abstract class MinigameSkeleton {
         }
         return false
     }
-
     /**
      *  Guard clause for executing the method that the command called.
      *  Used for when wanting to call [pauseGame].
@@ -471,6 +462,7 @@ abstract class MinigameSkeleton {
         }
         return false
     }
+
     /**
      *  Guard clause for executing the method that the command called.
      *  Used for when wanting to call [endGame].
@@ -493,5 +485,3 @@ abstract class MinigameSkeleton {
         return false
     }
 }
-
-

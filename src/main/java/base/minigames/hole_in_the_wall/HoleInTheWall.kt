@@ -241,10 +241,10 @@ class HoleInTheWall (val plugin: Plugin) : MinigameSkeleton() {
 
     override fun endGame() {
         super.endGame()
-        nukeArea()
+        nukeArena()
     }
 
-    fun nukeArea() {
+    override fun nukeArena() {
         BuildLoader.deleteSchematic(mapSchematicRegion)
     }
 

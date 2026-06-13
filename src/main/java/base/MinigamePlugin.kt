@@ -1,7 +1,6 @@
 package base
 
 import base.listeners.ItemClickListener
-import base.listeners.ParkourDashListener
 import base.listeners.PlayerDeathListener
 import base.minigames.blueprint_bazaar.BlueprintBazaar
 import base.minigames.blueprint_bazaar.BlueprintBazaarCommands
@@ -15,6 +14,8 @@ import base.minigames.maze_hunt.MazeHuntCommands
 import base.minigames.maze_hunt.MazeHuntEventHandlers
 import base.minigames.parkour_dash.ParkourDash
 import base.minigames.parkour_dash.ParkourDashCommands
+import base.minigames.parkour_dash.ParkourDashCourseCreatorListener
+import base.minigames.parkour_dash.ParkourDashGameEventsHandler
 import org.bukkit.Bukkit
 import org.bukkit.Difficulty
 import org.bukkit.GameMode
@@ -30,11 +31,13 @@ class MinigamePlugin : JavaPlugin() {
     lateinit var holeInTheWall: HoleInTheWall
     lateinit var mazeHunt: MazeHunt
     lateinit var parkourDash: ParkourDash
+    lateinit var listOfMinigames: MutableList<MinigameSkeleton>
 
+    @Suppress("UsePropertyAccessSyntax")
     override fun onEnable() {
         plugin = this
 
-        var listOfMinigames: MutableList<MinigameSkeleton> = mutableListOf()
+        listOfMinigames = mutableListOf()
 
         discoMayhem = DiscoMayhem(this)
         blueprintBazaar= BlueprintBazaar(this)
@@ -63,7 +66,9 @@ class MinigamePlugin : JavaPlugin() {
         server.pluginManager.let {
             it.registerEvents(ItemClickListener(), this)
             it.registerEvents(PlayerDeathListener(discoMayhem, holeInTheWall, mazeHunt), this)
-            it.registerEvents(ParkourDashListener(parkourDash), this)
+            it.registerEvents(parkourDash, this)
+            it.registerEvents(ParkourDashCourseCreatorListener(parkourDash), this)
+            it.registerEvents(ParkourDashGameEventsHandler(parkourDash), this)
             it.registerEvents(MazeHuntEventHandlers(mazeHunt),this)
         }
         //</editor-fold>
@@ -89,7 +94,11 @@ class MinigamePlugin : JavaPlugin() {
 
 
     override fun onDisable() {
-        // Plugin shutdown logic
+        //clean up arenas of minigames if they are running
+        if (::listOfMinigames.isInitialized)
+            listOfMinigames.forEach {
+                it.nukeArena()
+            }
     }
 
     fun getSchematicsBaseFolder(minigame: MinigameType): File {

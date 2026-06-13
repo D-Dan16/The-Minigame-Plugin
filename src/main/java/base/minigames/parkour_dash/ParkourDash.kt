@@ -5,39 +5,55 @@ import base.annotations.CalledByCommand
 import base.annotations.Mode
 import base.minigames.MinigameSkeleton
 import base.minigames.parkour_dash.PDConst.ParkourPath
+import base.minigames.parkour_dash.types.PlayerParkourState
+import base.minigames.parkour_dash.types.player_score.PlayerScore
+import base.resources.Colors
 import base.resources.Colors.TitleColors.AQUA
+import base.utils.additions.Direction
 import base.utils.additions.Direction.*
-import base.utils.additions.PausableBukkitRunnable
 import base.utils.additions.createBoxOutline
 import base.utils.additions.initFloor
 import base.utils.extensions_for_classes.setOnClickListener
+import base.utils.extensions_for_classes.showTitle
 import base.utils.extensions_for_classes.toYaw
 import base.utils.other.BuildLoader
 import com.sk89q.worldedit.regions.CuboidRegion
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
+import org.bukkit.Bukkit
 import org.bukkit.GameMode
 import org.bukkit.Location
 import org.bukkit.Material
+import org.bukkit.boss.BarColor
+import org.bukkit.boss.BarStyle
+import org.bukkit.boss.BossBar
 import org.bukkit.entity.Player
+import org.bukkit.event.EventHandler
+import org.bukkit.event.Listener
+import org.bukkit.event.player.PlayerDropItemEvent
+import org.bukkit.event.player.PlayerQuitEvent
 import org.bukkit.inventory.ItemStack
-import org.bukkit.plugin.java.JavaPlugin
-import org.bukkit.scheduler.BukkitRunnable
+import java.util.UUID
 import java.util.WeakHashMap
-import kotlin.collections.plusAssign
+import kotlin.properties.Delegates
 
-class ParkourDash(val plugin: MinigamePlugin) : MinigameSkeleton() {
+class ParkourDash(val plugin: MinigamePlugin) : MinigameSkeleton(), Listener {
     override val minigameName: String = this::class.simpleName ?: "Unknown"
     //<editor-fold desc="Properties"> ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    //<editor-fold desc="Game Modifiers">
+    //<editor-fold desc="Misc">
     var difficulty: ParkourDashCommands.Modes = ParkourDashCommands.Modes.NORMAL
         @CalledByCommand(Mode.EXCLUSIVE)
         set
 
+    internal var scores: WeakHashMap<UUID, PlayerScore> = WeakHashMap()
+    internal var totalPossibleScore = 0
+    var playerBossBars: MutableMap<UUID, BossBar> = HashMap()
+
     //</editor-fold>
 
     //<editor-fold desc="Arena creation handlers">
+    internal var hasSetUpArena: Boolean = false
     internal var locationToGeneratePath = mapOf(
         ParkourPath.LEFT to PDConst.Locations.START_GENERATION_LOCATION_OF_LEFT_PATH.clone(),
         ParkourPath.MIDDLE to PDConst.Locations.START_GENERATION_LOCATION_OF_MIDDLE_PATH.clone(),
@@ -49,36 +65,43 @@ class ParkourDash(val plugin: MinigamePlugin) : MinigameSkeleton() {
     //</editor-fold>
 
     //<editor-fold desc="Timers">
-    private var remainingTimeSeconds: Long = PDConst.Times.GAME_DURATION
+    internal var remainingTimeSeconds: Long = PDConst.Times.GAME_DURATION
     //</editor-fold>
 
     //<editor-fold desc="Teleporters">
-    private var parkourPathCheckpointsFor: Map<ParkourPath, HashMap<Player, MutableList<Location>>> = mapOf(
-        ParkourPath.LEFT to HashMap(),
-        ParkourPath.MIDDLE to HashMap(),
-        ParkourPath.RIGHT to HashMap()
-    )
+    private val activePaths = ParkourPath.entries.filter { it != ParkourPath.UNDECIDED }
 
     /** All the endpoints of each pk course (i.e., the diamond blocks)*/
-    internal var pathCheckpointsNoter: Map<ParkourPath, MutableList<Location>> = mapOf(
-        ParkourPath.LEFT to mutableListOf(),
-        ParkourPath.MIDDLE to mutableListOf(),
-        ParkourPath.RIGHT to mutableListOf()
+    internal var endOfCourses: Map<ParkourPath, MutableList<Location>> = mapOf(
+        ParkourPath.LEFT to mutableListOf(PDConst.Locations.START_GENERATION_LOCATION_OF_LEFT_PATH),
+        ParkourPath.MIDDLE to mutableListOf(PDConst.Locations.START_GENERATION_LOCATION_OF_MIDDLE_PATH),
+        ParkourPath.RIGHT to mutableListOf(PDConst.Locations.START_GENERATION_LOCATION_OF_RIGHT_PATH)
     )
-    
-    private var pathPlayerIsAt: WeakHashMap<Player, ParkourPath> = WeakHashMap()
+
+    /** Consolidated per-player state: current path, checkpoints, and courses completed */
+    internal var playerParkourState: MutableMap<UUID, PlayerParkourState> = mutableMapOf()
+
+    /** Points awarded per course, indexed by \[path]\[courseIndex] */
+    internal var pointsForCourse: MutableMap<ParkourPath, MutableList<Int>> =
+        activePaths.associateWith { mutableListOf<Int>() }.toMutableMap()
     //</editor-fold>
 
     //</editor-fold> ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     override fun resetState() {
-        super.resetState()
-        //<editor-fold desc="Game Modifiers">
+        //<editor-fold desc="Misc">
         difficulty = ParkourDashCommands.Modes.NORMAL
-
+        scores = WeakHashMap()
+        totalPossibleScore = 0
+        players.forEach {
+            playerBossBars[it.uniqueId]?.isVisible = false
+        }
+        playerBossBars = HashMap()
         //</editor-fold>
 
         //<editor-fold desc="Arena creation handlers">
+        hasSetUpArena = false
+
         locationToGeneratePath = mapOf(
             ParkourPath.LEFT to PDConst.Locations.START_GENERATION_LOCATION_OF_LEFT_PATH.clone(),
             ParkourPath.MIDDLE to PDConst.Locations.START_GENERATION_LOCATION_OF_MIDDLE_PATH.clone(),
@@ -95,60 +118,53 @@ class ParkourDash(val plugin: MinigamePlugin) : MinigameSkeleton() {
         //</editor-fold>
 
         //<editor-fold desc="Teleporters">
-        parkourPathCheckpointsFor = mapOf(
-            ParkourPath.LEFT to HashMap(),
-            ParkourPath.MIDDLE to HashMap(),
-            ParkourPath.RIGHT to HashMap()
+        endOfCourses = mapOf(
+            ParkourPath.LEFT to mutableListOf(PDConst.Locations.START_GENERATION_LOCATION_OF_LEFT_PATH),
+            ParkourPath.MIDDLE to mutableListOf(PDConst.Locations.START_GENERATION_LOCATION_OF_MIDDLE_PATH),
+            ParkourPath.RIGHT to mutableListOf(PDConst.Locations.START_GENERATION_LOCATION_OF_RIGHT_PATH)
         )
 
-        pathCheckpointsNoter = mapOf(
-            ParkourPath.LEFT to mutableListOf(),
-            ParkourPath.MIDDLE to mutableListOf(),
-            ParkourPath.RIGHT to mutableListOf()
-        )
-
-        pathPlayerIsAt = WeakHashMap()
+        playerParkourState = mutableMapOf()
+        pointsForCourse = activePaths.associateWith { mutableListOf(0) }.toMutableMap()
         //</editor-fold>
+
+        super.resetState()
     }
 
+    override fun initState() {
+        players.forEach {
+            scores[it.uniqueId] = PlayerScore(0)
+
+            playerBossBars[it.uniqueId] = Bukkit.createBossBar(
+                "Your Score: 0",
+                BarColor.GREEN,
+                BarStyle.SOLID
+            ).apply {
+                addPlayer(it)
+                progress = 0.0
+            }
+
+            playerParkourState[it.uniqueId] = PlayerParkourState()
+        }
+
+        pointsForCourse.forEach { (_, ints) -> totalPossibleScore += ints.sum() }
+    }
 
     override fun addScoreboardElements() {
-        // Add Parkour Dash specific scoreboard line: Time Remaining
-        registerScoreboardLine(
-            key = "timeRemaining",
-            entryText = "Time Remaining: ",
-            suffix = remainingTimeSeconds
-        )
+        registerScoreboardLine("timeRemaining", "Time Remaining: ", suffix = remainingTimeSeconds)
     }
 
     override fun addTimeBasedEvents() {
-        // Tick down every second and update suffix. When it reaches 0, end the game.
-        pausableRunnables += PausableBukkitRunnable(
-            plugin as JavaPlugin,
-            remainingTicks = 20L,
-            periodTicks = 20L
-        ) {
-            remainingTimeSeconds = (remainingTimeSeconds - 1).coerceAtLeast(0)
-            updateScoreboardLineSuffix("timeRemaining", remainingTimeSeconds)
-
-            // Auto end the game when time runs out
-            if (remainingTimeSeconds == 0L) endGame()
-        }
-
+        updateTimeRemaining()
     }
 
     override fun start(sender: Player) {
         super.start(sender)
-
-        players.forEach {
-            pathPlayerIsAt[it] = ParkourPath.UNDECIDED
-        }
-
     }
 
     @CalledByCommand(Mode.EXCLUSIVE)
     override fun endGame() {
-        nukeArea()
+        nukeArena()
 
         //<editor-fold desc="General Player settings">
         players.forEach {
@@ -159,10 +175,16 @@ class ParkourDash(val plugin: MinigamePlugin) : MinigameSkeleton() {
         //</editor-fold>
 
         super.endGame()
+
+        players.forEach { it.showTitle(
+            "Game over!",
+            "Duration: ${scores[it.uniqueId]}s",
+            Colors.TitleColors.CYAN
+        ) }
     }
 
     @CalledByCommand(Mode.NON_EXCLUSIVE)
-    fun nukeArea() {
+    override fun nukeArena() {
         courseRegions.forEach {
             BuildLoader.deleteSchematic(it)
         }
@@ -179,72 +201,54 @@ class ParkourDash(val plugin: MinigamePlugin) : MinigameSkeleton() {
 
     @CalledByCommand(Mode.NON_EXCLUSIVE)
     override fun prepareArea() {
-        createCoursePaths(this)
+        if (hasSetUpArena) return
+
+        createCoursePaths()
+        generateStartingBox()
+    }
+
+    @CalledByCommand(Mode.EXCLUSIVE)
+    internal fun generatePreviewCourse() {
+        createCoursePaths()
+    }
+
+    @CalledByCommand(Mode.NON_EXCLUSIVE)
+    internal fun generateStartingBox() {
         initFloor(5, 5, Material.WHITE_STAINED_GLASS, PDConst.Locations.START_LOCATION.clone())
         createBoxOutline(5, 5, 2, Material.WHITE_STAINED_GLASS, PDConst.Locations.START_LOCATION.clone().apply { y++ })
     }
 
+    @CalledByCommand(Mode.NON_EXCLUSIVE)
     override fun prepareGameSetting() {
-        super.prepareGameSetting()
-
-        //<editor-fold desc="General Player settings">
-        players.forEach {
-            it.teleport(PDConst.Locations.START_LOCATION.clone().apply { y+=2 })
-            it.gameMode = GameMode.ADVENTURE
-            it.isInvulnerable = true
-            it.setRotation(EAST.toYaw(), 0.0F)
-        }
-        //</editor-fold>
+        if (hasSetUpArena.not())
+            setGeneralPlayerSettings()
 
         //<editor-fold desc="Init Checkpoints and Path Teleporters">
 
         // Create a checkpoint for each player at the start of each path.
-        players.forEach {
-            parkourPathCheckpointsFor[ParkourPath.LEFT]!![it] = mutableListOf()
-            parkourPathCheckpointsFor[ParkourPath.MIDDLE]!![it] = mutableListOf()
-            parkourPathCheckpointsFor[ParkourPath.RIGHT]!![it] = mutableListOf()
-
-            parkourPathCheckpointsFor[ParkourPath.LEFT]!![it]!! += PDConst.Locations.START_LOCATION_OF_PLAYER_LEFT_PATH.clone()
-            parkourPathCheckpointsFor[ParkourPath.MIDDLE]!![it]!! += PDConst.Locations.START_LOCATION_OF_PLAYER_MIDDLE_PATH.clone()
-            parkourPathCheckpointsFor[ParkourPath.RIGHT]!![it]!! += PDConst.Locations.START_LOCATION_OF_PLAYER_RIGHT_PATH.clone()
-        }
-
-        fun createTeleporter(
-            itemStack: ItemStack,
-            trackerOfPlayerCheckpoints: HashMap<Player, MutableList<Location>>,
-            path: ParkourPath
-        ): ItemStack {
+        fun createTeleporter(itemStack: ItemStack, path: ParkourPath): ItemStack {
             return itemStack.clone().setOnClickListener { clicker ->
-                val lastCheckpoint = trackerOfPlayerCheckpoints[clicker]!!.last()
+                val state = playerParkourState[clicker.uniqueId] ?: return@setOnClickListener
+
+                state.currentPath = path
+
+                val lastCheckpoint = state.checkpoints[state.currentPath]?.lastOrNull() ?: return@setOnClickListener
 
                 clicker.teleport(lastCheckpoint)
                 clicker.setRotation(EAST.toYaw(), 0.0F)
-                pathPlayerIsAt[clicker] = path
             }
         }
 
-        players.forEach { player ->
-            // Add items for teleportation to each parkour path
-            val leftPathTeleporter = createTeleporter(
-                PDConst.Items.LEFT_PATH_TELEPORTER_ICON,
-                parkourPathCheckpointsFor[ParkourPath.LEFT]!!,
-                ParkourPath.LEFT
-            )
-            val middlePathTeleporter = createTeleporter(
-                PDConst.Items.MIDDLE_PATH_TELEPORTER_ICON,
-                parkourPathCheckpointsFor[ParkourPath.MIDDLE]!!,
-                ParkourPath.MIDDLE
-            )
-            val rightPathTeleporter = createTeleporter(
-                PDConst.Items.RIGHT_PATH_TELEPORTER_ICON,
-                parkourPathCheckpointsFor[ParkourPath.RIGHT]!!,
-                ParkourPath.RIGHT
-            )
+        // Teleporter items are identical for all players, so create once
+        val leftPathTeleporter = createTeleporter(PDConst.Items.LEFT_PATH_TELEPORTER_ICON, ParkourPath.LEFT)
+        val middlePathTeleporter = createTeleporter(PDConst.Items.MIDDLE_PATH_TELEPORTER_ICON, ParkourPath.MIDDLE)
+        val rightPathTeleporter = createTeleporter(PDConst.Items.RIGHT_PATH_TELEPORTER_ICON, ParkourPath.RIGHT)
 
+        players.forEach { player ->
             player.inventory.apply {
-                setItem(0,leftPathTeleporter)
-                setItem(1,middlePathTeleporter)
-                setItem(2,rightPathTeleporter)
+                setItem(0, leftPathTeleporter)
+                setItem(1, middlePathTeleporter)
+                setItem(2, rightPathTeleporter)
 
                 setItem(5, PDConst.Items.SET_CUSTOM_CHECKPOINT.clone().setOnClickListener {
                     setCheckpointFor(player)
@@ -260,6 +264,18 @@ class ParkourDash(val plugin: MinigamePlugin) : MinigameSkeleton() {
         //</editor-fold>
     }
 
+    @CalledByCommand(Mode.NON_EXCLUSIVE)
+    internal fun setGeneralPlayerSettings() {
+        super.prepareGameSetting()
+
+        players.forEach {
+            it.teleport(PDConst.Locations.START_LOCATION.clone().apply { y += 2 })
+            it.gameMode = GameMode.ADVENTURE
+            it.isInvulnerable = true
+            it.setRotation(EAST.toYaw(), 0.0F)
+        }
+    }
+
     @CalledByCommand(Mode.EXCLUSIVE)
     internal fun tpPlayersToNextSection() {
         players.forEach {
@@ -269,22 +285,25 @@ class ParkourDash(val plugin: MinigamePlugin) : MinigameSkeleton() {
 
     @CalledByCommand(Mode.NON_EXCLUSIVE)
     internal fun tpPlayerToNextSection(player: Player) {
-        val parkourPath: ParkourPath? = pathPlayerIsAt[player]
-        val checkpoints = parkourPathCheckpointsFor[parkourPath]?.get(player) ?: throw IllegalStateException("Player is not at any parkour path")
+        val state = playerParkourState[player.uniqueId] ?: throw IllegalStateException("Player has no parkour state")
+        val parkourPath = state.currentPath
+        val checkpoints = state.checkpoints[parkourPath] ?: throw IllegalStateException("Player is not at any parkour path")
         val lastCheckPointForPlayer = checkpoints.last()
 
-        val nextCheckpoint = pathCheckpointsNoter[parkourPath]?.last {
+        val nextCheckpoint = endOfCourses[parkourPath]?.first {
             lastCheckPointForPlayer.x < it.x
         } ?: return
 
-        checkpoints += nextCheckpoint
+        checkpoints += nextCheckpoint.apply { yaw = EAST.toYaw() }
 
         player.teleport(nextCheckpoint.clone().apply { y++ })
     }
 
     @CalledByCommand(Mode.NON_EXCLUSIVE)
     internal fun setCheckpointFor(player: Player) {
-        val checkpoints = parkourPathCheckpointsFor[pathPlayerIsAt[player]]!![player]
+        val state = playerParkourState[player.uniqueId]
+            ?: throw IllegalStateException("Player has no parkour state")
+        val checkpoints = state.checkpoints[state.currentPath]
             ?: throw IllegalStateException("Player is not at any parkour path")
 
         @Suppress("DEPRECATION")
@@ -307,7 +326,9 @@ class ParkourDash(val plugin: MinigamePlugin) : MinigameSkeleton() {
     }
 
     private fun removeLatestCheckpoint(player: Player) {
-        val checkpoints = parkourPathCheckpointsFor[pathPlayerIsAt[player]]!![player]
+        val state = playerParkourState[player.uniqueId]
+            ?: throw IllegalStateException("Player has no parkour state")
+        val checkpoints = state.checkpoints[state.currentPath]
             ?: throw IllegalStateException("Player is not at any parkour path")
 
         if (checkpoints.size <= 1)
@@ -323,20 +344,33 @@ class ParkourDash(val plugin: MinigamePlugin) : MinigameSkeleton() {
 
     @CalledByCommand(Mode.NON_EXCLUSIVE)
     internal fun sendToLastCheckpoint(player: Player) {
-        val parkourPath = pathPlayerIsAt[player] ?: throw IllegalStateException("Player is not at any parkour path")
-        val locationToTp: Location = when (parkourPath) {
-            ParkourPath.LEFT -> parkourPathCheckpointsFor[ParkourPath.LEFT]!![player]!!.last()
-            ParkourPath.MIDDLE -> parkourPathCheckpointsFor[ParkourPath.MIDDLE]!![player]!!.last()
-            ParkourPath.RIGHT -> parkourPathCheckpointsFor[ParkourPath.RIGHT]!![player]!!.last()
-            ParkourPath.UNDECIDED -> return
-        } ?: throw IllegalStateException("Location to teleport to is null")
+        val state = playerParkourState[player.uniqueId]
+            ?: throw IllegalStateException("Player has no parkour state")
+        if (state.currentPath == ParkourPath.UNDECIDED) return
+
+        val locationToTp = state.checkpoints[state.currentPath]?.lastOrNull()
+            ?: throw IllegalStateException("No checkpoints available for player")
 
         player.teleport(locationToTp)
     }
 
-    @CalledByCommand(Mode.NON_EXCLUSIVE)
-    internal fun reset() {
-//        TODO("Not yet implemented")
+    /**
+     * Prevents players from dropping items
+     */
+    @EventHandler
+    fun onPlayerItemDrop(event: PlayerDropItemEvent) {
+        if (!isGameRunning) return
+
+        event.isCancelled = true
+    }
+
+    /**
+     * Used to remove a player's score if they quit
+     */
+    @EventHandler
+    fun onPlayerQuit(event: PlayerQuitEvent) {
+        val player: Player = event.player
+        playerBossBars.remove(player.uniqueId)
+        playerParkourState.remove(player.uniqueId)
     }
 }
-
