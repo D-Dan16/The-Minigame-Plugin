@@ -10,7 +10,7 @@ import org.bukkit.event.player.PlayerMoveEvent
 import org.bukkit.plugin.java.JavaPlugin
 import kotlin.collections.plusAssign
 
-class ParkourDashGameEventsHandler(private val pd: ParkourDash) : Listener {
+class GameEvents(private val pd: ParkourDash) : Listener {
     /**
      * Check if the player has completed a course.
      * If so, add the checkpoint to the list of checkpoints the player has and increment how many courses in that path the player has completed
@@ -22,6 +22,9 @@ class ParkourDashGameEventsHandler(private val pd: ParkourDash) : Listener {
 
         val state = pd.playerParkourState[uid] ?: return
         val parkourPath: ParkourPath = state.currentPath
+
+        if (parkourPath == ParkourPath.UNDECIDED)
+            return
 
         var curCoursesCompleted: CourseIndex = state.coursesCompleted[parkourPath]!!
         val courseCheckpointToCheck = pd.endOfCourses[parkourPath]!![curCoursesCompleted.i+1]

@@ -30,7 +30,7 @@ import kotlin.random.Random
 
 @Suppress("NULLABILITY_MISMATCH_BASED_ON_JAVA_ANNOTATIONS")
 class HoleInTheWall (val plugin: Plugin) : MinigameSkeleton() {
-    override val minigameName: String = "HoleInTheWall"
+    override val minigameName: String = "Minigames/HoleInTheWall"
 //region vars
 
     private lateinit var selectedMapBaseFile: File

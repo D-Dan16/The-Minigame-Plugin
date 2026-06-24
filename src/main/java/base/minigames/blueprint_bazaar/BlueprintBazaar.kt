@@ -33,7 +33,7 @@ import java.io.IOException
     "SameParameterValue", "DEPRECATION"
 )
 class BlueprintBazaar(plugin: Plugin) : MinigameSkeleton() {
-    override val minigameName: String = "BlueprintBazaar"
+    override val minigameName: String = "Minigames/BlueprintBazaar"
 
 
     //region vars

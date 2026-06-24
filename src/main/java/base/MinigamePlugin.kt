@@ -15,7 +15,7 @@ import base.minigames.maze_hunt.MazeHuntEventHandlers
 import base.minigames.parkour_dash.ParkourDash
 import base.minigames.parkour_dash.ParkourDashCommands
 import base.minigames.parkour_dash.ParkourDashCourseCreatorListener
-import base.minigames.parkour_dash.ParkourDashGameEventsHandler
+import base.minigames.parkour_dash.GameEvents
 import org.bukkit.Bukkit
 import org.bukkit.Difficulty
 import org.bukkit.GameMode
@@ -68,7 +68,7 @@ class MinigamePlugin : JavaPlugin() {
             it.registerEvents(PlayerDeathListener(discoMayhem, holeInTheWall, mazeHunt), this)
             it.registerEvents(parkourDash, this)
             it.registerEvents(ParkourDashCourseCreatorListener(parkourDash), this)
-            it.registerEvents(ParkourDashGameEventsHandler(parkourDash), this)
+            it.registerEvents(GameEvents(parkourDash), this)
             it.registerEvents(MazeHuntEventHandlers(mazeHunt),this)
         }
         //</editor-fold>
@@ -103,10 +103,10 @@ class MinigamePlugin : JavaPlugin() {
 
     fun getSchematicsBaseFolder(minigame: MinigameType): File {
         return when (minigame) {
-            MinigameType.BLUEPRINT_BAZAAR -> File(dataFolder, "BlueprintBazaar")
-            MinigameType.HOLE_IN_THE_WALL -> File(dataFolder, "HoleInTheWall")
+            MinigameType.BLUEPRINT_BAZAAR -> File(dataFolder, "Minigames/BlueprintBazaar")
+            MinigameType.HOLE_IN_THE_WALL -> File(dataFolder, "Minigames/HoleInTheWall")
             MinigameType.DISCO_MAYHEM -> File(dataFolder, "DiscoMayhem") //Doesn't exist
-            MinigameType.PARKOUR_DASH -> File(dataFolder, "parkourdash")
+            MinigameType.PARKOUR_DASH -> File(dataFolder, "Minigames/ParkourDash")
             MinigameType.MAZE_HUNT -> File(dataFolder, "MazeHunt") //Doesn't exist
         }
     }
