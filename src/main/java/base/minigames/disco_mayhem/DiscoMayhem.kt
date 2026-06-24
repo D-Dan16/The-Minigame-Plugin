@@ -3,7 +3,7 @@ package base.minigames.disco_mayhem
 
 import base.minigames.MinigameSkeleton
 import base.utils.extensions_for_classes.getBlockAt
-import base.utils.additions.Utils.initFloor
+import base.utils.additions.initFloor
 import com.sk89q.worldedit.math.BlockVector3
 import com.sk89q.worldedit.regions.CuboidRegion
 import net.kyori.adventure.text.Component
@@ -24,12 +24,11 @@ import kotlin.math.max
 class DiscoMayhem (val plugin: Plugin) : MinigameSkeleton() {
     override val minigameName: String = "DiscoMayhem"
 
-
     //--Game Modifiers that change as the game progresses to scale difficulty-//
-    private var upperBound__startingIntervalForChangingFloor = 0
-    private var lowerBound__startingIntervalForChangingFloor = 0
-    private var upperBound__stopChangingFloorInterval = 0
-    private var lowerBound__stopChangingFloorInterval = 0
+    private var upperBound__startingIntervalForChangingFloor = DiscoMayhemConst.FloorLogic.ChangingFloor.UPPER_BOUND_START_INTERVAL
+    private var lowerBound__startingIntervalForChangingFloor = DiscoMayhemConst.FloorLogic.ChangingFloor.LOWER_BOUND_START_INTERVAL
+    private var upperBound__stopChangingFloorInterval = DiscoMayhemConst.FloorLogic.ChangingFloor.UPPER_BOUND_STOP_INTERVAL
+    private var lowerBound__stopChangingFloorInterval = DiscoMayhemConst.FloorLogic.ChangingFloor.LOWER_BOUND_STOP_INTERVAL
 
     /**
      * Starts the minigame. The player is teleported to the starting location, and the game is initialized.
@@ -39,8 +38,6 @@ class DiscoMayhem (val plugin: Plugin) : MinigameSkeleton() {
     @Throws(InterruptedException::class)
     override fun start(sender: Player) {
         super.start(sender)
-
-        initModifiers() // Initialize the modifiers for the game
 
         // Wait a lil before starting game events.
         object : BukkitRunnable() {
@@ -78,12 +75,21 @@ class DiscoMayhem (val plugin: Plugin) : MinigameSkeleton() {
     /**
      * Resumes the minigame. The game is resumed and the player is notified.
      */
-    //fixme: some parts of the game are not resumed- the game is not resumed, but the floor is not changed nor old floors aren't removed.
+    //fixme: some parts of the game are not resumed - the game is not resumed, but the floor is not changed nor old floors aren't removed.
     override fun resumeGame() {
         super.resumeGame()
 
         activateGameEvents() // Resume the game events
         // Add more actions here
+    }
+
+    override fun resetState() {
+        super.resetState()
+
+        upperBound__startingIntervalForChangingFloor = DiscoMayhemConst.FloorLogic.ChangingFloor.UPPER_BOUND_START_INTERVAL
+        lowerBound__startingIntervalForChangingFloor = DiscoMayhemConst.FloorLogic.ChangingFloor.LOWER_BOUND_START_INTERVAL
+        upperBound__stopChangingFloorInterval = DiscoMayhemConst.FloorLogic.ChangingFloor.UPPER_BOUND_STOP_INTERVAL
+        lowerBound__stopChangingFloorInterval = DiscoMayhemConst.FloorLogic.ChangingFloor.LOWER_BOUND_STOP_INTERVAL
     }
 
     /**
@@ -92,9 +98,7 @@ class DiscoMayhem (val plugin: Plugin) : MinigameSkeleton() {
     override fun endGame() {
         super.endGame()
 
-        nukeArea(DiscoMayhemConst.GAME_START_LOCATION, DiscoMayhemConst.NUKE_AREA_RADIUS)
-
-        initModifiers() // Reset the modifiers for the game
+        nukeArena()
 
         if (intervalTask != null && !intervalTask!!.isCancelled) intervalTask!!.cancel() // Cancel the task that decreases the interval for changing the floor as time goes on
 
@@ -102,26 +106,10 @@ class DiscoMayhem (val plugin: Plugin) : MinigameSkeleton() {
         //player.teleport(MinigameConstants.GAME_START_LOCATION.clone().add(0, -70, 0));
     }
 
-    /**
-     * Initializes the modifiers that CAN be tempered with for the game.
-     * Modifiers change throughout the game to scale difficulty.
-     * This method is called when the game starts and when the game ends.
-     */
-    fun initModifiers() {
-        upperBound__startingIntervalForChangingFloor =
-            DiscoMayhemConst.FloorLogic.ChangingFloor.UPPER_BOUND_START_INTERVAL
-        lowerBound__startingIntervalForChangingFloor =
-            DiscoMayhemConst.FloorLogic.ChangingFloor.LOWER_BOUND_START_INTERVAL
-        upperBound__stopChangingFloorInterval = DiscoMayhemConst.FloorLogic.ChangingFloor.UPPER_BOUND_STOP_INTERVAL
-        lowerBound__stopChangingFloorInterval = DiscoMayhemConst.FloorLogic.ChangingFloor.LOWER_BOUND_STOP_INTERVAL
-    }
+    override fun nukeArena() {
+        val center = DiscoMayhemConst.GAME_START_LOCATION
+        val radius = DiscoMayhemConst.NUKE_AREA_RADIUS
 
-    /**
-     * Removes all blocks in a radius around a location.
-     * @param center The center of the area to nuke
-     * @param radius The radius of the area
-     */
-    override fun nukeArea(center: Location, radius: Int) {
         val minX: Int = center.blockX - radius
         val maxX: Int = center.blockX + radius
         val minY: Int = center.blockY - radius/3
@@ -140,21 +128,20 @@ class DiscoMayhem (val plugin: Plugin) : MinigameSkeleton() {
     }
 
     override fun prepareArea() {
-        nukeArea(DiscoMayhemConst.GAME_START_LOCATION, DiscoMayhemConst.NUKE_AREA_RADIUS) // Clear the area before starting the game
+        nukeArena()
 
         val floorCenter = DiscoMayhemConst.INIT_FLOOR_LOCATION // The center of the floor
         initFloor(
             7,
             7,
             Material.GLASS,
-            floorCenter,
-            DiscoMayhemConst.WORLD
+            floorCenter
         ) // Initialize the floor under the player to glass
 
         // Wait a lil before removing the initial floor.
         object : BukkitRunnable() {
             override fun run() {
-                initFloor(7, 7, Material.AIR, floorCenter, DiscoMayhemConst.WORLD)
+                initFloor(7, 7, Material.AIR, floorCenter)
             }
         }.runTaskLater(plugin, 100)
     }
@@ -402,7 +389,7 @@ class DiscoMayhem (val plugin: Plugin) : MinigameSkeleton() {
 
         // Remove the remaining parts of the floor after a certain amount of time. This is the time the player has to go from the old floor to the new floor.
         //fixme: if the new floor is too close to the old one, this runnable will remove blocks from the new floor that their material is the same
-        // as the old chosen material from , if they are in the bounds of the old floor.
+        // as the old chosen material from, if they are in the bounds of the old floor.
         object : BukkitRunnable() {
             override fun run() {
                 if (!isGameRunning || isGamePaused) {

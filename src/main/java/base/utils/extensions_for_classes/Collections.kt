@@ -4,7 +4,7 @@ import kotlin.random.Random
 
 fun <T> Collection<Pair<T, Int>>.getWeightedRandom(): T {
     val totalWeight = this.sumOf { it.second }
-    var randomValue = Random.Default.nextInt(totalWeight)
+    var randomValue = Random.nextInt(totalWeight)
     for ((item, weight) in this) {
         randomValue -= weight
         if (randomValue < 0) {

@@ -6,10 +6,35 @@ import org.bukkit.inventory.Inventory
 import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.PlayerInventory
 import org.bukkit.inventory.meta.Damageable
+import base.MinigamePlugin
+import org.bukkit.NamespacedKey
+import org.bukkit.persistence.PersistentDataType
+import java.util.UUID
 import java.util.WeakHashMap
+import java.util.concurrent.ConcurrentHashMap
 
 // Backing store for the extension property
 val duraRanges = WeakHashMap<ItemStack, IntRange>()
+
+// Backing store for click listeners
+typealias ClickListener = (Player) -> Unit
+private val clickListeners = ConcurrentHashMap<String, ClickListener>()
+private val CLICK_LISTENER_KEY = NamespacedKey(MinigamePlugin.plugin, "click_listener_id")
+
+fun ItemStack.setOnClickListener(listener: ClickListener): ItemStack {
+    val meta = itemMeta ?: return this
+    val id = UUID.randomUUID().toString()
+    meta.persistentDataContainer.set(CLICK_LISTENER_KEY, PersistentDataType.STRING, id)
+    itemMeta = meta
+    clickListeners[id] = listener
+    return this
+}
+
+fun ItemStack.getOnClickListener(): ClickListener? {
+    val meta = itemMeta ?: return null
+    val id = meta.persistentDataContainer.get(CLICK_LISTENER_KEY, PersistentDataType.STRING) ?: return null
+    return clickListeners[id]
+}
 
 // Extension property
 var ItemStack.duraRange: IntRange?

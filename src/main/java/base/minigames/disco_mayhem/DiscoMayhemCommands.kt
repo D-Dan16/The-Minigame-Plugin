@@ -2,7 +2,6 @@
 package base.minigames.disco_mayhem
 
 import base.commands.MinigameCommandsSkeleton
-import base.minigames.maze_hunt.MazeHuntCommands
 import org.bukkit.command.Command
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
@@ -35,26 +34,26 @@ class DiscoMayhemCommands(private val discoMayhem: DiscoMayhem) : MinigameComman
     override fun handleCommand(sender: Player, command: Command, label: String, args: Array<String>): Boolean {
      when (SubCommands.fromString(args[0])) {
             SubCommands.START -> {
-                if (discoMayhem.stopIfGameIsRunning()) return false
+                if (discoMayhem.isAlreadyRunning()) return false
                 discoMayhem.start(sender)
             }
             SubCommands.START_HARD_MODE -> {
-                if (discoMayhem.stopIfGameIsRunning()) return false
+                if (discoMayhem.isAlreadyRunning()) return false
                 discoMayhem.startFastMode(sender)
             }
             SubCommands.PAUSE -> {
-                if (discoMayhem.stopIfGameIsPaused()) return false
+                if (discoMayhem.isAlreadyPaused()) return false
                 discoMayhem.pauseGame()
             }
             SubCommands.RESUME -> {
-                if (discoMayhem.stopIfGameIsNotPaused()) return false
+                if (discoMayhem.isNotPaused()) return false
                 discoMayhem.resumeGame()
             }
             SubCommands.END -> {
-                if (discoMayhem.stopIfGameIsNotRunning()) return false
+                if (discoMayhem.isGameNotRunning()) return false
                 discoMayhem.endGame()
             }
-            SubCommands.NUKE_ARENA -> discoMayhem.nukeArea(DiscoMayhemConst.GAME_START_LOCATION,DiscoMayhemConst.NUKE_AREA_RADIUS)
+            SubCommands.NUKE_ARENA -> discoMayhem.nukeArena()
             else -> return error(sender, "Unknown command.")
         }
 

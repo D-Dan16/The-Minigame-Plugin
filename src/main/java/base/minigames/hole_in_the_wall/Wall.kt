@@ -61,7 +61,7 @@ class Wall(
             BuildLoader.applyDirectionToClipboardHolder(holder, directionWallIsFacing)
 
             // Create the wall region based on the clipboard's dimensions.
-            wallRegion = BuildLoader.getRotatedRegion(holder, spawnLocation, directionWallIsFacing)
+            wallRegion = BuildLoader.getRotatedRegion(holder)
         }
     private lateinit var directionWallIsFacing: Direction
     private var spawnLocation: Location = when (directionWallComesFrom) {
@@ -128,9 +128,9 @@ class Wall(
         // Get the locations of all piston blocks within the bounding box of the wall
         val locations = mutableListOf<Location>()
 
-        for (x in wallRegion.minimumPoint.x..wallRegion.maximumPoint.x) {
-            for (y in wallRegion.minimumPoint.y..wallRegion.maximumPoint.y) {
-                for (z in wallRegion.minimumPoint.z..wallRegion.maximumPoint.z) {
+        for (x in wallRegion.minimumPoint.x()..wallRegion.maximumPoint.x()) {
+            for (y in wallRegion.minimumPoint.y()..wallRegion.maximumPoint.y()) {
+                for (z in wallRegion.minimumPoint.z()..wallRegion.maximumPoint.z()) {
                     val block = HITWConst.Locations.WORLD.getBlockAt(x, y, z)
                     // Only check blocks that are pistons
                     if (block.type == Material.PISTON) {
@@ -306,15 +306,15 @@ class Wall(
 
         val min = Location(
             HITWConst.Locations.WORLD,
-            wallRegion.minimumPoint.x.toDouble(),
-            wallRegion.minimumPoint.y.toDouble(),
-            wallRegion.minimumPoint.z.toDouble()
+            wallRegion.minimumPoint.x().toDouble(),
+            wallRegion.minimumPoint.y().toDouble(),
+            wallRegion.minimumPoint.z().toDouble()
         )
         val max = Location(
             HITWConst.Locations.WORLD,
-            wallRegion.maximumPoint.x.toDouble(),
-            wallRegion.maximumPoint.y.toDouble(),
-            wallRegion.maximumPoint.z.toDouble()
+            wallRegion.maximumPoint.x().toDouble(),
+            wallRegion.maximumPoint.y().toDouble(),
+            wallRegion.maximumPoint.z().toDouble()
         )
 
         putBlock(min)

@@ -51,7 +51,7 @@ class MiscCommands(private val plugin: MinigamePlugin?) : CommandExecutor, TabEx
         command: Command,
         label: String,
         args: Array<out String>
-    ): List<String?>? {
+    ): List<String?> {
         if (args.size == 1) {
             return mutableListOf<String?>("nuke")
         }

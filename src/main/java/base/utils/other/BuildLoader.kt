@@ -9,17 +9,21 @@ import com.sk89q.worldedit.extent.clipboard.io.ClipboardFormat
 import com.sk89q.worldedit.extent.clipboard.io.ClipboardFormats
 import com.sk89q.worldedit.function.operation.Operations
 import com.sk89q.worldedit.math.BlockVector3
-import com.sk89q.worldedit.math.Vector3
 import com.sk89q.worldedit.math.transform.AffineTransform
 import com.sk89q.worldedit.regions.CuboidRegion
 import com.sk89q.worldedit.regions.Region
 import com.sk89q.worldedit.session.ClipboardHolder
 import com.sk89q.worldedit.world.block.BlockState
+import base.MinigamePlugin
+import base.MinigamePlugin.Companion.plugin
 import base.MinigamePlugin.Companion.world
 import base.utils.additions.Direction
+import com.sk89q.worldedit.EditSession
+import com.sk89q.worldedit.function.operation.Operation
 import org.bukkit.Bukkit
 import org.bukkit.Location
 import org.bukkit.Material
+import org.bukkit.block.Skull
 import org.bukkit.entity.FallingBlock
 import org.bukkit.util.Vector
 import java.io.File
@@ -117,60 +121,94 @@ object BuildLoader {
     }
 
     fun loadSchematic(clipboardHolder: ClipboardHolder) {
-        // Create an edit session to paste the schematic.
-        val editSession = WorldEdit.getInstance()
+        val adaptedWorld = BukkitAdapter.adapt(world)
+
+        WorldEdit.getInstance()
             .newEditSessionBuilder()
-            .world(BukkitAdapter.adapt(world))
+            .world(adaptedWorld)
             .build()
+            .use { editSession: EditSession ->
 
-        // Paste the schematic.
-        val operation = clipboardHolder
-            .createPaste(editSession)
-            .to(clipboardHolder.clipboard.origin)
-            .ignoreAirBlocks(false)
-            .build()
+                editSession.setReorderMode(EditSession.ReorderMode.NONE)
 
-        // Execute the operation.
-        Operations.complete(operation)
-        // Close the edit session.
-        editSession.close()
+                try {
+                    val operation: Operation = clipboardHolder
+                        .createPaste(editSession)
+                        .to(clipboardHolder.clipboard.origin)
+                        .ignoreAirBlocks(false)
+                        .copyEntities(true)
+                        .copyBiomes(false)
+                        .build()
 
-        Bukkit.getLogger().info("Successfully pasted schematic at Location: ${clipboardHolder.clipboard.origin}. Minimum Point: ${clipboardHolder.clipboard.region.minimumPoint}, Maximum Point: ${clipboardHolder.clipboard.region.maximumPoint}")
+                    Operations.completeLegacy(operation)
+                    editSession.close()
+
+                } catch (exception: Exception) {
+                    Bukkit.getLogger().warning("Error while pasting schematic: ${exception.message}")
+                }
+            }
+
+        // Delay to ensure chunks + tile entities are fully applied
+        Bukkit.getScheduler().runTaskLater(plugin, Runnable {
+            refreshPlayerHeads()
+        }, 2L)
     }
 
-    fun getRotatedRegion(clipboardHolder: ClipboardHolder, pasteLocation: Location?, direction: Direction): CuboidRegion {
-        if (pasteLocation == null) {
-            return clipboardHolder.clipboard.region as CuboidRegion
-        }
+    //TODO:  Make this work - currently player heads are still not rendering
+    private fun refreshPlayerHeads() {
+        for (chunk in world.loadedChunks) {
+            for (state in chunk.tileEntities) {
 
-        val transform = AffineTransform().rotateY(getRotationForDirection(direction).toDouble())
+                if (state is Skull) {
+                    val block = state.block
+
+                    // Re-apply the SAME block data
+                    val data = block.blockData
+                    block.blockData = data
+
+                    // Then update state (no physics)
+                    state.update(true, false)
+                }
+            }
+        }
+    }
+
+    fun getRotatedRegion(clipboardHolder: ClipboardHolder): CuboidRegion {
         val region = clipboardHolder.clipboard.region
+        val transform = clipboardHolder.transform
         val origin = clipboardHolder.clipboard.origin
 
-        // Transform all corners of the region
-        val points: List<Location> = listOf(
-            region.minimumPoint,
-            region.maximumPoint
-        ).map { point ->
-            // Calculate the relative position from the origin
-            val rel: BlockVector3 = point.subtract(origin)
-            // Apply the rotation transform to the relative position
-            val transformed: Vector3 = transform.apply(rel.toVector3())
-            // Convert back to a Location relative to the paste location
-            return@map pasteLocation.clone().add(transformed.x, transformed.y, transformed.z)
+        // Transform all 8 corners of the cuboid region
+        val min = region.minimumPoint
+        val max = region.maximumPoint
+        val corners = listOf(
+            BlockVector3.at(min.x(), min.y(), min.z()),
+            BlockVector3.at(min.x(), min.y(), max.z()),
+            BlockVector3.at(min.x(), max.y(), min.z()),
+            BlockVector3.at(min.x(), max.y(), max.z()),
+            BlockVector3.at(max.x(), min.y(), min.z()),
+            BlockVector3.at(max.x(), min.y(), max.z()),
+            BlockVector3.at(max.x(), max.y(), min.z()),
+            BlockVector3.at(max.x(), max.y(), max.z())
+        )
+
+        val transformedPoints = corners.map { point ->
+            val rel = point.subtract(origin)
+            val transformed = transform.apply(rel.toVector3())
+            origin.toVector3().add(transformed)
         }
 
-        // find the minimum and maximum coordinates from the transformed points
-        val minX = points.minOf { it.x }
-        val minY = points.minOf { it.y }
-        val minZ = points.minOf { it.z }
-        val maxX = points.maxOf { it.x }
-        val maxY = points.maxOf { it.y }
-        val maxZ = points.maxOf { it.z }
+        val minX = transformedPoints.minOf { it.x() }.toInt()
+        val minY = transformedPoints.minOf { it.y() }.toInt()
+        val minZ = transformedPoints.minOf { it.z() }.toInt()
+        val maxX = transformedPoints.maxOf { it.x() }.toInt()
+        val maxY = transformedPoints.maxOf { it.y() }.toInt()
+        val maxZ = transformedPoints.maxOf { it.z() }.toInt()
 
-        val min = BlockVector3.at(minX, minY, minZ)
-        val max = BlockVector3.at(maxX, maxY, maxZ)
-        return CuboidRegion(min, max)
+        return CuboidRegion(
+            BlockVector3.at(minX, minY, minZ),
+            BlockVector3.at(maxX, maxY, maxZ)
+        )
     }
 
     //endregion -------------------------------------------------------------
@@ -178,7 +216,7 @@ object BuildLoader {
     /**
      * Modify and load a schematic via this method.
      * @param file the schematic file you want to paste it
-     * @param location an optional parameter to specify where this shcem should be pasted. if nto specified, it will be pasted in the world pos in was saved at.
+     * @param location an optional parameter to specify where this shcem should be pasted. if nto specified, it will be pasted in the world position in was saved at.
      *
      */
     fun loadSchematicByFileAndDirection(
@@ -197,7 +235,7 @@ object BuildLoader {
         // Load the schematic into the world.
         loadSchematic(clipboardHolder)
 
-        return getRotatedRegion(clipboardHolder,location,direction)
+        return getRotatedRegion(clipboardHolder)
     }
 
     fun loadSchematicByFile(
@@ -232,12 +270,12 @@ object BuildLoader {
 
     fun deleteSchematic(firstCorner: BlockVector3, secondCorner: BlockVector3) {
         // Calculate the boundaries of the area to delete.
-        val minX = min(firstCorner.blockX, secondCorner.blockX)
-        val maxX = max(firstCorner.blockX, secondCorner.blockX)
-        val minY = min(firstCorner.blockY, secondCorner.blockY)
-        val maxY = max(firstCorner.blockY, secondCorner.blockY)
-        val minZ = min(firstCorner.blockZ, secondCorner.blockZ)
-        val maxZ = max(firstCorner.blockZ, secondCorner.blockZ)
+        val minX = min(firstCorner.x(), secondCorner.x())
+        val maxX = max(firstCorner.x(), secondCorner.x())
+        val minY = min(firstCorner.y(), secondCorner.y())
+        val maxY = max(firstCorner.y(), secondCorner.y())
+        val minZ = min(firstCorner.z(), secondCorner.z())
+        val maxZ = max(firstCorner.z(), secondCorner.z())
 
         // Loop through the area and set all blocks to air.
         for (x in minX..maxX) {
@@ -251,40 +289,15 @@ object BuildLoader {
 
     fun deleteSchematic(region: Region) {
         // Loop through the region and set all blocks to air.
-        for (x in region.minimumPoint.blockX..region.maximumPoint.blockX) {
-            for (y in region.minimumPoint.blockY..region.maximumPoint.blockY) {
-                for (z in region.minimumPoint.blockZ..region.maximumPoint.blockZ) {
+        for (x in region.minimumPoint.x()..region.maximumPoint.x()) {
+            for (y in region.minimumPoint.y()..region.maximumPoint.y()) {
+                for (z in region.minimumPoint.z()..region.maximumPoint.z()) {
                     world.getBlockAt(x, y, z).type = Material.AIR
                 }
             }
         }
     }
 
-
-    @Deprecated(
-        "Should not be used when also using loadSchematicByFileAndLocation() with ANY SCHEMATIC, including others. instead, if u use loadSchematicByFileAndLocation(), prefer using its region parameter in order to get the region of the schematic. "
-    )
-    fun getRegionFromFile(file: File, location: Location): Region? {
-        val format = ClipboardFormats.findByFile(file) ?: return null
-
-        try {
-            FileInputStream(file).use { fis ->
-                format.getReader(fis).use { reader ->
-                    val clipboard = reader.read()
-                    // the offset is the difference between the clipboard's origin and the location's block coordinates.
-                    val offset = BlockVector3.at(location.blockX, location.blockY, location.blockZ).subtract(clipboard.origin)
-                    val region = CuboidRegion(clipboard.region.world,
-                        clipboard.region.minimumPoint.add(offset),
-                        clipboard.region.maximumPoint.add(offset)
-                    )
-                    return region
-                }
-            }
-        } catch (e: IOException) {
-            Bukkit.getLogger().severe("Failed to load schematic: ${e.message}")
-            return null
-        }
-    }
 
     /**
      * Disables gravity for all falling blocks in a certain radius around the center.

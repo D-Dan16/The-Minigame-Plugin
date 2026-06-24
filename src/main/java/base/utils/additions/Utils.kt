@@ -2,12 +2,8 @@
 
 package base.utils.additions
 
-import base.MinigamePlugin.Companion.world
-import base.utils.extensions_for_classes.getBlockAt
-import org.bukkit.Bukkit
 import org.bukkit.Location
 import org.bukkit.Material
-import org.bukkit.World
 import kotlin.random.Random
 
 /** A simple wrapper class to hold an integer value by reference. Useful for passing integers to functions that need to modify them. */
@@ -53,7 +49,6 @@ enum class Direction {
 }
 
 object Utils {
-
     fun nukeGameArea(center: Location, radius: Int) {
         for (x in -radius..radius) {
             for (y in -radius..radius) {
@@ -66,32 +61,13 @@ object Utils {
     }
 
     /**
-     * Initializes the floor under the player to a specific material.
-     * @param xLengthRad The x radius of the floor
-     * @param zLengthRad The z radius of the floor
-     * @param material The material to set the floor to
-     * @param center The center of the floor
-     * @param world The world to set the floor in
-     */
-    @JvmStatic
-    fun initFloor(xLengthRad: Int, zLengthRad: Int, material: Material, center: Location, world: World?) {
-        // Initialize the floor under the player to stone 1 block at a time. The floor is a rectangle with side lengths 2*xLengthRad+1 and 2*zLengthRad+1.
-        for (x in -xLengthRad..xLengthRad) {
-            for (z in -zLengthRad..zLengthRad) {
-                val selectedLocation = Location(world, center.x + x, center.y, center.z + z)
-                selectedLocation.block.type = material
-            }
-        }
-    }
-
-    /**
      * Returns true with the given probability (chance).
      * @param chance A double between 0.0 and 1.0 representing the probability of returning true.
      * @return true with the given probability, false otherwise.
      */
     fun successChance(chance: Double): Boolean {
         require(chance in 0.0..1.0) { "Chance must be between 0.0 and 1.0" }
-        return Random.Default.nextDouble() < chance
+        return Random.nextDouble() < chance
     }
 
     inline fun doActionByChance(probability: Double, action: () -> Unit) {

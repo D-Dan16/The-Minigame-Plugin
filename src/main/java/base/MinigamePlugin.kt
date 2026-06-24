@@ -1,5 +1,6 @@
 package base
 
+import base.listeners.ItemClickListener
 import base.listeners.PlayerDeathListener
 import base.minigames.blueprint_bazaar.BlueprintBazaar
 import base.minigames.blueprint_bazaar.BlueprintBazaarCommands
@@ -8,10 +9,13 @@ import base.minigames.disco_mayhem.DiscoMayhemCommands
 import base.minigames.hole_in_the_wall.HoleInTheWall
 import base.minigames.hole_in_the_wall.HoleInTheWallCommands
 import base.minigames.MinigameSkeleton
-import base.commands.MiscCommands
-import base.minigames.maze_hunt.MHConst.Locations.WORLD
 import base.minigames.maze_hunt.MazeHunt
 import base.minigames.maze_hunt.MazeHuntCommands
+import base.minigames.maze_hunt.MazeHuntEventHandlers
+import base.minigames.parkour_dash.ParkourDash
+import base.minigames.parkour_dash.ParkourDashCommands
+import base.minigames.parkour_dash.ParkourDashCourseCreatorListener
+import base.minigames.parkour_dash.GameEvents
 import org.bukkit.Bukkit
 import org.bukkit.Difficulty
 import org.bukkit.GameMode
@@ -26,37 +30,50 @@ class MinigamePlugin : JavaPlugin() {
     lateinit var blueprintBazaar: BlueprintBazaar
     lateinit var holeInTheWall: HoleInTheWall
     lateinit var mazeHunt: MazeHunt
+    lateinit var parkourDash: ParkourDash
+    lateinit var listOfMinigames: MutableList<MinigameSkeleton>
 
+    @Suppress("UsePropertyAccessSyntax")
     override fun onEnable() {
         plugin = this
 
+        listOfMinigames = mutableListOf()
 
         discoMayhem = DiscoMayhem(this)
         blueprintBazaar= BlueprintBazaar(this)
         holeInTheWall = HoleInTheWall(this)
         mazeHunt = MazeHunt(this)
+        parkourDash = ParkourDash(this)
 
+        listOfMinigames.addAll(listOf(discoMayhem, blueprintBazaar, holeInTheWall, mazeHunt, parkourDash))
+
+        listOfMinigames.forEach {
+            it.configMinigame()
+        }
 
         world = server.getWorld("world")!! // Initialize the world object
 
-        //region Server Gamerule Settings
+        //<editor-fold desc="Server Game rule Settings">
         world.setGameRule(GameRule.DO_FIRE_TICK,false)
         world.setGameRule(GameRule.MOB_GRIEFING,false)
         world.difficulty = Difficulty.PEACEFUL
         Bukkit.getServer().onlinePlayers.forEach {
             it.gameMode = GameMode.ADVENTURE
         }
-        //endregion
+        //</editor-fold>
 
-
-
-        // Register the event listeners
+        //<editor-fold desc="Register the event listeners">
         server.pluginManager.let {
-            it.registerEvents(PlayerDeathListener(discoMayhem, holeInTheWall,mazeHunt), this)
-            it.registerEvents(mazeHunt,this)
+            it.registerEvents(ItemClickListener(), this)
+            it.registerEvents(PlayerDeathListener(discoMayhem, holeInTheWall, mazeHunt), this)
+            it.registerEvents(parkourDash, this)
+            it.registerEvents(ParkourDashCourseCreatorListener(parkourDash), this)
+            it.registerEvents(GameEvents(parkourDash), this)
+            it.registerEvents(MazeHuntEventHandlers(mazeHunt),this)
         }
+        //</editor-fold>
 
-
+        //<editor-fold desc="Register Command Classes for the minigames">
         getCommand("mg_disco_mayhem")?.setExecutor(
             DiscoMayhemCommands(discoMayhem)
         )
@@ -69,19 +86,28 @@ class MinigamePlugin : JavaPlugin() {
         getCommand("mg_maze_hunt")?.setExecutor(
             MazeHuntCommands(mazeHunt)
         )
-        getCommand("misc")?.setExecutor(MiscCommands(this))
+        getCommand("mg_parkour_dash")?.setExecutor(
+            ParkourDashCommands(parkourDash)
+        )
+        //</editor-fold>
     }
 
 
     override fun onDisable() {
-        // Plugin shutdown logic
+        //clean up arenas of minigames if they are running
+        if (::listOfMinigames.isInitialized)
+            listOfMinigames.forEach {
+                it.nukeArena()
+            }
     }
 
-    fun getSchematicsFolder(minigame: String): File {
+    fun getSchematicsBaseFolder(minigame: MinigameType): File {
         return when (minigame) {
-            "blueprintbazaar" -> File(dataFolder, "BlueprintBazaar")
-            "holeinthewall" -> File(dataFolder, "HoleInTheWall")
-            else -> throw IllegalStateException("Unexpected value: $minigame")
+            MinigameType.BLUEPRINT_BAZAAR -> File(dataFolder, "Minigames/BlueprintBazaar")
+            MinigameType.HOLE_IN_THE_WALL -> File(dataFolder, "Minigames/HoleInTheWall")
+            MinigameType.DISCO_MAYHEM -> File(dataFolder, "DiscoMayhem") //Doesn't exist
+            MinigameType.PARKOUR_DASH -> File(dataFolder, "Minigames/ParkourDash")
+            MinigameType.MAZE_HUNT -> File(dataFolder, "MazeHunt") //Doesn't exist
         }
     }
 
@@ -90,6 +116,8 @@ class MinigamePlugin : JavaPlugin() {
             MinigameType.HOLE_IN_THE_WALL -> this.holeInTheWall
             MinigameType.DISCO_MAYHEM -> this.discoMayhem
             MinigameType.BLUEPRINT_BAZAAR -> this.blueprintBazaar
+            MinigameType.PARKOUR_DASH -> this.parkourDash
+            MinigameType.MAZE_HUNT -> this.mazeHunt
         }
     }
 
@@ -100,7 +128,9 @@ class MinigamePlugin : JavaPlugin() {
         enum class MinigameType {
             HOLE_IN_THE_WALL,
             DISCO_MAYHEM,
-            BLUEPRINT_BAZAAR
+            BLUEPRINT_BAZAAR,
+            PARKOUR_DASH,
+            MAZE_HUNT;
         }
     }
 }

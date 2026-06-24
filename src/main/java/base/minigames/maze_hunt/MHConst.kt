@@ -210,13 +210,13 @@ object MHConst {
              * - Diamond sword (Weight: 1)
              */
             val meleeWeaponLootTable  = listOf(
-                ItemStack(Material.WOODEN_SWORD).apply { duraRange = DurabilityRange.WOOD_WEAPONS.duraRange } to 8,
-                ItemStack(Material.WOODEN_AXE).apply { duraRange = DurabilityRange.WOOD_WEAPONS.duraRange} to 8,
-                ItemStack(Material.STONE_SWORD).apply { duraRange = DurabilityRange.STONE_WEAPONS.duraRange} to 7,
-                ItemStack(Material.STONE_AXE).apply { duraRange = DurabilityRange.STONE_WEAPONS.duraRange} to 5,
-                ItemStack(Material.IRON_SWORD).apply { duraRange = DurabilityRange.IRON_WEAPONS.duraRange} to 4,
-                ItemStack(Material.IRON_AXE).apply { duraRange = DurabilityRange.IRON_WEAPONS.duraRange} to 3,
-                ItemStack(Material.DIAMOND_SWORD).apply { duraRange = DurabilityRange.DIAMOND_WEAPONS.duraRange} to 1,
+                weighted(Material.WOODEN_SWORD, 8, dura = DurabilityRange.WOOD_WEAPONS),
+                weighted(Material.WOODEN_AXE, 8, dura = DurabilityRange.WOOD_WEAPONS),
+                weighted(Material.STONE_SWORD, 7, dura = DurabilityRange.STONE_WEAPONS),
+                weighted(Material.STONE_AXE, 5, dura = DurabilityRange.STONE_WEAPONS),
+                weighted(Material.IRON_SWORD, 4, dura = DurabilityRange.IRON_WEAPONS),
+                weighted(Material.IRON_AXE, 3, dura = DurabilityRange.IRON_WEAPONS),
+                weighted(Material.DIAMOND_SWORD, 1, dura = DurabilityRange.DIAMOND_WEAPONS),
             )
 
             /**
@@ -229,18 +229,18 @@ object MHConst {
              * - Splash Potion (Weight: 2)
              */
             val rangedWeaponLootTable = listOf(
-                ItemStack(Material.BOW).apply {  duraRange = DurabilityRange.BOWS.duraRange} to 2,
-                ItemStack(Material.CROSSBOW).apply {  duraRange = DurabilityRange.BOWS.duraRange} to 2,
-                ItemStack(Material.FISHING_ROD).apply {  duraRange = DurabilityRange.FISHING_ROD.duraRange} to 1,
-                ItemStack(Material.SNOWBALL,16) to 5,
-                ItemStack(Material.ARROW,4) to 5,
-                ItemStack(Material.ARROW,12) to 1,
+                weighted(Material.BOW, 2, dura = DurabilityRange.BOWS),
+                weighted(Material.CROSSBOW, 2, dura = DurabilityRange.BOWS),
+                weighted(Material.FISHING_ROD, 1, dura = DurabilityRange.FISHING_ROD),
+                weighted(Material.SNOWBALL, 5, amount = 16),
+                weighted(Material.ARROW, 5, amount = 4),
+                weighted(Material.ARROW, 1, amount = 12),
                 ItemStack(Material.TIPPED_ARROW,4).apply {
                     val meta = itemMeta as PotionMeta
                     meta.basePotionType = PotionType.SLOWNESS
                     itemMeta = meta
                 } to 2,
-                ItemStack(Material.WIND_CHARGE,4) to 2,
+                weighted(Material.WIND_CHARGE, 2, amount = 4),
             )
 
             private fun ItemStack.setPotionType(type: PotionType) {
@@ -260,14 +260,14 @@ object MHConst {
              * - Debuff potions (Strong Slowness: Weight 3)
              */
             val potionLootTable = listOf(
-                ItemStack(Material.SPLASH_POTION).apply { setPotionType(PotionType.HARMING) } to 10,
-                ItemStack(Material.SPLASH_POTION).apply { setPotionType(PotionType.HEALING) } to 10,
-                ItemStack(Material.SPLASH_POTION).apply { setPotionType(PotionType.SWIFTNESS) } to 7,
-                ItemStack(Material.SPLASH_POTION).apply { setPotionType(PotionType.POISON) } to 7,
-                ItemStack(Material.SPLASH_POTION).apply { setPotionType(PotionType.REGENERATION) } to 6,
-                ItemStack(Material.SPLASH_POTION).apply { setPotionType(PotionType.LEAPING) } to 4,
-                ItemStack(Material.SPLASH_POTION).apply { setPotionType(PotionType.LONG_SLOW_FALLING) } to 4,
-                ItemStack(Material.SPLASH_POTION).apply { setPotionType(PotionType.STRONG_SLOWNESS) } to 3,
+                splashPotion(PotionType.HARMING, 10),
+                splashPotion(PotionType.HEALING, 10),
+                splashPotion(PotionType.SWIFTNESS, 7),
+                splashPotion(PotionType.POISON, 7),
+                splashPotion(PotionType.REGENERATION, 6),
+                splashPotion(PotionType.LEAPING, 4),
+                splashPotion(PotionType.LONG_SLOW_FALLING, 4),
+                splashPotion(PotionType.STRONG_SLOWNESS, 3),
             )
 
 
@@ -280,25 +280,25 @@ object MHConst {
              * Each piece includes a helmet, chestplate, leggings, and boots
              */
             val armorLootTable = listOf(
-                ItemStack(Material.SHIELD).apply { duraRange = DurabilityRange.SHIELD.duraRange} to 3,
+                weighted(Material.SHIELD, 3, dura = DurabilityRange.SHIELD),
 
                 // Leather Armor (Common)
-                ItemStack(Material.LEATHER_HELMET).apply { duraRange = DurabilityRange.LEATHER_ARMOR.duraRange} to 10,
-                ItemStack(Material.LEATHER_CHESTPLATE).apply { duraRange = DurabilityRange.LEATHER_ARMOR.duraRange} to 10,
-                ItemStack(Material.LEATHER_LEGGINGS).apply { duraRange = DurabilityRange.LEATHER_ARMOR.duraRange} to 10,
-                ItemStack(Material.LEATHER_BOOTS).apply { duraRange = DurabilityRange.LEATHER_ARMOR.duraRange} to 10,
+                weighted(Material.LEATHER_HELMET, 10, dura = DurabilityRange.LEATHER_ARMOR),
+                weighted(Material.LEATHER_CHESTPLATE, 10, dura = DurabilityRange.LEATHER_ARMOR),
+                weighted(Material.LEATHER_LEGGINGS, 10, dura = DurabilityRange.LEATHER_ARMOR),
+                weighted(Material.LEATHER_BOOTS, 10, dura = DurabilityRange.LEATHER_ARMOR),
 
                 // Iron Armor (Uncommon)
-                ItemStack(Material.IRON_HELMET).apply { duraRange = DurabilityRange.IRON_ARMOR.duraRange} to 6,
-                ItemStack(Material.IRON_CHESTPLATE).apply { duraRange = DurabilityRange.IRON_ARMOR.duraRange} to 6,
-                ItemStack(Material.IRON_LEGGINGS).apply { duraRange = DurabilityRange.IRON_ARMOR.duraRange} to 6,
-                ItemStack(Material.IRON_BOOTS).apply { duraRange = DurabilityRange.IRON_ARMOR.duraRange} to 6,
+                weighted(Material.IRON_HELMET, 6, dura = DurabilityRange.IRON_ARMOR),
+                weighted(Material.IRON_CHESTPLATE, 6, dura = DurabilityRange.IRON_ARMOR),
+                weighted(Material.IRON_LEGGINGS, 6, dura = DurabilityRange.IRON_ARMOR),
+                weighted(Material.IRON_BOOTS, 6, dura = DurabilityRange.IRON_ARMOR),
 
                 // Diamond Armor (Rare)
-                ItemStack(Material.DIAMOND_HELMET).apply { duraRange = DurabilityRange.DIAMOND_ARMOR.duraRange} to 1,
-                ItemStack(Material.DIAMOND_CHESTPLATE).apply { duraRange = DurabilityRange.DIAMOND_ARMOR.duraRange} to 1,
-                ItemStack(Material.DIAMOND_LEGGINGS).apply { duraRange = DurabilityRange.DIAMOND_ARMOR.duraRange} to 1,
-                ItemStack(Material.DIAMOND_BOOTS).apply { duraRange = DurabilityRange.DIAMOND_ARMOR.duraRange} to 1
+                weighted(Material.DIAMOND_HELMET, 1, dura = DurabilityRange.DIAMOND_ARMOR),
+                weighted(Material.DIAMOND_CHESTPLATE, 1, dura = DurabilityRange.DIAMOND_ARMOR),
+                weighted(Material.DIAMOND_LEGGINGS, 1, dura = DurabilityRange.DIAMOND_ARMOR),
+                weighted(Material.DIAMOND_BOOTS, 1, dura = DurabilityRange.DIAMOND_ARMOR)
             )
 
 
@@ -306,16 +306,16 @@ object MHConst {
             const val COBWEB_LIFESPAN = 4 * 20L
 
             val escapeLootTable = listOf(
-                ItemStack(Material.BRICKS,5) to 10,
-                ItemStack(Material.BRICKS,10) to 4,
+                weighted(Material.BRICKS, 10, amount = 5),
+                weighted(Material.BRICKS, 4, amount = 10),
 
-                ItemStack(Material.COBWEB,2) to 3,
-                ItemStack(Material.COBWEB,5) to 1,
+                weighted(Material.COBWEB, 3, amount = 2),
+                weighted(Material.COBWEB, 1, amount = 5),
 
-                ItemStack(Material.TNT,2) to 4,
+                weighted(Material.TNT, 4, amount = 2),
 
-                ItemStack(Material.ENDER_PEARL) to 2,
-                ItemStack(Material.TOTEM_OF_UNDYING) to 2
+                weighted(Material.ENDER_PEARL, 2),
+                weighted(Material.TOTEM_OF_UNDYING, 2)
             )
 
 
@@ -328,16 +328,35 @@ object MHConst {
              * - Special food (Golden Apple x1: Weight 1)
              */
             val foodLootTable = listOf(
-                ItemStack(Material.COOKIE,8) to 5,
-                ItemStack(Material.CARROT,4) to 5,
-                ItemStack(Material.POTATO,12) to 5,
-                ItemStack(Material.APPLE,4) to 5,
-                ItemStack(Material.BREAD,3) to 3,
-                ItemStack(Material.COOKED_PORKCHOP,2) to 2,
-                ItemStack(Material.COOKED_CHICKEN,2) to 2,
-                ItemStack(Material.COOKED_BEEF,2) to 2,
-                ItemStack(Material.GOLDEN_APPLE,1) to 1
+                weighted(Material.COOKIE, 5, amount = 8),
+                weighted(Material.CARROT, 5, amount = 4),
+                weighted(Material.POTATO, 5, amount = 12),
+                weighted(Material.APPLE, 5, amount = 4),
+                weighted(Material.BREAD, 3, amount = 3),
+                weighted(Material.COOKED_PORKCHOP, 2, amount = 2),
+                weighted(Material.COOKED_CHICKEN, 2, amount = 2),
+                weighted(Material.COOKED_BEEF, 2, amount = 2),
+                weighted(Material.GOLDEN_APPLE, 1, amount = 1)
             )
+
+            // Helper to create a weighted ItemStack, with optional amount and durability range
+            private fun weighted(
+                material: Material,
+                weight: Int,
+                amount: Int = 1,
+                dura: DurabilityRange? = null
+            ): Pair<ItemStack, Int> {
+                val item = ItemStack(material, amount)
+
+                if (dura != null)
+                    item.duraRange = dura.duraRange
+
+                return item to weight
+            }
+
+            // Helper to create a weighted splash potion entry
+            private fun splashPotion(type: PotionType, weight: Int): Pair<ItemStack, Int> =
+                ItemStack(Material.SPLASH_POTION).apply { setPotionType(type) } to weight
         }
 
     }

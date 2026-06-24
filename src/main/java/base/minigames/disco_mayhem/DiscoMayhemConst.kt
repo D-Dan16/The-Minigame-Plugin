@@ -6,10 +6,10 @@ import org.bukkit.Location
 import org.bukkit.Material
 import org.bukkit.World
 
-public object DiscoMayhemConst {
+object DiscoMayhemConst {
     val WORLD: World = Bukkit.getWorld("world")!!
 
-    val NUKE_AREA_RADIUS = 50
+    const val NUKE_AREA_RADIUS = 50
 
     val GAME_START_LOCATION: Location = Location(WORLD, 0.0, 150.0, 0.0)
     val INIT_FLOOR_LOCATION: Location = GAME_START_LOCATION.clone().add(0.0, 8.0, 0.0)
@@ -21,7 +21,7 @@ public object DiscoMayhemConst {
         const val DELAY_TO_SELECT_A_FLOOR_MATERIAL: Int = 25
         const val DURATION_OF_STAYING_IN_A_FLOOR_WITH_ONLY_CHOSEN_MATERIAL: Int = 60
 
-        val LIST_OF_FLOOR_MATERIALS: Array<Material> = arrayOf<Material>(
+        val LIST_OF_FLOOR_MATERIALS: Array<Material> = arrayOf(
             Material.RED_WOOL,
             Material.BLUE_WOOL,
             Material.GREEN_WOOL,
@@ -33,7 +33,7 @@ public object DiscoMayhemConst {
             Material.LIGHT_BLUE_WOOL
         )
         val DEFAULT_FLOOR_BLOCK_TYPES: Array<Material> =
-            arrayOf<Material>(Material.RED_WOOL, Material.BLUE_WOOL, Material.GREEN_WOOL, Material.PURPLE_WOOL)
+            arrayOf(Material.RED_WOOL, Material.BLUE_WOOL, Material.GREEN_WOOL, Material.PURPLE_WOOL)
 
         // Constants that define boundaries for where a new floor can spawn.
         object NewFloorSpawnBoundaries {
@@ -42,7 +42,7 @@ public object DiscoMayhemConst {
             const val UPPER_BOUND_Z_CENTER: Int = 10
             const val LOWER_BOUND_Z_CENTER: Int = 5
             const val UPPER_BOUND_Y_CENTER: Int = 1
-            val LOWER_BOUND_Y_CENTER: Int = -3
+            const val LOWER_BOUND_Y_CENTER: Int = -3
         }
 
         object FloorSize {
@@ -59,7 +59,7 @@ public object DiscoMayhemConst {
             const val UPPER_BOUND_STOP_INTERVAL: Int = 15
             const val LOWER_BOUND_STOP_INTERVAL: Int = 10
 
-            val DELAY_TO_DECREASE_INTERVAL: Int = 20 * 15
+            const val DELAY_TO_DECREASE_INTERVAL: Int = 20 * 15
         }
     }
 }

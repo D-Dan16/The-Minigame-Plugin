@@ -3,11 +3,11 @@ package base.utils.extensions_for_classes
 import base.MinigamePlugin
 import base.utils.additions.Direction
 import com.sk89q.worldedit.math.BlockVector3
-import kotlinx.coroutines.SupervisorJob
-import org.bukkit.Bukkit
+import net.kyori.adventure.text.Component.text
+import net.kyori.adventure.text.format.TextColor
+import net.kyori.adventure.title.Title
 import org.bukkit.Bukkit.*
 import org.bukkit.Material
-import org.bukkit.Particle
 import org.bukkit.World
 import org.bukkit.block.Block
 import org.bukkit.entity.ArmorStand
@@ -15,6 +15,7 @@ import org.bukkit.entity.Item
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
 import org.bukkit.util.BoundingBox
+import java.time.Duration
 import kotlin.collections.iterator
 import kotlin.random.Random
 
@@ -33,31 +34,52 @@ fun <Type> Random.getNextWeighted(weights: Map<Type, Int>): Type {
 }
 
 fun World.getBlockAt(vector: BlockVector3): Block {
-    return this.getBlockAt(vector.x,vector.y, vector.z)
+    return this.getBlockAt(vector.x(),vector.y(), vector.z())
 }
 
 fun World.getMaterialAt(vector: BlockVector3): Material {
-    return this.getBlockAt(vector.x,vector.y, vector.z).type
+    return this.getBlockAt(vector.x(),vector.y(), vector.z()).type
 }
 
 operator fun BlockVector3.plus(other: BlockVector3): BlockVector3 {
     return BlockVector3.at(
-        this.x + other.x,
-        this.y + other.y,
-        this.z + other.z
+        this.x() + other.x(),
+        this.y() + other.y(),
+        this.z() + other.z()
     )
 }
 
 operator fun BlockVector3.minus(other: BlockVector3): BlockVector3 {
     return BlockVector3.at(
-        this.x - other.x,
-        this.y - other.y,
-        this.z - other.z
+        this.x() - other.x(),
+        this.y() - other.y(),
+        this.z() - other.z()
     )
 }
 
 fun Block.toBlockVector3() : BlockVector3 {
     return BlockVector3.at(this.x,this.y,this.z)
+}
+
+fun Player.showTitle(
+    content: String = "",
+    subContent: String = "",
+    color: String,
+    duration: Long = 3000
+) {
+    val isContentNotEmpty = content.isEmpty().not()
+
+    val message = text(
+        content, TextColor.fromHexString(color)
+    )
+    val title = Title.title(
+        message,
+        text(subContent, TextColor.fromHexString(color)),
+        Title.Times.times(Duration.ofMillis(500), Duration.ofMillis(duration), Duration.ofMillis(500))
+    )
+
+    if(isContentNotEmpty) this.sendMessage(message)
+    this.showTitle(title)
 }
 
 fun Player.clearInvAndGiveItems(
@@ -96,7 +118,7 @@ fun Direction.toYaw(): Float {
 }
 
 inline fun <reified T: Number> T.randomlyFlipSign(): T {
-    if (Random.Default.nextBoolean()) return this
+    if (Random.nextBoolean()) return this
 
     return when (this) {
         is Int -> -this as T
@@ -123,7 +145,7 @@ fun Block.breakGradually(decayDuration: Long) {
         stand.setAI(false)
     }
 
-    getScheduler().runTaskTimer(MinigamePlugin.Companion.plugin, Runnable {
+    getScheduler().runTaskTimer(MinigamePlugin.plugin, Runnable {
         // Block already gone, stop animation
         if (type.isAir) { return@Runnable }
 
