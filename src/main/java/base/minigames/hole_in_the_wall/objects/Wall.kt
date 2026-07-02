@@ -1,25 +1,25 @@
-package base.minigames.hole_in_the_wall
+package base.minigames.hole_in_the_wall.objects
 
+import base.MinigamePlugin
+import base.minigames.hole_in_the_wall.HITWConst
+import base.minigames.hole_in_the_wall.HoleInTheWall
+import base.utils.additions.Direction
+import base.utils.other.BuildLoader
 import com.sk89q.worldedit.math.BlockVector3
 import com.sk89q.worldedit.regions.CuboidRegion
 import com.sk89q.worldedit.session.ClipboardHolder
-import base.utils.other.BuildLoader
+import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.format.NamedTextColor
+import org.bukkit.Bukkit
 import org.bukkit.Location
 import org.bukkit.Material
 import org.bukkit.block.Block
 import org.bukkit.block.BlockFace
 import org.bukkit.block.BlockState
 import org.bukkit.block.data.Powerable
-import java.io.File
-import org.bukkit.Bukkit
-
-import base.utils.additions.Direction
-import base.MinigamePlugin
-import base.MinigamePlugin.Companion.plugin
-import net.kyori.adventure.text.Component
-import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.block.data.type.Piston
 import org.bukkit.block.data.type.Switch
+import java.io.File
 
 class Wall(
     val wallFile: File,
@@ -28,7 +28,7 @@ class Wall(
     var isPsych: Boolean = false,
     val shouldRemovePsychThatStopped: Boolean = true // If the psych wall continues to move after it has reached its lifespan and has stopped. This is only relevant for psych walls and is set to true by default for regular walls. (doesn't mean anything)
 ) {
-    constructor(wallFile: File,directionWallComesFrom: Direction) : this(wallFile,directionWallComesFrom,false,false)
+    constructor(wallFile: File, directionWallComesFrom: Direction) : this(wallFile,directionWallComesFrom,false,false)
 
 
     //region -- Properties --
@@ -208,12 +208,14 @@ class Wall(
             // Check if the block behind the piston is air, if it is not, then we can't place a button there.
             // this will typically happen if two walls have collided with each other.
             if (buttonLocation.block.type != Material.AIR) {
-                val game = plugin.getInstanceOfMinigame(MinigamePlugin.Companion.MinigameType.HOLE_IN_THE_WALL) as HoleInTheWall
+                val game = MinigamePlugin.plugin.getInstanceOfMinigame(MinigamePlugin.Companion.MinigameType.HOLE_IN_THE_WALL) as HoleInTheWall
 
                 //game.clearWalls()
                 game.pauseGame()
 
-                Bukkit.getServer().broadcast(Component.text("Two walls have seemed to collide. Cleaning the arena and pausing.").color(NamedTextColor.YELLOW))
+                Bukkit.getServer().broadcast(
+                    Component.text("Two walls have seemed to collide. Cleaning the arena and pausing.").color(
+                        NamedTextColor.YELLOW))
             }
 
             // Update the button location to the list of button locations.
@@ -243,7 +245,7 @@ class Wall(
 
         // IMPORTANT: We need to let the pistons extend before we move the wall region, so we will wait for a lil before excecuting the entire logic of this function..
 
-        Bukkit.getScheduler().runTaskLater(plugin, Runnable {
+        Bukkit.getScheduler().runTaskLater(MinigamePlugin.plugin, Runnable {
         // region ---Update the region of the wall based on the wall direction, since in the physical world, the slime wall has moved.
 
         //shift the wall region in the direction it is facing by 1 block.

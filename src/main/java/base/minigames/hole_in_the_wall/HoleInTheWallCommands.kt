@@ -2,6 +2,8 @@ package base.minigames.hole_in_the_wall
 
 import base.commands.MinigameCommandsSkeleton
 import base.minigames.hole_in_the_wall.HITWConst.availableMaps
+import base.minigames.hole_in_the_wall.game_loop_handlers.clearWalls
+import base.minigames.hole_in_the_wall.game_loop_handlers.createNewWall
 import org.bukkit.command.Command
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
@@ -89,7 +91,7 @@ class HoleInTheWallCommands(private val holeInTheWall: HoleInTheWall) : Minigame
 
                         try {
                             val speed = args[2].toInt()
-                            holeInTheWall.wallSpeed = speed
+                            holeInTheWall.setWallSpeed(speed)
                         } catch (_: NumberFormatException) {
                             return error(sender, "Invalid wall speed value")
                         }
@@ -97,8 +99,8 @@ class HoleInTheWallCommands(private val holeInTheWall: HoleInTheWall) : Minigame
                     else -> return error(sender, "Unknown setting: ${args[1]}.")
                 }
             }
-            SubCommands.SPAWN_WALL -> holeInTheWall.createNewWall()
-            SubCommands.CLEAR_WALLS -> holeInTheWall.clearWalls()
+            SubCommands.SPAWN_WALL -> createNewWall()
+            SubCommands.CLEAR_WALLS -> clearWalls()
 
             else -> return error(sender, "Unknown command.")
         }

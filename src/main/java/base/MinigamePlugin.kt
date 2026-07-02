@@ -105,9 +105,9 @@ class MinigamePlugin : JavaPlugin() {
         return when (minigame) {
             MinigameType.BLUEPRINT_BAZAAR -> File(dataFolder, "Minigames/BlueprintBazaar")
             MinigameType.HOLE_IN_THE_WALL -> File(dataFolder, "Minigames/HoleInTheWall")
-            MinigameType.DISCO_MAYHEM -> File(dataFolder, "DiscoMayhem") //Doesn't exist
+            MinigameType.DISCO_MAYHEM -> File(dataFolder, "Minigames/DiscoMayhem") //Doesn't exist
             MinigameType.PARKOUR_DASH -> File(dataFolder, "Minigames/ParkourDash")
-            MinigameType.MAZE_HUNT -> File(dataFolder, "MazeHunt") //Doesn't exist
+            MinigameType.MAZE_HUNT -> File(dataFolder, "Minigames/MazeHunt") //Doesn't exist
         }
     }
 
