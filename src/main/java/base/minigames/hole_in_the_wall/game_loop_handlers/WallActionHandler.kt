@@ -13,7 +13,8 @@ import java.io.File
 import kotlin.random.Random
 
 //DO MODIFY THIS FOR DEBUGGING PURPOSES
-internal lateinit var wallPackSchematics: Array<File> //the wallpack selected from a given map. each element features a group of files of walls, whose grouped via difficulty.
+/** The selected wall pack for the current map, grouped by difficulty. */
+internal lateinit var wallPackSchematics: Array<File>
 
 fun createNewWall() {
     val wallFile = wallPackSchematics.random() // Randomly select a wall from the wall pack

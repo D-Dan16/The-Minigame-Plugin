@@ -11,9 +11,12 @@ import java.util.Arrays
 import java.util.Objects
 
 internal lateinit var selectedMapBaseFile: File
-internal lateinit var platformSchematics: Array<File> //the platform stages for a given map
-internal lateinit var mapSchematic: File //the map schematic that is being played.
-internal lateinit var mapSchematicRegion : Region //the region of the map schematic that is being played. used to nuke the area gracefully.
+/** The platform stages for a given map. */
+internal lateinit var platformSchematics: Array<File>
+/** The map schematic that is being played. */
+internal lateinit var mapSchematic: File
+/** The region of the map schematic that is being played. Used to nuke the area gracefully. */
+internal lateinit var mapSchematicRegion : Region
 
 internal fun HoleInTheWall.arenaPreparer() {
     fun getGameBaseFolder(): File {

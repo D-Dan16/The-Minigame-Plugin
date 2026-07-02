@@ -38,7 +38,8 @@ import java.time.Duration
 
 class HoleInTheWall (val plugin: Plugin) : MinigameSkeleton() {
     override val minigameName: String = "HoleInTheWall"
-    internal lateinit var mapName: String //the map name that is being played. gets a value on the start() method.
+    /** The map name that is being played. Gets a value in `start()`. */
+    internal lateinit var mapName: String
 
     fun setWallSpeed(speed: Int) {
         wallSpeed = speed

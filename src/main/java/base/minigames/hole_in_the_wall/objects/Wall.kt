@@ -23,16 +23,19 @@ import java.io.File
 
 class Wall(
     val wallFile: File,
-    directionWallComesFrom: Direction, // The direction the wall is coming from. This is used to determine the direction the wall is facing and how it should be moved.
+    /** The direction the wall is coming from. */
+    directionWallComesFrom: Direction,
     val isFlipped: Boolean = false,
     var isPsych: Boolean = false,
-    val shouldRemovePsychThatStopped: Boolean = true // If the psych wall continues to move after it has reached its lifespan and has stopped. This is only relevant for psych walls and is set to true by default for regular walls. (doesn't mean anything)
+    /** Whether a stopped psych wall should be removed instead of resumed later. */
+    val shouldRemovePsychThatStopped: Boolean = true
 ) {
     constructor(wallFile: File, directionWallComesFrom: Direction) : this(wallFile,directionWallComesFrom,false,false)
 
 
     //region -- Properties --
 
+    /** The current direction the wall comes from. */
     var directionWallComesFrom: Direction = directionWallComesFrom
         set(direction) {
             field = direction
@@ -75,7 +78,7 @@ class Wall(
     lateinit var wallRegion: CuboidRegion
     lateinit var locationOfPistons: MutableList<Location>
 
-    //How many blocks the wall travels before it stops moving.
+    /** How many blocks the wall travels before it stops moving. */
     val initialLifespan =
         if (!isPsych) HITWConst.DEFAULT_WALL_TRAVEL_LIFESPAN
         else HITWConst.DEFAULT_PSYCH_WALL_TRAVEL_LIFESPAN
@@ -86,13 +89,17 @@ class Wall(
     val minimumLifespanTraveledWhereWallsCanSpawnBehindIt = HITWConst.MINIMUM_SPACE_BETWEEN_2_WALLS_FROM_THE_SAME_DIRECTION
 
 
-    var shouldBeRemoved: Boolean = false // If the wall should be removed from the game when it has stopped moving.
-    var shouldBeStopped: Boolean = false // If the wall should be stopped from moving. It doesn't mean it should be removed from the game, but it has the possibility (for example - Psych walls)
+    /** Whether the wall should be removed from the game when it stops moving. */
+    var shouldBeRemoved: Boolean = false
+    /** Whether the wall should be stopped from moving. */
+    var shouldBeStopped: Boolean = false
 
-    var isBeingHandled: Boolean = false // a special value that serves to prevent executing logic on the wall if this is flagged. this can be general purpose, however it is heavily discouraged. its actual use is to prevent logic trying to be repeated on psych walls that are stopped.
+    /** Prevents repeated handling of stopped psych walls. */
+    var isBeingHandled: Boolean = false
     //endregion
 
-    lateinit var holder: ClipboardHolder // This is the ClipboardHolder that will be used to hold the schematic of the wall.
+    /** Clipboard holder for the wall schematic. */
+    lateinit var holder: ClipboardHolder
 
     init {
         // Load the wall file and validate its contents if necessary

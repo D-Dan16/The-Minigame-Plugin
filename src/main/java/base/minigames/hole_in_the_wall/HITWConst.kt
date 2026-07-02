@@ -6,7 +6,8 @@ import org.bukkit.World
 
 
 object HITWConst {
-    const val IS_IN_DEVELOPMENT: Boolean = false // If the plugin is in development mode, some features may be disabled or behave differently. this is so that the plugin can be tested easily without constantly tempering with the code.
+    /** Whether the plugin is running in development mode. */
+    const val IS_IN_DEVELOPMENT: Boolean = false
     const val PLATFORMS_FOLDER: String = "platforms"
 
 
@@ -17,11 +18,13 @@ object HITWConst {
 
     //region wall constants that aren't tied to a specific wall spawner mode
 
-    // regular value for this is 6.
+    /** Maximum number of walls that can exist at once. */
     const val HARD_CAP_MAX_POSSIBLE_AMOUNT_OF_WALLS: Int = 6
 
-    const val DEFAULT_WALL_TRAVEL_LIFESPAN: Int = 25 // How many blocks the wall travels before it disappears. This is the default value, but can be overridden by the wall file itself.
-    const val DEFAULT_PSYCH_WALL_TRAVEL_LIFESPAN: Int = 6 // How many blocks the psych wall travels before it stops moving, then it'll be decided if it gets deleted or not and continues to move later on. This is the default value, but can be overridden by the wall file itself.
+    /** Default travel lifespan for a regular wall. */
+    const val DEFAULT_WALL_TRAVEL_LIFESPAN: Int = 25
+    /** Default travel lifespan for a psych wall. */
+    const val DEFAULT_PSYCH_WALL_TRAVEL_LIFESPAN: Int = 6
 
     const val MINIMUM_SPACE_BETWEEN_2_WALLS_FROM_THE_SAME_DIRECTION = 6
     const val PSYCH_WALL_THAT_RETURNS_TO_MOVING_LIFESPAN: Int = DEFAULT_WALL_TRAVEL_LIFESPAN - DEFAULT_PSYCH_WALL_TRAVEL_LIFESPAN
@@ -35,17 +38,18 @@ object HITWConst {
     object Locations {
         val WORLD: World = getWorld("world") ?: throw IllegalStateException("World 'world' not found. Please ensure the world is loaded.")
 
-        // The pivot point - everything is centered around this point. The idea is that this is the center of the map
+        /** The pivot point all arena locations are centered around. */
         val PIVOT: Location = Location(WORLD,0.0, 130.0, 0.0)
 
-        // The offset needed to center the arena (deco) relative to walls and the floor of the game. SHOULD NOT BE REFERENCED FOR LOCATIONS OTHER THAN THE PLAYER SPAWN.
+        /** Offset used to center the arena relative to walls and floor. */
         val CENTER_OF_MAP: Location = PIVOT.clone().add(1.0, 0.0, -1.0)
 
-        val SPAWN: Location = PIVOT.clone().add(0.0, 3.0, 0.0) // The spawn point of the player in the game.
+        /** The player spawn point. */
+        val SPAWN: Location = PIVOT.clone().add(0.0, 3.0, 0.0)
 
         val PLATFORM: Location = PIVOT.clone()
 
-        // The max value this can be is 17, since after that the walls will collide with the Letters Signs
+        /** Maximum wall distance before colliding with the letter signs. */
         const val DISTANCE_OF_WALL_FROM_CENTER_OF_PLATFORM: Double = 16.0
 
         val SOUTH_WALL_SPAWN: Location = PIVOT.clone().add(1.0, 1.0, DISTANCE_OF_WALL_FROM_CENTER_OF_PLATFORM)
@@ -90,14 +94,17 @@ object HITWConst {
 
     object WallSpawnerModes {
         object WallChainer {
-            const val MIN_AMOUNT_OF_SPAWNS_TILL_CHANGING_DIRECTIONS: Int = 5 // How many walls must be spawned before the direction is allowed to change
+            /** How many walls must spawn before the direction may change. */
+            const val MIN_AMOUNT_OF_SPAWNS_TILL_CHANGING_DIRECTIONS: Int = 5
         }
         object WallsFromAllDirections {
             const val CHANCE_THAT_PSYCH_WALL_WILL_GET_REMOVED: Int = (0.66 * 100).toInt()
         }
         object WallsFrom2OppositeDirections {
-            const val CHANCE_OF_CHANGING_DIRECTIONS: Int = (0.15 * 100).toInt() //0.2 regularly
-            const val CHANCE_OF_CONSIDERING_TO_SWAP_REAL_WALL_DIRECTION: Int = (0.4 * 100).toInt() // 0.4 regularly
+            /** Chance that the duo mode changes directions. */
+            const val CHANCE_OF_CHANGING_DIRECTIONS: Int = (0.15 * 100).toInt()
+            /** Chance of considering a real-wall direction swap. */
+            const val CHANCE_OF_CONSIDERING_TO_SWAP_REAL_WALL_DIRECTION: Int = (0.4 * 100).toInt()
             const val MINIMUM_SPACE_BETWEEN_2_WALLS_FROM_THE_SAME_DIRECTION: Int = HITWConst.MINIMUM_SPACE_BETWEEN_2_WALLS_FROM_THE_SAME_DIRECTION
 
             const val MIN_AMOUNT_OF_SPAWNS_TILL_CHANGING_DIRECTIONS_FOR_DUO: Int = 7
@@ -108,21 +115,29 @@ object HITWConst {
     }
 
     object Timers {
-        const val DELAY_BEFORE_STARTING_GAME: Long = 2*20 // in ticks
-        const val GAME_DURATION: Int = 300 // in seconds
+        /** Delay before the game starts, in ticks. */
+        const val DELAY_BEFORE_STARTING_GAME: Long = 2*20
+        /** Game duration in seconds. */
+        const val GAME_DURATION: Int = 300
 
-        val WALL_SPEED_UP_LANDMARKS: IntArray = intArrayOf(30, 60, 90, 120, 155, 200) // in seconds
-        val INCREASE_WALL_DIFFICULTY_LANDMARKS: IntArray = intArrayOf(45, 90, 155) // in seconds
+        /** Wall speed increase landmarks in seconds. */
+        val WALL_SPEED_UP_LANDMARKS: IntArray = intArrayOf(30, 60, 90, 120, 155, 200)
+        /** Wall difficulty increase landmarks in seconds. */
+        val INCREASE_WALL_DIFFICULTY_LANDMARKS: IntArray = intArrayOf(45, 90, 155)
         val PLATFORM_SHRINKAGE_LANDMARKS: IntArray = intArrayOf(70, 155)
 
-        val WALL_SPEED: IntArray = intArrayOf(15, 12, 10, 7, 6, 5, 4) //in ticks
+        /** Wall speeds in ticks. */
+        val WALL_SPEED: IntArray = intArrayOf(15, 12, 10, 7, 6, 5, 4)
 
         // *after the game knows that the wall can safely spawn in that direction, we'll make it wait extra for randomness
-        val DELAY_BEFORE_SPAWNING_A_WALL_FROM_THE_SAME_DIRECTION: LongRange = 0L..12L // in ticks
-        val DELAY_BEFORE_SPAWNING_A_WALL_FROM_A_DIFFERENT_DIRECTION: LongRange = 0L..5L // in ticks
+        /** Random delay range before spawning from the same direction. */
+        val DELAY_BEFORE_SPAWNING_A_WALL_FROM_THE_SAME_DIRECTION: LongRange = 0L..12L
+        /** Random delay range before spawning from a different direction. */
+        val DELAY_BEFORE_SPAWNING_A_WALL_FROM_A_DIFFERENT_DIRECTION: LongRange = 0L..5L
 
 
-        val STOPPED_WALL_DELAY_BEFORE_ACTION_DEALT: LongRange = 1L*20..2L*20 // for walls that haven't entered center
+        /** Delay before taking action on a stopped wall that has not entered center. */
+        val STOPPED_WALL_DELAY_BEFORE_ACTION_DEALT: LongRange = 1L*20..2L*20
 
 
         const val ALTERNATING_WALL_SPAWNER_MODES_DELAY: Long = 20*20

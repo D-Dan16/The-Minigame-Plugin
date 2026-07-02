@@ -14,39 +14,39 @@ import kotlin.collections.set
 import kotlin.random.Random
 
 //<editor-fold desc="Global State Variables">
-// A list of walls that are currently alive in the game. This is used to keep track of walls that are currently in play.
-// This list is updated as walls are spawned and deleted, and is tackled in the periodic() method.
+/** Walls that are currently alive in the game. */
 internal val existingWallsList: MutableList<Wall> = mutableListOf()
 
-internal var stateOfWallSpawner: WallSpawnerState = WallSpawnerState.DO_NO_ACTION // The state of the wall spawner. This is used to determine what action is being done at any given moment and to ensure that nothing unexpected or unwanted occurs with behaviors to walls.
+/** The state of the wall spawner. This is used to determine what action is being done at any given moment and to ensure that nothing unexpected or unwanted occurs with behaviors to walls.*/
+internal var stateOfWallSpawner: WallSpawnerState = WallSpawnerState.DO_NO_ACTION
 
-// The current mode of spawning walls logic. A mode dictates what possible WallSpawnerStates can be done in the state machine at a given moment.
-// The moment swaps naturally every so often to increase replayability.
+/** The current wall spawning mode. It determines which states are valid at a given moment. */
 internal var wallSpawningMode: WallSpawnerMode? = null
 
-// a tracker for how many *real* walls have been spawned in a row. used for control flow - so one direction will be chosen for a healthy number of times.
+/** Tracks how many real walls have been spawned in a row for each spawning mode. */
 internal var amountOfSpawnsSinceDirectionChange: MutableMap<WallSpawnerMode, Int> = mutableMapOf(
     WallSpawnerMode.WALL_CHAINER to 0,
     WallSpawnerMode.WALLS_FROM_2_OPPOSITE_DIRECTIONS to 0
 )
 
-// A runnable that is used to change the wall spawning mode every so often when the mode is set to Alternating.
+/** Runnable that periodically changes the wall spawning mode when Alternating is enabled. */
 internal var alternatingWallSpawnerModeRunnable: BukkitRunnable? = null
 
-internal var currentAvailableListOfModesToAlternateTo: MutableList<WallSpawnerMode> = mutableListOf() // A list of modes that the wall spawner can alternate to when the mode is set to Alternating. When a mode is set, it will be taken out of the list, and when the list is empty, it will be refilled with all the modes that are available to play.
+/** Modes that are still available for Alternating to pick from. */
+internal var currentAvailableListOfModesToAlternateTo: MutableList<WallSpawnerMode> = mutableListOf()
 
+/** Walls that are scheduled to be spawned next. */
+val upcomingWalls: MutableList<Wall> = mutableListOf()
 
-val upcomingWalls: MutableList<Wall> = mutableListOf()// A list of walls that are upcoming to be spawned. This is used to keep track of walls that are about to be spawned in the game.
-
-// this is a flag used for
-// Mode: WALLS_FROM_2_OPPOSITE_DIRECTIONS,
-// at the state: WallSpawnerState.INTENDING_TO_CREATE_MULTIPLE_WALLS_AT_ONCE
-// purpose: to stop the wall spawner from swapping the real wall direction multiple times in a row from the method isConsideringSwappingRealWallDirection()
+/**
+ * Flag used in WALLS_FROM_2_OPPOSITE_DIRECTIONS to avoid swapping the real wall
+ * direction multiple times in a row.
+ */
 var atTheProcessOfConsideringSwappingRealWallDirection: Boolean = false
 
-// this is a flag used for
-// Mode: WALLS_FROM_2_OPPOSITE_DIRECTIONS,
-// at the state: WallSpawnerState.INTENDING_TO_CREATE_MULTIPLE_WALLS_AT_ONCE
+/**
+ * Counts spawns since the real wall direction was switched in the duo mode.
+ */
 // purpose: to gatekeep and limit changing the directions of the real wall from the duo / directions of the walls..
 var amountOfSpawnsSinceSwitchedTheRealDirection = 0
 //</editor-fold>

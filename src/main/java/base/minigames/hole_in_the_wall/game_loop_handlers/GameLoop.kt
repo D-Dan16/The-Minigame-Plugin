@@ -18,8 +18,10 @@ import java.time.Duration
 
 //region ----Game Modifiers that change as the game progresses
 internal var timeLeft: Double = Timers.GAME_DURATION.toDouble()
-internal var timeElapsed: Double = 0.0 //in seconds
-internal var wallSpeed: Int = Timers.WALL_SPEED[0] //in ticks
+/** Time elapsed in seconds. */
+internal var timeElapsed: Double = 0.0
+/** Wall speed in ticks. */
+internal var wallSpeed: Int = Timers.WALL_SPEED[0]
     set(value) {
         if (value !in Timers.WALL_SPEED.last() .. Timers.WALL_SPEED.first()) {
             Bukkit.getServer().broadcast(Component.text("Wall speed must be between ${Timers.WALL_SPEED[0]} and ${Timers.WALL_SPEED.last()} ticks").color(NamedTextColor.RED))
@@ -38,20 +40,23 @@ internal var wallSpeed: Int = Timers.WALL_SPEED[0] //in ticks
         Bukkit.getServer().broadcast(Component.text("Wall speed set to $value ticks").color(NamedTextColor.AQUA))
     }
 
-internal val wallSpeedUpLandmarks: IntArray = Timers.WALL_SPEED_UP_LANDMARKS //in seconds
-internal var wallSpeedIndex = 0 //index of the wall speed in the array
+/** Wall speed increase landmarks in seconds. */
+internal val wallSpeedUpLandmarks: IntArray = Timers.WALL_SPEED_UP_LANDMARKS
+/** Index of the wall speed in the array. */
+internal var wallSpeedIndex = 0
 
-//the current wall difficulty in the pack. starts from EASY and increases as the game progresses.
-// note that previous wall difficulties are also used in the game, but less frequently.
+/** The current wall difficulty in the pack. Starts from EASY and increases as the game progresses. */
 internal var curWallDifficultyInPack = HITWConst.WallDifficulty.EASY
-internal val increaseWallDifficultyLandmarks: IntArray = Timers.INCREASE_WALL_DIFFICULTY_LANDMARKS //in seconds
+/** Wall difficulty increase landmarks in seconds. */
+internal val increaseWallDifficultyLandmarks: IntArray = Timers.INCREASE_WALL_DIFFICULTY_LANDMARKS
 
-var tickCount: Int = 0 // Used to keep track of the number of ticks that have passed since the game started
+/** Number of ticks that have passed since the game started. */
+var tickCount: Int = 0
 
-internal val wallsToDelete: MutableList<Wall> = mutableListOf() // A list of walls that are to be deleted. This is used to delete walls that are no longer alive
+/** Walls that are queued for deletion. */
+internal val wallsToDelete: MutableList<Wall> = mutableListOf()
 
-//the periodic task that runs every second to update the game state
-//Update every second the time left and the time elapsed, and keep track if certain events should trigger based on the time that has elapsed.
+/** The periodic task that updates game state and time-based events. */
 internal var gameEvents: BukkitRunnable? = null
 
 //endregion
