@@ -296,12 +296,13 @@ abstract class MinigameSkeleton {
             it.scoreboard.clearSlot(DisplaySlot.SIDEBAR)
         }
 
+        resetState()
+
         // say length of game
         announceMessage("Game over!", "Duration: ${gameTimeElapsed}s", Colors.TitleColors.CYAN)
 
         gameTimeElapsed = 0
 
-        resetState()
     }
     /**
      * Checks if a player is in the minigame. This will be used for event handling, such as player death.

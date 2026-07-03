@@ -1,10 +1,11 @@
 package base.minigames.hole_in_the_wall
 
 import base.MinigamePlugin
-import base.minigames.hole_in_the_wall.game_loop_handlers.wallPackSchematics
+import base.minigames.hole_in_the_wall.game_loop_handlers.WallPack
+import base.minigames.hole_in_the_wall.game_loop_handlers.GameLoopRuntimeState.startOnFinalPlatformStage
+import base.minigames.hole_in_the_wall.game_loop_handlers.wallPackDifficulties
 import base.utils.other.BuildLoader
 import com.sk89q.worldedit.regions.Region
-import net.kyori.adventure.text.logger.slf4j.ComponentLogger.logger
 import java.io.File
 import java.io.IOException
 import java.util.Arrays
@@ -17,8 +18,35 @@ internal lateinit var platformSchematics: Array<File>
 internal lateinit var mapSchematic: File
 /** The region of the map schematic that is being played. Used to nuke the area gracefully. */
 internal lateinit var mapSchematicRegion : Region
+/** The region of the currently loaded platform stage. */
+internal var currentPlatformRegion: Region? = null
+/** The currently loaded platform stage. */
+internal var currentPlatformStageIndex: Int = 0
 
 internal fun HoleInTheWall.arenaPreparer() {
+    fun pickWallPackDifficultyFiles(component: File): WallPack {
+        val wallFiles = component.walkTopDown()
+            .filter { it.isFile && it.name.endsWith(".schem", ignoreCase = true) }
+            .toList()
+
+        fun filesMatchingPrefix(prefix: String): List<File> {
+            return wallFiles
+                .filter { it.name.startsWith(prefix, ignoreCase = true) }
+                .sortedBy { it.name.lowercase() }
+        }
+
+        val easyFiles = filesMatchingPrefix("Wall-E")
+        val mediumFiles = filesMatchingPrefix("Wall-M")
+        val hardFiles = filesMatchingPrefix("Wall-H")
+        val veryHardFiles = filesMatchingPrefix("Wall-VH")
+
+        if (easyFiles.isEmpty() || mediumFiles.isEmpty() || hardFiles.isEmpty() || veryHardFiles.isEmpty()) {
+            throw IOException("Wall pack ${component.absolutePath} must contain E, M, H, and VH schematics")
+        }
+
+        return WallPack(easyFiles, mediumFiles, hardFiles, veryHardFiles)
+    }
+
     fun getGameBaseFolder(): File {
         check(plugin is MinigamePlugin) { "Invalid plugin type" }
         val baseFolder: File = plugin.getSchematicsBaseFolder(MinigamePlugin.Companion.MinigameType.HOLE_IN_THE_WALL)
@@ -46,12 +74,16 @@ internal fun HoleInTheWall.arenaPreparer() {
     fun processMapComponents() {
         val mapComponents: Array<out File?> = selectedMapBaseFile.listFiles() ?: throw IOException("No files found in map base folder named ${selectedMapBaseFile.name}")
         for (component in mapComponents) {
-            when (component?.getName()) {
+            when (component?.name?.lowercase()) {
                 HITWConst.PLATFORMS_FOLDER -> {
-                    platformSchematics = component.listFiles() ?: throw IOException("No platform schematics found in ${component.name}")
+                    platformSchematics = component.listFiles()
+                        ?.filterNotNull()
+                        ?.sortedBy { it.name.lowercase() }
+                        ?.toTypedArray()
+                        ?: throw IOException("No platform schematics found in ${component.name}")
                 }
                 HITWConst.WALLPACK_FOLDER -> {
-                    wallPackSchematics = component.listFiles() ?: throw IOException("No wall pack schematics found in ${component.name}")
+                    wallPackDifficulties = pickWallPackDifficultyFiles(component)
                 }
                 HITWConst.MAP_FOLDER -> {
                     mapSchematic = component.listFiles()?.firstOrNull()
@@ -68,13 +100,16 @@ internal fun HoleInTheWall.arenaPreparer() {
     } catch (e: Exception) {
         plugin.logger.severe("Failed to load minigame: ${e.message}")
         endGame()
+        return
     }
-
 
     // Load the map schematic (the deco arena) and store the region of the map
     mapSchematicRegion = BuildLoader.loadSchematicByFile(mapSchematic, HITWConst.Locations.CENTER_OF_MAP)
-    // Load the platform schematic (the platform that players will stand on)
-    BuildLoader.loadSchematicByFile(platformSchematics[2], HITWConst.Locations.PLATFORM)
+    // Load the requested initial platform stage.
+    val initialPlatformIndex = if (startOnFinalPlatformStage) platformSchematics.lastIndex else 0
+    currentPlatformRegion = BuildLoader.loadSchematicByFile(platformSchematics[initialPlatformIndex], HITWConst.Locations.PLATFORM)
+    currentPlatformStageIndex = initialPlatformIndex
+    startOnFinalPlatformStage = false
 }
 
 internal fun deleteArena() {

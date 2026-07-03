@@ -2,6 +2,8 @@ package base.minigames.hole_in_the_wall.game_loop_handlers.state_machine
 
 import base.minigames.hole_in_the_wall.HITWConst
 import base.minigames.hole_in_the_wall.objects.Wall
+import base.minigames.hole_in_the_wall.game_loop_handlers.state_machine.SpawnerRuntimeState.existingWallsList
+import base.minigames.hole_in_the_wall.game_loop_handlers.state_machine.SpawnerRuntimeState.upcomingWalls
 import base.utils.additions.Direction
 
 //TODO: the logic currently is very dull and incomplete

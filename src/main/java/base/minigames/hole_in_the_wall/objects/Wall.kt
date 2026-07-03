@@ -5,6 +5,8 @@ import base.minigames.hole_in_the_wall.HITWConst
 import base.minigames.hole_in_the_wall.HoleInTheWall
 import base.utils.additions.Direction
 import base.utils.other.BuildLoader
+import base.minigames.hole_in_the_wall.wall_types.PsychWallType
+import base.minigames.hole_in_the_wall.wall_types.WallType
 import com.sk89q.worldedit.math.BlockVector3
 import com.sk89q.worldedit.regions.CuboidRegion
 import com.sk89q.worldedit.session.ClipboardHolder
@@ -26,11 +28,9 @@ class Wall(
     /** The direction the wall is coming from. */
     directionWallComesFrom: Direction,
     val isFlipped: Boolean = false,
-    var isPsych: Boolean = false,
-    /** Whether a stopped psych wall should be removed instead of resumed later. */
-    val shouldRemovePsychThatStopped: Boolean = true
+    initialWallTypes: Collection<WallType> = emptyList()
 ) {
-    constructor(wallFile: File, directionWallComesFrom: Direction) : this(wallFile,directionWallComesFrom,false,false)
+    constructor(wallFile: File, directionWallComesFrom: Direction) : this(wallFile, directionWallComesFrom, false, emptyList())
 
 
     //region -- Properties --
@@ -73,15 +73,17 @@ class Wall(
         Direction.WEST -> HITWConst.Locations.WEST_WALL_SPAWN.clone()
         Direction.EAST -> HITWConst.Locations.EAST_WALL_SPAWN.clone()
     }
+    private val wallTypesAtConstructionTime: List<WallType> = initialWallTypes.toList()
 
 
     lateinit var wallRegion: CuboidRegion
     lateinit var locationOfPistons: MutableList<Location>
 
     /** How many blocks the wall travels before it stops moving. */
-    val initialLifespan =
-        if (!isPsych) HITWConst.DEFAULT_WALL_TRAVEL_LIFESPAN
-        else HITWConst.DEFAULT_PSYCH_WALL_TRAVEL_LIFESPAN
+    val initialLifespan = wallTypesAtConstructionTime
+        .filterIsInstance<PsychWallType>().firstOrNull()
+        ?.initialLifespan()
+        ?: HITWConst.DEFAULT_WALL_TRAVEL_LIFESPAN
 
     var lifespanRemaining = initialLifespan
     var lifespanTraveled = 0
@@ -96,6 +98,9 @@ class Wall(
 
     /** Prevents repeated handling of stopped psych walls. */
     var isBeingHandled: Boolean = false
+
+    /** Permanent wall identities attached to this wall. */
+    val wallTypes: MutableList<WallType> = mutableListOf()
     //endregion
 
     /** Clipboard holder for the wall schematic. */
@@ -112,6 +117,7 @@ class Wall(
 
         // we will set the direction of the wall, and update the holder to reflect the direction the wall is facing.
         this.directionWallComesFrom = directionWallComesFrom
+        setWallTypes(wallTypesAtConstructionTime)
 
         // mirror the schematic if the wall is flipped.
         if (isFlipped) {
@@ -128,6 +134,38 @@ class Wall(
 
         // Get the locations of all pistons in the wall region. important that this is done after the wall region is set (which it is only after loading the schem), since the method relies on the wall region to get the piston locations.
         locationOfPistons = getPistonLocations()
+    }
+
+    fun setWallTypes(types: Collection<WallType>) {
+        wallTypes.clear()
+
+        types.forEach { type ->
+            if (wallTypes.none { it.id == type.id }) {
+                wallTypes.add(type)
+            }
+        }
+    }
+
+    fun addWallType(type: WallType) {
+        if (wallTypes.none { it.id == type.id }) {
+            wallTypes.add(type)
+        }
+    }
+
+    fun removeWallType(typeId: String) {
+        wallTypes.removeAll { it.id == typeId }
+    }
+
+    fun hasWallType(typeId: String): Boolean {
+        return wallTypes.any { it.id == typeId }
+    }
+
+    inline fun <reified T : WallType> hasWallType(): Boolean {
+        return wallTypes.any { it is T }
+    }
+
+    inline fun <reified T : WallType> getWallType(): T? {
+        return wallTypes.filterIsInstance<T>().firstOrNull()
     }
 
 
@@ -220,9 +258,10 @@ class Wall(
                 //game.clearWalls()
                 game.pauseGame()
 
-                Bukkit.getServer().broadcast(
-                    Component.text("Two walls have seemed to collide. Cleaning the arena and pausing.").color(
-                        NamedTextColor.YELLOW))
+                if (HITWConst.IS_IN_DEVELOPMENT)
+                    Bukkit.getServer().broadcast(
+                        Component.text("Two walls have seemed to collide. Cleaning the arena and pausing.").color(
+                            NamedTextColor.YELLOW))
             }
 
             // Update the button location to the list of button locations.

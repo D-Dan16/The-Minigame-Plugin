@@ -7,7 +7,9 @@ import org.bukkit.scheduler.BukkitRunnable
 import org.bukkit.scheduler.BukkitTask
 import kotlin.math.max
 
-
+/**
+ * The delay will be in Ticks
+ */
 infix fun Long.delayTheFollowing(runnable: ()-> Unit) {
     Bukkit.getScheduler().runTaskLater(MinigamePlugin.plugin,runnable,this)
 }

@@ -49,19 +49,13 @@ class HoleInTheWallCommands(private val holeInTheWall: HoleInTheWall) : Minigame
                             holeInTheWall.start(sender, args[1])
                         }
                     }
-                    3 -> {
-                        if (SubCommands.fromString(args[0]) == SubCommands.START_HARD_MODE) {
-                            holeInTheWall.startFastMode(sender, args[1], args[2])
-                        } else {
-                            holeInTheWall.start(sender, args[1], args[2])
-                        }
-                    }
                     else -> return error(sender, "Too many arguments")
                 }
             }
             SubCommands.START_HARD_MODE -> {
                 if (holeInTheWall.isAlreadyRunning()) return false
-                holeInTheWall.startFastMode(sender)
+                if (args.size < 2) return error(sender, "Please specify a map name to start the game.")
+                holeInTheWall.startFastMode(sender, args[1])
             }
             SubCommands.PAUSE -> {
                 if (holeInTheWall.isAlreadyPaused()) return false
@@ -81,11 +75,6 @@ class HoleInTheWallCommands(private val holeInTheWall: HoleInTheWall) : Minigame
 
 
                 when (args[1].lowercase(Locale.getDefault())) {
-                    "wall_spawning_mode" -> {
-                        if (args.size < 3) return error(sender, "Please specify the wall spawning mode.")
-
-                        holeInTheWall.changeWallSpawningMode(args[2])
-                    }
                     "wall_speed" -> {
                         if (args.size < 3) return error(sender, "Please specify the wall speed.")
 
@@ -113,23 +102,19 @@ class HoleInTheWallCommands(private val holeInTheWall: HoleInTheWall) : Minigame
             1 -> SubCommands.entries.map { it.name.lowercase()}
             2 -> {
                 when (args[0]) {
-                    "start" -> availableMaps
+                    "start", "start_hard_mode" -> availableMaps
                     "set" -> listOf(
-                        "wall_spawning_mode", "wall_speed"
+                        "wall_speed"
                     )
                     else -> listOf()
                 }
             }
-            3 -> {
-                when (args[0]) {
-                    "start" -> HITWConst.WallSpawnerMode.getModesAsAStringList()
-                    "set" -> when (args[1]) {
-                        "wall_spawning_mode" -> HITWConst.WallSpawnerMode.getModesAsAStringList()
-                        "wall_speed" -> HITWConst.Timers.WALL_SPEED.map { it.toString() }
-                        else -> listOf()
-                    }
+            3 -> when (args[0]) {
+                "set" -> when (args[1]) {
+                    "wall_speed" -> HITWConst.Timers.WALL_SPEED.map { it.toString() }
                     else -> listOf()
                 }
+                else -> listOf()
             }
             else -> listOf()
         }

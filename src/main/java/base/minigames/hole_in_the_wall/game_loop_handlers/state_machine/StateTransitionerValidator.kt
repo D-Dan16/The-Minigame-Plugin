@@ -2,6 +2,7 @@ package base.minigames.hole_in_the_wall.game_loop_handlers.state_machine
 
 import base.minigames.hole_in_the_wall.HITWConst
 import base.minigames.hole_in_the_wall.HoleInTheWall
+import base.minigames.hole_in_the_wall.game_loop_handlers.state_machine.SpawnerRuntimeState.stateOfWallSpawner
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.Bukkit
@@ -57,6 +58,6 @@ internal fun HoleInTheWall.attemptChangingStateTo(wantedState: HITWConst.WallSpa
 
     stateOfWallSpawner = wantedState
 
-    Bukkit.getServer().broadcast(Component.text("state = $stateOfWallSpawner").color(NamedTextColor.GRAY))
-    //Bukkit.getServer().broadcast(Component.text("mode = $wallSpawningMode").color(NamedTextColor.WHITE))
+    if (HITWConst.IS_IN_DEVELOPMENT)
+        Bukkit.getServer().broadcast(Component.text("state = $stateOfWallSpawner").color(NamedTextColor.GRAY))
 }

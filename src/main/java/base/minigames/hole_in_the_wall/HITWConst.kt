@@ -8,12 +8,10 @@ import org.bukkit.World
 object HITWConst {
     /** Whether the plugin is running in development mode. */
     const val IS_IN_DEVELOPMENT: Boolean = false
+
     const val PLATFORMS_FOLDER: String = "platforms"
-
-
     const val WALLPACK_FOLDER: String = "wallpack"
     const val MAP_FOLDER: String = "map"
-
     val availableMaps: List<String> = listOf("Map1", "Map2", "Map3")
 
     //region wall constants that aren't tied to a specific wall spawner mode
@@ -58,12 +56,12 @@ object HITWConst {
         val EAST_WALL_SPAWN: Location = PIVOT.clone().add(DISTANCE_OF_WALL_FROM_CENTER_OF_PLATFORM + 1.0, 1.0, -1.0)
     }
 
-        object WallDifficulty {
-            const val EASY: Int = 0
-            const val MEDIUM: Int = 1
-            const val HARD: Int = 2
-            const val VERY_HARD: Int = 3
-        }
+    object WallDifficulty {
+        const val EASY: Int = 0
+        const val MEDIUM: Int = 1
+        const val HARD: Int = 2
+        const val VERY_HARD: Int = 3
+    }
 
     enum class WallSpawnerState {
         DO_NO_ACTION,
@@ -76,58 +74,20 @@ object HITWConst {
         SPAWNING_MULTIPLE_WALLS_AT_ONCE
     }
 
-    enum class WallSpawnerMode {
-        WALL_CHAINER,
-        WALLS_FROM_ALL_DIRECTIONS,
-        WALLS_FROM_2_OPPOSITE_DIRECTIONS;
-       // WALLS_ARE_UNPREDICTABLE,
-       // WALLS_REVERSE;
-
-        companion object {
-            fun getModesAsAStringList(): List<String> {
-                val modeNames: MutableList<String> = entries.map { it.name }.toMutableList()
-                modeNames.add("Alternating")
-                return modeNames
-            }
-        }
-    }
-
-    object WallSpawnerModes {
-        object WallChainer {
-            /** How many walls must spawn before the direction may change. */
-            const val MIN_AMOUNT_OF_SPAWNS_TILL_CHANGING_DIRECTIONS: Int = 5
-        }
-        object WallsFromAllDirections {
-            const val CHANCE_THAT_PSYCH_WALL_WILL_GET_REMOVED: Int = (0.66 * 100).toInt()
-        }
-        object WallsFrom2OppositeDirections {
-            /** Chance that the duo mode changes directions. */
-            const val CHANCE_OF_CHANGING_DIRECTIONS: Int = (0.15 * 100).toInt()
-            /** Chance of considering a real-wall direction swap. */
-            const val CHANCE_OF_CONSIDERING_TO_SWAP_REAL_WALL_DIRECTION: Int = (0.4 * 100).toInt()
-            const val MINIMUM_SPACE_BETWEEN_2_WALLS_FROM_THE_SAME_DIRECTION: Int = HITWConst.MINIMUM_SPACE_BETWEEN_2_WALLS_FROM_THE_SAME_DIRECTION
-
-            const val MIN_AMOUNT_OF_SPAWNS_TILL_CHANGING_DIRECTIONS_FOR_DUO: Int = 7
-            const val MIN_AMOUNT_OF_SPAWNS_TILL_THERE_CAN_BE_CONSIDERATION_TO_SWAP_REAL_WALL_DIRECTION: Int = 3
-
-            const val MAX_AMOUNT_OF_SPAWNS_TILL_THERE_MUST_BE_CHANGE: Int = 10
-        }
-    }
-
     object Timers {
         /** Delay before the game starts, in ticks. */
         const val DELAY_BEFORE_STARTING_GAME: Long = 2*20
         /** Game duration in seconds. */
         const val GAME_DURATION: Int = 300
 
-        /** Wall speed increase landmarks in seconds. */
-        val WALL_SPEED_UP_LANDMARKS: IntArray = intArrayOf(30, 60, 90, 120, 155, 200)
-        /** Wall difficulty increase landmarks in seconds. */
-        val INCREASE_WALL_DIFFICULTY_LANDMARKS: IntArray = intArrayOf(45, 90, 155)
-        val PLATFORM_SHRINKAGE_LANDMARKS: IntArray = intArrayOf(70, 155)
-
         /** Wall speeds in ticks. */
-        val WALL_SPEED: IntArray = intArrayOf(15, 12, 10, 7, 6, 5, 4)
+        val WALL_SPEED: IntArray = intArrayOf(10, 9, 8, 7, 6, 5, 4)
+        /** Wall speed increase landmarks in seconds. */
+        val WALL_SPEED_UP_LANDMARKS: IntArray = intArrayOf(15, 30, 45, 60, 75, 100)
+        /** Wall difficulty increase landmarks in seconds. */
+        val INCREASE_WALL_DIFFICULTY_LANDMARKS: IntArray = intArrayOf(20, 45, 70)
+
+        val PLATFORM_SHRINKAGE_LANDMARKS: IntArray = intArrayOf(35, 75)
 
         // *after the game knows that the wall can safely spawn in that direction, we'll make it wait extra for randomness
         /** Random delay range before spawning from the same direction. */
