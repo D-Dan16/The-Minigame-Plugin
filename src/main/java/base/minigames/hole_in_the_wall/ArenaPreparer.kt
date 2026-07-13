@@ -1,9 +1,9 @@
 package base.minigames.hole_in_the_wall
 
 import base.MinigamePlugin
-import base.minigames.hole_in_the_wall.game_loop_handlers.WallPack
-import base.minigames.hole_in_the_wall.game_loop_handlers.GameLoopRuntimeState.startOnFinalPlatformStage
-import base.minigames.hole_in_the_wall.game_loop_handlers.wallPackDifficulties
+import base.minigames.hole_in_the_wall.game_loop.walls.WallPack
+import base.minigames.hole_in_the_wall.game_loop.GameLoopRuntimeState.startOnFinalPlatformStage
+import base.minigames.hole_in_the_wall.game_loop.walls.wallPackDifficulties
 import base.utils.other.BuildLoader
 import com.sk89q.worldedit.regions.Region
 import java.io.File
@@ -25,26 +25,21 @@ internal var currentPlatformStageIndex: Int = 0
 
 internal fun HoleInTheWall.arenaPreparer() {
     fun pickWallPackDifficultyFiles(component: File): WallPack {
-        val wallFiles = component.walkTopDown()
-            .filter { it.isFile && it.name.endsWith(".schem", ignoreCase = true) }
-            .toList()
+        val easyFiles = File(component, HITWConst.EASY_WALLPACK_FOLDER)
+        val mediumFiles = File(component, HITWConst.MEDIUM_WALLPACK_FOLDER)
+        val hardFiles = File(component, HITWConst.HARD_WALLPACK_FOLDER)
+        val veryHardFiles = File(component, HITWConst.VERY_HARD_WALLPACK_FOLDER)
 
-        fun filesMatchingPrefix(prefix: String): List<File> {
-            return wallFiles
-                .filter { it.name.startsWith(prefix, ignoreCase = true) }
-                .sortedBy { it.name.lowercase() }
-        }
-
-        val easyFiles = filesMatchingPrefix("Wall-E")
-        val mediumFiles = filesMatchingPrefix("Wall-M")
-        val hardFiles = filesMatchingPrefix("Wall-H")
-        val veryHardFiles = filesMatchingPrefix("Wall-VH")
-
-        if (easyFiles.isEmpty() || mediumFiles.isEmpty() || hardFiles.isEmpty() || veryHardFiles.isEmpty()) {
+        if (!easyFiles.exists() || !mediumFiles.exists() || !hardFiles.exists() || !veryHardFiles.exists()) {
             throw IOException("Wall pack ${component.absolutePath} must contain E, M, H, and VH schematics")
         }
 
-        return WallPack(easyFiles, mediumFiles, hardFiles, veryHardFiles)
+        return WallPack(
+            easyFiles.listFiles().toList(),
+            mediumFiles.listFiles().toList(),
+            hardFiles.listFiles().toList(),
+            veryHardFiles.listFiles().toList()
+        )
     }
 
     fun getGameBaseFolder(): File {

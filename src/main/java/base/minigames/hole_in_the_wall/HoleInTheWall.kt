@@ -3,14 +3,14 @@ package base.minigames.hole_in_the_wall
 import base.minigames.hole_in_the_wall.HITWConst.Timers
 import base.minigames.hole_in_the_wall.HITWConst.WallSpawnerState
 import base.minigames.MinigameSkeleton
-import base.minigames.hole_in_the_wall.game_loop_handlers.GameLoopRuntimeState
-import base.minigames.hole_in_the_wall.game_loop_handlers.GameLoopRuntimeState.gameEvents
-import base.minigames.hole_in_the_wall.game_loop_handlers.GameLoopRuntimeState.startOnFinalPlatformStage
-import base.minigames.hole_in_the_wall.game_loop_handlers.GameLoopRuntimeState.wallSpeed
-import base.minigames.hole_in_the_wall.game_loop_handlers.shrinkPlatform
-import base.minigames.hole_in_the_wall.game_loop_handlers.state_machine.SpawnerRuntimeState
-import base.minigames.hole_in_the_wall.game_loop_handlers.state_machine.SpawnerRuntimeState.stateOfWallSpawner
-import base.minigames.hole_in_the_wall.game_loop_handlers.startRepeatingGameLoop
+import base.minigames.hole_in_the_wall.game_loop.GameLoopRuntimeState
+import base.minigames.hole_in_the_wall.game_loop.GameLoopRuntimeState.gameEvents
+import base.minigames.hole_in_the_wall.game_loop.GameLoopRuntimeState.startOnFinalPlatformStage
+import base.minigames.hole_in_the_wall.game_loop.GameLoopRuntimeState.wallSpeed
+import base.minigames.hole_in_the_wall.game_loop.walls.runtime.WallsRuntimeState
+import base.minigames.hole_in_the_wall.game_loop.walls.spawning.SpawnerRuntimeState
+import base.minigames.hole_in_the_wall.game_loop.walls.spawning.SpawnerRuntimeState.stateOfWallSpawner
+import base.minigames.hole_in_the_wall.game_loop.startRepeatingGameLoop
 import org.bukkit.GameMode
 import org.bukkit.entity.Player
 import org.bukkit.plugin.Plugin
@@ -30,6 +30,7 @@ class HoleInTheWall (val plugin: Plugin) : MinigameSkeleton() {
     override fun resetState() {
         super.resetState()
         GameLoopRuntimeState.reset()
+        WallsRuntimeState.reset()
         SpawnerRuntimeState.reset()
     }
 
@@ -44,7 +45,7 @@ class HoleInTheWall (val plugin: Plugin) : MinigameSkeleton() {
     }
 
     fun startFastMode(player: Player, mapName: String) {
-        GameLoopRuntimeState.wallSpeed = Timers.WALL_SPEED.last()
+        wallSpeed = Timers.WALL_SPEED.last()
         GameLoopRuntimeState.wallSpeedIndex = Timers.WALL_SPEED_UP_LANDMARKS.last()
         GameLoopRuntimeState.curWallDifficultyInPack = HITWConst.WallDifficulty.VERY_HARD
         startOnFinalPlatformStage = true

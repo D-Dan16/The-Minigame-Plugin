@@ -1,8 +1,9 @@
-package base.minigames.hole_in_the_wall.objects
+package base.minigames.hole_in_the_wall.models
 
 import base.MinigamePlugin
 import base.minigames.hole_in_the_wall.HITWConst
 import base.minigames.hole_in_the_wall.HoleInTheWall
+import base.minigames.hole_in_the_wall.game_loop.walls.runtime.WallReference
 import base.utils.additions.Direction
 import base.utils.other.BuildLoader
 import base.minigames.hole_in_the_wall.wall_types.PsychWallType
@@ -28,13 +29,9 @@ class Wall(
     /** The direction the wall is coming from. */
     directionWallComesFrom: Direction,
     val isFlipped: Boolean = false,
-    initialWallTypes: Collection<WallType> = emptyList()
+    val wallTypes: MutableList<WallType> = mutableListOf()
 ) {
-    constructor(wallFile: File, directionWallComesFrom: Direction) : this(wallFile, directionWallComesFrom, false, emptyList())
-
-
     //region -- Properties --
-
     /** The current direction the wall comes from. */
     var directionWallComesFrom: Direction = directionWallComesFrom
         set(direction) {
@@ -49,12 +46,9 @@ class Wall(
             }
 
             // Update the spawn location based on the new direction.
-            spawnLocation = when (direction) {
-                Direction.SOUTH -> HITWConst.Locations.SOUTH_WALL_SPAWN.clone()
-                Direction.NORTH -> HITWConst.Locations.NORTH_WALL_SPAWN.clone()
-                Direction.WEST -> HITWConst.Locations.WEST_WALL_SPAWN.clone()
-                Direction.EAST -> HITWConst.Locations.EAST_WALL_SPAWN.clone()
-            }
+            spawnLocation = getWallSpawnPosition(direction)
+
+            axisPositionFromSpawn = HITWConst.Locations.axisSpawnPosition(direction)
 
             // We will gather the schematic as a Clipboard from the wall file.
             // This is to easily and conveniently manipulate the schematic based on the characteristics of the wall.
@@ -67,28 +61,36 @@ class Wall(
             wallRegion = BuildLoader.getRotatedRegion(holder)
         }
     private lateinit var directionWallIsFacing: Direction
-    private var spawnLocation: Location = when (directionWallComesFrom) {
-        Direction.SOUTH -> HITWConst.Locations.SOUTH_WALL_SPAWN.clone()
-        Direction.NORTH -> HITWConst.Locations.NORTH_WALL_SPAWN.clone()
-        Direction.WEST -> HITWConst.Locations.WEST_WALL_SPAWN.clone()
-        Direction.EAST -> HITWConst.Locations.EAST_WALL_SPAWN.clone()
+    private var spawnLocation: Location = getWallSpawnPosition(directionWallComesFrom)
+
+    /** Returns the spawn location for a wall coming from the given direction. */
+    private fun getWallSpawnPosition(directionWallComesFrom: Direction): Location = when (directionWallComesFrom) {
+        Direction.SOUTH -> HITWConst.Locations.SOUTH_WALL_SPAWN
+        Direction.NORTH -> HITWConst.Locations.NORTH_WALL_SPAWN
+        Direction.WEST -> HITWConst.Locations.WEST_WALL_SPAWN
+        Direction.EAST -> HITWConst.Locations.EAST_WALL_SPAWN
     }
-    private val wallTypesAtConstructionTime: List<WallType> = initialWallTypes.toList()
 
 
     lateinit var wallRegion: CuboidRegion
     lateinit var locationOfPistons: MutableList<Location>
 
     /** How many blocks the wall travels before it stops moving. */
-    val initialLifespan = wallTypesAtConstructionTime
-        .filterIsInstance<PsychWallType>().firstOrNull()
-        ?.initialLifespan()
-        ?: HITWConst.DEFAULT_WALL_TRAVEL_LIFESPAN
-
-    var lifespanRemaining = initialLifespan
+    var lifespanRemaining = when {
+        this.hasWallType<PsychWallType>() -> {
+            if (this.getWallType<PsychWallType>()!!.shouldRemoveWhenStopped)
+                HITWConst.PSYCH_WALL_TRAVEL_LIFESPAN
+            else
+                HITWConst.DEFAULT_WALL_TRAVEL_LIFESPAN
+        }
+        else -> HITWConst.DEFAULT_WALL_TRAVEL_LIFESPAN
+    }
+        set(value) {
+            field = value
+        }
     var lifespanTraveled = 0
-
-    val minimumLifespanTraveledWhereWallsCanSpawnBehindIt = HITWConst.MINIMUM_SPACE_BETWEEN_2_WALLS_FROM_THE_SAME_DIRECTION
+    /** The wall's signed position on its travel axis, relative to `HITWConst.Locations.SPAWN`. */
+    var axisPositionFromSpawn = HITWConst.Locations.axisSpawnPosition(directionWallComesFrom)
 
 
     /** Whether the wall should be removed from the game when it stops moving. */
@@ -99,12 +101,61 @@ class Wall(
     /** Prevents repeated handling of stopped psych walls. */
     var isBeingHandled: Boolean = false
 
-    /** Permanent wall identities attached to this wall. */
-    val wallTypes: MutableList<WallType> = mutableListOf()
     //endregion
 
     /** Clipboard holder for the wall schematic. */
     lateinit var holder: ClipboardHolder
+
+    /**
+     * Returns the two travel-axis cells occupied by this wall.
+     *
+     * The first entry is the slime/front cell. The second entry is the piston/rear cell.
+     */
+    fun occupiedAxisPositions(): IntArray {
+        val frontAxisPosition = axisPositionFromSpawn
+        val rearAxisPosition = when (directionWallIsFacing) {
+            Direction.NORTH, Direction.WEST -> frontAxisPosition + 1
+            Direction.SOUTH, Direction.EAST -> frontAxisPosition - 1
+        }
+
+        return intArrayOf(frontAxisPosition, rearAxisPosition)
+    }
+
+    /** Returns the arena axis this wall travels along. */
+    fun getArenaAxis(): HITWConst.Locations.ArenaAxis {
+        return when (directionWallComesFrom) {
+            Direction.NORTH, Direction.SOUTH -> HITWConst.Locations.ArenaAxis.Z
+            Direction.WEST, Direction.EAST -> HITWConst.Locations.ArenaAxis.X
+        }
+    }
+
+    /** Marks this wall's occupied positions on the provided axis occupancy array. */
+    fun markOnAxisOccupancy(axisOccupancy: Array<WallReference>) {
+        occupiedAxisPositions().forEach { occupiedAxisPosition ->
+            val index = HITWConst.Locations.relativeCoordinateToAxisIndex(getArenaAxis(), occupiedAxisPosition)
+
+            if (index in axisOccupancy.indices) {
+                axisOccupancy[index] = WallReference(this)
+            }
+        }
+    }
+
+    /**
+     * A wall has fully passed the middle ring only once both occupied axis cells are outside it.
+     */
+    fun hasPassedMiddleRing(): Boolean {
+        val middleRingAxisRange = when (getArenaAxis()) {
+            HITWConst.Locations.ArenaAxis.X ->
+                HITWConst.Locations.PlatformGeometry.ABOVE_PLATFORM_REGION.minimumPoint.x()..
+                    HITWConst.Locations.PlatformGeometry.ABOVE_PLATFORM_REGION.maximumPoint.x()
+
+            HITWConst.Locations.ArenaAxis.Z ->
+                HITWConst.Locations.PlatformGeometry.ABOVE_PLATFORM_REGION.minimumPoint.z()..
+                    HITWConst.Locations.PlatformGeometry.ABOVE_PLATFORM_REGION.maximumPoint.z()
+        }
+
+        return occupiedAxisPositions().none { it in middleRingAxisRange }
+    }
 
     init {
         // Load the wall file and validate its contents if necessary
@@ -115,9 +166,8 @@ class Wall(
             throw IllegalArgumentException("Wall file does not exist: ${wallFile.path}")
         }
 
-        // we will set the direction of the wall, and update the holder to reflect the direction the wall is facing.
+        // we will set the direction of the wall and update the holder to reflect the direction the wall is facing.
         this.directionWallComesFrom = directionWallComesFrom
-        setWallTypes(wallTypesAtConstructionTime)
 
         // mirror the schematic if the wall is flipped.
         if (isFlipped) {
@@ -127,6 +177,7 @@ class Wall(
         // -------------------------------------------------------------------------------------------- //
     }
 
+    /** Loads the wall schematic into the world at its spawn location. */
     fun makeWallExist() {
         // Now we have the schematic ready to be pasted into the world.
         // after modifying the schematic, now we can finally paste the schematic into the world at the spawn location.
@@ -136,6 +187,7 @@ class Wall(
         locationOfPistons = getPistonLocations()
     }
 
+    /** Replaces the current wall type set with the provided types, deduplicated by id. */
     fun setWallTypes(types: Collection<WallType>) {
         wallTypes.clear()
 
@@ -146,29 +198,35 @@ class Wall(
         }
     }
 
+    /** Adds a wall type if another type with the same id is not already present. */
     fun addWallType(type: WallType) {
         if (wallTypes.none { it.id == type.id }) {
             wallTypes.add(type)
         }
     }
 
+    /** Removes every wall type whose id matches the given value. */
     fun removeWallType(typeId: String) {
         wallTypes.removeAll { it.id == typeId }
     }
 
+    /** Returns `true` when a wall type with the given id is attached. */
     fun hasWallType(typeId: String): Boolean {
         return wallTypes.any { it.id == typeId }
     }
 
+    /** Returns `true` when a wall type of the requested reified type is attached. */
     inline fun <reified T : WallType> hasWallType(): Boolean {
         return wallTypes.any { it is T }
     }
 
+    /** Returns the first attached wall type of the requested reified type, if any. */
     inline fun <reified T : WallType> getWallType(): T? {
         return wallTypes.filterIsInstance<T>().firstOrNull()
     }
 
 
+    /** Collects all piston block locations currently inside this wall's region. */
     private fun getPistonLocations(): MutableList<Location> {
         // Get the locations of all piston blocks within the bounding box of the wall
         val locations = mutableListOf<Location>()
@@ -195,9 +253,14 @@ class Wall(
     }
 
 
+    /** Advances the wall's lifespan counters and signed axis position by one step. */
     private fun updateLifespans() {
         lifespanRemaining--
         lifespanTraveled++
+        axisPositionFromSpawn += when (directionWallComesFrom) {
+            Direction.SOUTH, Direction.EAST -> -1
+            Direction.NORTH, Direction.WEST -> 1
+        }
     }
 
 
@@ -219,16 +282,14 @@ class Wall(
                 state.blockData = powerableState
                 state.update(true, true) // Update the block state
 
-                // Now we turn off the button after a short delay of X ticks in order to simulate the button being pressed which activates the piston.
-
-
+                // Now we turn off the button after a short delay of X ticks to simulate the button being pressed which activates the piston.
             }
         }
 
         // -------------------------------------------------------------------------------------------- //
 
         if (lifespanRemaining <= 0) {
-            this.shouldBeStopped = true // If the wall has reached its lifespan, it should be stopped (it'll be determined by the game logic if it should be removed or continue living on for later).
+            this.shouldBeStopped = true // If the wall has reached its lifespan, it should be stopped (and it'll get removed).
 
             // We will not continue with the logic of moving the wall, since it has reached its lifespan.
             return
@@ -237,7 +298,7 @@ class Wall(
         //region ----Moving Wall Logic - add and Press Buttons on Pistons---------------------------------------------------
 
 
-        // We'll create a list of locations where the buttons will be placed. this will be used when we will want to eventually remove the buttons.
+        // We'll create a list of locations where the buttons will be placed. this will be used when we want to eventually remove the buttons.
         val buttonLocations: MutableList<Location> = mutableListOf()
 
         // We'll iterate through the locations of all pistons. we'll add behind them a stone button and activate the buttons on their faces.
@@ -255,7 +316,6 @@ class Wall(
             if (buttonLocation.block.type != Material.AIR) {
                 val game = MinigamePlugin.plugin.getInstanceOfMinigame(MinigamePlugin.Companion.MinigameType.HOLE_IN_THE_WALL) as HoleInTheWall
 
-                //game.clearWalls()
                 game.pauseGame()
 
                 if (HITWConst.IS_IN_DEVELOPMENT)
@@ -288,7 +348,6 @@ class Wall(
         }
         //endregion
 
-
         // IMPORTANT: We need to let the pistons extend before we move the wall region, so we will wait for a lil before excecuting the entire logic of this function..
 
         Bukkit.getScheduler().runTaskLater(MinigamePlugin.plugin, Runnable {
@@ -306,14 +365,14 @@ class Wall(
         //region --- Update the Pistons' location so that they match the new wall location and aren't left behind.
 
 
-        // First things first, we want to remove the buttons that were placed behind the pistons, since if we will move the pistons, the buttons will be dropped as items.
+        // First things first, we want to remove the buttons that were placed behind the pistons, since if we move the pistons, the buttons will be dropped as items.
         buttonLocations.forEach { location ->
             location.block.type = Material.AIR
         }
 
 
         locationOfPistons.forEach { location ->
-            // First we need to remove the pistons from their current locations, so that they can be moved to their new locations.
+            // First, we need to remove the pistons from their current locations so that they can be moved to their new locations.
             location.block.type = Material.AIR
 
             //then we need to update the location of the piston in the list so that it matches the new wall location.
@@ -347,6 +406,7 @@ class Wall(
         } , 2L)
     }
 
+    /** Highlights the wall's bounding corners for debugging. */
     fun showBlocks() {
         fun putBlock(location: Location) {
             location.block.type = Material.DIAMOND_BLOCK

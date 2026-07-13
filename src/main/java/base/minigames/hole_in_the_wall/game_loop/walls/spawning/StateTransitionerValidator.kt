@@ -1,14 +1,13 @@
-package base.minigames.hole_in_the_wall.game_loop_handlers.state_machine
+package base.minigames.hole_in_the_wall.game_loop.walls.spawning
 
 import base.minigames.hole_in_the_wall.HITWConst
 import base.minigames.hole_in_the_wall.HoleInTheWall
-import base.minigames.hole_in_the_wall.game_loop_handlers.state_machine.SpawnerRuntimeState.stateOfWallSpawner
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.Bukkit
 
 internal fun HoleInTheWall.attemptChangingStateTo(wantedState: HITWConst.WallSpawnerState) {
-    val canTransition = when (stateOfWallSpawner) {
+    val canTransition = when (SpawnerRuntimeState.stateOfWallSpawner) {
         HITWConst.WallSpawnerState.IDLE -> wantedState in setOf(
             HITWConst.WallSpawnerState.INTENDING_TO_CREATE_1_WALL,
             HITWConst.WallSpawnerState.INTENDING_TO_CREATE_MULTIPLE_WALLS_AT_ONCE,
@@ -51,13 +50,13 @@ internal fun HoleInTheWall.attemptChangingStateTo(wantedState: HITWConst.WallSpa
 
     if (!canTransition) {
         Bukkit.getServer().broadcast(
-            Component.text("HITW: Cannot transition from $stateOfWallSpawner to $wantedState").color(
+            Component.text("HITW: Cannot transition from ${SpawnerRuntimeState.stateOfWallSpawner} to $wantedState").color(
                 NamedTextColor.RED))
         pauseGame()
     }
 
-    stateOfWallSpawner = wantedState
+    SpawnerRuntimeState.stateOfWallSpawner = wantedState
 
     if (HITWConst.IS_IN_DEVELOPMENT)
-        Bukkit.getServer().broadcast(Component.text("state = $stateOfWallSpawner").color(NamedTextColor.GRAY))
+        Bukkit.getServer().broadcast(Component.text("state = ${SpawnerRuntimeState.stateOfWallSpawner}").color(NamedTextColor.GRAY))
 }

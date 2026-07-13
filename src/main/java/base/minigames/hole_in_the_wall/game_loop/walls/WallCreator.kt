@@ -1,10 +1,9 @@
-package base.minigames.hole_in_the_wall.game_loop_handlers
+package base.minigames.hole_in_the_wall.game_loop.walls
 
-import base.minigames.hole_in_the_wall.HoleInTheWall
-import base.minigames.hole_in_the_wall.game_loop_handlers.GameLoopRuntimeState.curWallDifficultyInPack
-import base.minigames.hole_in_the_wall.game_loop_handlers.state_machine.SpawnerRuntimeState.existingWallsList
-import base.minigames.hole_in_the_wall.game_loop_handlers.state_machine.SpawnerRuntimeState.upcomingWalls
-import base.minigames.hole_in_the_wall.objects.Wall
+import base.minigames.hole_in_the_wall.HITWConst
+import base.minigames.hole_in_the_wall.game_loop.GameLoopRuntimeState.curWallDifficultyInPack
+import base.minigames.hole_in_the_wall.game_loop.walls.spawning.SpawnerRuntimeState
+import base.minigames.hole_in_the_wall.models.Wall
 import base.minigames.hole_in_the_wall.wall_types.WallType
 import base.utils.additions.Direction
 import base.utils.other.BuildLoader
@@ -14,16 +13,16 @@ import net.kyori.adventure.text.logger.slf4j.ComponentLogger.logger
 import org.bukkit.Bukkit
 import java.io.File
 import kotlin.random.Random
+import base.minigames.hole_in_the_wall.game_loop.walls.runtime.WallsRuntimeState
 
 
+/** Files grouped by the difficulty tier they belong to. */
 data class WallPack(val easy: List<File>, val medium: List<File>, val hard: List<File>, val very_hard: List<File>)
 
 /** The selected wall pack for the current map, grouped by difficulty. */
 internal lateinit var wallPackDifficulties: WallPack
 
-/**
- * USED FOR ONLY DEBUGGING PURPOSES
- */
+/** Creates a wall immediately for debugging, bypassing the normal spawn flow. */
 fun createNewWall() {
     val wallFile = pickWeightedWallFileForCurrentDifficulty()
     val direction = Direction.entries.toTypedArray().random() // Randomly select a direction for the wall to come from
@@ -38,71 +37,70 @@ fun createNewWall() {
         NamedTextColor.DARK_AQUA))
 }
 
-fun HoleInTheWall.createNewWall(direction: Direction, wallTypes: Collection<WallType> = emptyList()) {
+/** Queues a new wall of the given direction for the normal spawn flow. */
+fun createNewWall(direction: Direction, wallTypes: Collection<WallType> = emptyList()) {
     val wallFile = pickWeightedWallFileForCurrentDifficulty()
 
     val shouldBeFlipped: Boolean = Random.nextBoolean() // Randomly decide if the wall should be flipped
 
 
-    val newWall = Wall(wallFile, direction, shouldBeFlipped, wallTypes) // Create a new wall
+    val newWall = Wall(wallFile, direction, shouldBeFlipped, wallTypes.toMutableList()) // Create a new wall
 
-    upcomingWalls.add(newWall) // Add the new wall to the list of upcoming walls
+    SpawnerRuntimeState.upcomingWalls.add(newWall) // Add the new wall to the list of upcoming walls
 }
 
+/** Loads a wall into the arena and registers it as an active wall. */
 fun bringWallToLife(wall: Wall) {
     // Make the wall exist in the world by loading the schematic
     wall.makeWallExist()
-    // Add the new wall to the list of existing walls. the wall is added at the end of the list!
-    existingWallsList.add(wall)
+    // Add the new wall to the bucket for the direction it came from.
+    WallsRuntimeState.existingWalls.add(wall)
 }
 
+/** Deletes every active wall from the arena. */
 fun clearWalls() {
-    while (existingWallsList.isNotEmpty()) {
-        deleteWall(existingWallsList[0])
-    }
+    WallsRuntimeState.existingWalls.allWalls().forEach { deleteWall(it) }
 }
 
+/** Removes the wall's schematic from the world and unregisters it from active walls. */
 fun deleteWall(wall: Wall) {
     BuildLoader.deleteSchematic(wall.wallRegion.minimumPoint, wall.wallRegion.maximumPoint)
-    // delete the wall reference from the AliveWallsList
-    val hasWallBeenDeleted = existingWallsList.remove(wall)
+    // delete the wall reference from the alive wall buckets
+    val hasWallBeenDeleted = WallsRuntimeState.existingWalls.remove(wall)
 
     if (!hasWallBeenDeleted) {
         logger().warn("HITW: Wall deletion failed, wall not found in the alive walls list")
     }
 }
 
+/** Chooses a schematic file using the current difficulty weighting rules. */
 private fun pickWeightedWallFileForCurrentDifficulty(): File {
-    fun pickFromPool(pool: List<File>): File? {
-        return pool.randomOrNull()
-    }
-
     fun fallbackPools(vararg pools: List<File>): File {
         for (pool in pools) {
-            pickFromPool(pool)?.let { return it }
+            pool.randomOrNull()?.let { return it }
         }
 
         throw IllegalStateException("No wall schematics are available for the current difficulty")
     }
 
     return when (curWallDifficultyInPack) {
-        base.minigames.hole_in_the_wall.HITWConst.WallDifficulty.EASY ->
+        HITWConst.WallDifficulty.EASY ->
             fallbackPools(wallPackDifficulties.easy)
 
-        base.minigames.hole_in_the_wall.HITWConst.WallDifficulty.MEDIUM ->
+        HITWConst.WallDifficulty.MEDIUM ->
             when (Random.nextInt(100)) {
                 in 0..84 -> fallbackPools(wallPackDifficulties.medium, wallPackDifficulties.easy)
                 else -> fallbackPools(wallPackDifficulties.easy, wallPackDifficulties.medium)
             }
 
-        base.minigames.hole_in_the_wall.HITWConst.WallDifficulty.HARD ->
+        HITWConst.WallDifficulty.HARD ->
             when (Random.nextInt(100)) {
                 in 0..84 -> fallbackPools(wallPackDifficulties.hard, wallPackDifficulties.medium, wallPackDifficulties.easy)
                 in 85..94 -> fallbackPools(wallPackDifficulties.medium, wallPackDifficulties.hard, wallPackDifficulties.easy)
                 else -> fallbackPools(wallPackDifficulties.easy, wallPackDifficulties.medium, wallPackDifficulties.hard)
             }
 
-        base.minigames.hole_in_the_wall.HITWConst.WallDifficulty.VERY_HARD ->
+        HITWConst.WallDifficulty.VERY_HARD ->
             when (Random.nextInt(100)) {
                 in 0..79 -> fallbackPools(wallPackDifficulties.very_hard, wallPackDifficulties.hard, wallPackDifficulties.medium, wallPackDifficulties.easy)
                 in 80..89 -> fallbackPools(wallPackDifficulties.hard, wallPackDifficulties.very_hard, wallPackDifficulties.medium, wallPackDifficulties.easy)
