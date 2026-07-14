@@ -3,7 +3,6 @@ package base.minigames.hole_in_the_wall.wall_types
 import base.minigames.hole_in_the_wall.game_loop.walls.runtime.getStopSignRegion
 import base.minigames.hole_in_the_wall.game_loop.walls.runtime.overlaps
 import base.minigames.hole_in_the_wall.models.Wall
-import base.utils.additions.Direction
 import com.sk89q.worldedit.regions.CuboidRegion
 
 /**
@@ -16,13 +15,22 @@ data class PsychWallType(
     override val id: String = "psych"
 
     /**
-     * Stop Psyche Walls at the stop signs
+     * is used so that a psych wall that stops, then returns to moving, won't get stopped immediately again
      */
-    internal fun stopPsycheWallAtStopSign(wall: Wall) {
+    var hasDoneAPsych = false
+
+    /**
+     * Stop Psych Walls at the stop signs
+     */
+    internal fun stopPsychWallAtStopSign(wall: Wall) {
+        if (hasDoneAPsych)
+            return
+
         val stopSign: CuboidRegion = getStopSignRegion(wall.directionWallComesFrom)
 
         if (stopSign.overlaps(wall.wallRegion) ) {
             wall.shouldBeStopped = true
+            hasDoneAPsych = true
         }
     }
 }

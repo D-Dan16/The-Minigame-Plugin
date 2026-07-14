@@ -64,6 +64,7 @@ fun clearWalls() {
 
 /** Removes the wall's schematic from the world and unregisters it from active walls. */
 fun deleteWall(wall: Wall) {
+    wall.markDeleted()
     BuildLoader.deleteSchematic(wall.wallRegion.minimumPoint, wall.wallRegion.maximumPoint)
     // delete the wall reference from the alive wall buckets
     val hasWallBeenDeleted = WallsRuntimeState.existingWalls.remove(wall)

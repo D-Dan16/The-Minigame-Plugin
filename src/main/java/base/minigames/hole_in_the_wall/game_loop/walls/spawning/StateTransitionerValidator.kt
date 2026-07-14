@@ -11,7 +11,6 @@ internal fun HoleInTheWall.attemptChangingStateTo(wantedState: HITWConst.WallSpa
         HITWConst.WallSpawnerState.IDLE -> wantedState in setOf(
             HITWConst.WallSpawnerState.INTENDING_TO_CREATE_1_WALL,
             HITWConst.WallSpawnerState.INTENDING_TO_CREATE_MULTIPLE_WALLS_AT_ONCE,
-            HITWConst.WallSpawnerState.SPAWNING_1_WALL
         )
 
         HITWConst.WallSpawnerState.INTENDING_TO_CREATE_1_WALL -> wantedState in setOf(

@@ -33,17 +33,16 @@ object HITWConst {
     const val HARD_CAP_MAX_POSSIBLE_AMOUNT_OF_WALLS: Int = 6
 
     /** Default travel lifespan for a regular wall. */
-    const val DEFAULT_WALL_TRAVEL_LIFESPAN: Int = 34 //25
+    const val DEFAULT_WALL_TRAVEL_LIFESPAN: Int = 24
     /** Default travel lifespan for a psych wall that dies when stopped. */
     const val PSYCH_WALL_TRAVEL_LIFESPAN: Int = 6
 
     const val MINIMUM_SPACE_BETWEEN_2_WALLS_FROM_THE_SAME_DIRECTION_FROM_SPAWN = 6
 
-    const val TRAVEL_DISTANCE_THAT_LETS_YOU_SPAWN_A_WALL_FROM_AN_ADJACENT_DIRECTION: Int = DEFAULT_WALL_TRAVEL_LIFESPAN - 25//7
-    const val TRAVEL_DISTANCE_THAT_LETS_YOU_SPAWN_A_WALL_FROM_THE_DIRECTION_THIS_WALL_IS_FACING: Int = DEFAULT_WALL_TRAVEL_LIFESPAN - 15 //4
+    const val TRAVEL_DISTANCE_THAT_LETS_YOU_SPAWN_A_WALL_FROM_AN_ADJACENT_DIRECTION: Int = DEFAULT_WALL_TRAVEL_LIFESPAN - 7//25
+    const val TRAVEL_DISTANCE_THAT_LETS_YOU_SPAWN_A_WALL_FROM_THE_DIRECTION_THIS_WALL_IS_FACING: Int = DEFAULT_WALL_TRAVEL_LIFESPAN - 4 //15
 
     //endregion
-
 
     object Locations {
         val WORLD: World = getWorld("world") ?: throw IllegalStateException("World 'world' not found. Please ensure the world is loaded.")
@@ -81,46 +80,36 @@ object HITWConst {
             private fun lineRegion(
                 minX: Int,
                 maxX: Int,
-                minY: Int,
-                maxY: Int,
                 minZ: Int,
                 maxZ: Int
             ): CuboidRegion {
                 return CuboidRegion(
-                    PLATFORM.clone().add(minX.toDouble(), minY.toDouble(), minZ.toDouble()).toBlockVector(),
-                    PLATFORM.clone().add(maxX.toDouble(), maxY.toDouble(), maxZ.toDouble()).toBlockVector()
+                    PLATFORM.clone().add(minX.toDouble(), STOP_SIGN_MIN_Y.toDouble(), minZ.toDouble()).toBlockVector(),
+                    PLATFORM.clone().add(maxX.toDouble(), STOP_SIGN_MAX_Y.toDouble(), maxZ.toDouble()).toBlockVector()
                 )
             }
 
             val NORTH_STOP_SIGN_REGION: CuboidRegion = lineRegion(
                 PLATFORM_MIN_HORIZONTAL_OFFSET,
                 PLATFORM_MAX_HORIZONTAL_OFFSET,
-                STOP_SIGN_MIN_Y,
-                STOP_SIGN_MAX_Y,
                 NORTH_STOP_SIGN_Z,
                 NORTH_STOP_SIGN_Z
             )
             val EAST_STOP_SIGN_REGION: CuboidRegion = lineRegion(
                 EAST_STOP_SIGN_X,
                 EAST_STOP_SIGN_X,
-                STOP_SIGN_MIN_Y,
-                STOP_SIGN_MAX_Y,
                 PLATFORM_MIN_HORIZONTAL_OFFSET,
                 PLATFORM_MAX_HORIZONTAL_OFFSET
             )
             val SOUTH_STOP_SIGN_REGION: CuboidRegion = lineRegion(
                 PLATFORM_MIN_HORIZONTAL_OFFSET,
                 PLATFORM_MAX_HORIZONTAL_OFFSET,
-                STOP_SIGN_MIN_Y,
-                STOP_SIGN_MAX_Y,
                 SOUTH_STOP_SIGN_Z,
                 SOUTH_STOP_SIGN_Z
             )
             val WEST_STOP_SIGN_REGION: CuboidRegion = lineRegion(
                 WEST_STOP_SIGN_X,
                 WEST_STOP_SIGN_X,
-                STOP_SIGN_MIN_Y,
-                STOP_SIGN_MAX_Y,
                 PLATFORM_MIN_HORIZONTAL_OFFSET,
                 PLATFORM_MAX_HORIZONTAL_OFFSET
             )
@@ -241,6 +230,11 @@ object HITWConst {
         val INCREASE_WALL_DIFFICULTY_LANDMARKS: IntArray = intArrayOf(20, 45, 70)
 
         val PLATFORM_SHRINKAGE_LANDMARKS: IntArray = intArrayOf(35, 75)
+
+        /**
+         * delay until decay for Psych walls that don't reach mid, and ran out of lifespan
+         */
+        val DEAD_PSYCHE_WALL_TIME_TILL_DECAY_RANGE: IntRange = 0..3
 
         // *after the game knows that the wall can safely spawn in that direction, we'll make it wait extra for randomness
         /** Random delay range before spawning from the same direction. */

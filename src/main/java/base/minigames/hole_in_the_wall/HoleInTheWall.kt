@@ -4,7 +4,7 @@ import base.minigames.hole_in_the_wall.HITWConst.Timers
 import base.minigames.hole_in_the_wall.HITWConst.WallSpawnerState
 import base.minigames.MinigameSkeleton
 import base.minigames.hole_in_the_wall.game_loop.GameLoopRuntimeState
-import base.minigames.hole_in_the_wall.game_loop.GameLoopRuntimeState.gameEvents
+import base.minigames.hole_in_the_wall.game_loop.GameLoopRuntimeState.gameLoopRunnable
 import base.minigames.hole_in_the_wall.game_loop.GameLoopRuntimeState.startOnFinalPlatformStage
 import base.minigames.hole_in_the_wall.game_loop.GameLoopRuntimeState.wallSpeed
 import base.minigames.hole_in_the_wall.game_loop.walls.runtime.WallsRuntimeState
@@ -66,7 +66,7 @@ class HoleInTheWall (val plugin: Plugin) : MinigameSkeleton() {
         super.pauseGame()
 
         // Cancel the periodic task that updates the game state and handles all game events - such as wall movement, wall spawning, and wall deletion.
-        gameEvents?.cancel()
+        gameLoopRunnable?.cancel()
     }
 
 

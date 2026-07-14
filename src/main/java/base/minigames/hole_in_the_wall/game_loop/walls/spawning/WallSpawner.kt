@@ -5,27 +5,15 @@ import base.minigames.hole_in_the_wall.HITWConst.WallSpawnerState
 import base.minigames.hole_in_the_wall.HoleInTheWall
 import base.minigames.hole_in_the_wall.game_loop.walls.bringWallToLife
 import base.minigames.hole_in_the_wall.game_loop.walls.createNewWall
-import base.minigames.hole_in_the_wall.models.Wall
 import base.minigames.hole_in_the_wall.game_loop.walls.runtime.WallsRuntimeState
 import base.minigames.hole_in_the_wall.wall_types.PsychWallType
+import base.minigames.hole_in_the_wall.wall_types.WallType
 import base.utils.additions.Direction
 import base.utils.additions.activateTaskAfterConditionIsMet
-
-internal object SpawnerRuntimeState {
-    /** The state of the wall spawner. This is used to determine what action is being done at any given moment and to ensure that nothing unexpected or unwanted occurs with behaviors to walls. */
-    internal var stateOfWallSpawner: WallSpawnerState = WallSpawnerState.DO_NO_ACTION
-    /** Walls that are scheduled to be spawned next. */
-    internal val upcomingWalls: MutableList<Wall> = mutableListOf()
-
-    /** Resets the spawner back to its idle baseline and clears any queued walls. */
-    fun reset() {
-        stateOfWallSpawner = WallSpawnerState.DO_NO_ACTION
-        upcomingWalls.clear()
-    }
-}
+import kotlin.random.Random
 
 /** The State Machine of wall spawning. **/
-/** Runs the wall spawning state machine for the current game tick. */
+/** Runs the wall-spawning state machine for the current game tick. */
 internal fun HoleInTheWall.manageWallSpawning() {
     when (SpawnerRuntimeState.stateOfWallSpawner) {
         WallSpawnerState.IDLE -> {
@@ -33,21 +21,24 @@ internal fun HoleInTheWall.manageWallSpawning() {
             if (WallsRuntimeState.existingWalls.size >= HITWConst.HARD_CAP_MAX_POSSIBLE_AMOUNT_OF_WALLS) return
             if (SpawnerRuntimeState.upcomingWalls.isNotEmpty()) return
 
-            val wantedState: WallSpawnerState = if (WallsRuntimeState.existingWalls.isEmpty()) {
-                createNewWall(Direction.entries.random())
-                WallSpawnerState.SPAWNING_1_WALL
-            } else {
-                WallSpawnerState.INTENDING_TO_CREATE_1_WALL
-            }
+            val wantedState: WallSpawnerState =
+                setOf(WallSpawnerState.INTENDING_TO_CREATE_1_WALL, WallSpawnerState.INTENDING_TO_CREATE_MULTIPLE_WALLS_AT_ONCE).random()
+//                WallSpawnerState.INTENDING_TO_CREATE_MULTIPLE_WALLS_AT_ONCE
 
             attemptChangingStateTo(wantedState)
         }
 
         WallSpawnerState.INTENDING_TO_CREATE_1_WALL -> {
-            createNewWall(Direction.entries.random())
+            val randomDir = Direction.entries.random()
+            val directionOfLast = WallsRuntimeState.existingWalls.allWalls().lastOrNull()?.directionWallComesFrom
+
+            if (directionOfLast != null)
+                createNewWall(setOf(directionOfLast,randomDir).random())
+            else
+                createNewWall(randomDir)
 
             scheduleStateTransition(
-                condition = { isSafeToSpawnWall() },
+                condition = ::isSafeToSpawnWall,
                 targetState = WallSpawnerState.SPAWNING_1_WALL
             )
 
@@ -71,9 +62,36 @@ internal fun HoleInTheWall.manageWallSpawning() {
             }
         }
 
-        WallSpawnerState.INTENDING_TO_CREATE_MULTIPLE_WALLS_AT_ONCE,
+        WallSpawnerState.INTENDING_TO_CREATE_MULTIPLE_WALLS_AT_ONCE -> {
+            val wallsToSpawn = (2..4).random()
+            val directionToChooseFrom = Direction.entries.shuffled().toMutableList()
+
+            var createdRealWall = false
+            repeat(wallsToSpawn) {
+                val wallTypes = mutableListOf<WallType>()
+                if (!createdRealWall) {
+                    createdRealWall = true
+                } else {
+                    wallTypes += PsychWallType(Random.nextBoolean())
+                }
+
+                createNewWall(directionToChooseFrom.removeFirst(),wallTypes)
+            }
+
+            scheduleStateTransition(
+                condition = ::isSafeToSpawnWall,
+                targetState = WallSpawnerState.SPAWNING_MULTIPLE_WALLS_AT_ONCE
+            )
+
+            attemptChangingStateTo(WallSpawnerState.WAITING_A_LIL_TILL_WALL_HAS_SPACE_TO_SPAWN)
+
+        }
         WallSpawnerState.SPAWNING_MULTIPLE_WALLS_AT_ONCE -> {
-            // The free-form spawner currently only spawns one wall at a time.
+            SpawnerRuntimeState.upcomingWalls.forEach {
+                bringWallToLife(it)
+            }
+            SpawnerRuntimeState.upcomingWalls.clear()
+
             attemptChangingStateTo(WallSpawnerState.IDLE)
         }
 

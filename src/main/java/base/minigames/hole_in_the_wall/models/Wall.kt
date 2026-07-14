@@ -22,6 +22,7 @@ import org.bukkit.block.BlockState
 import org.bukkit.block.data.Powerable
 import org.bukkit.block.data.type.Piston
 import org.bukkit.block.data.type.Switch
+import org.bukkit.scheduler.BukkitTask
 import java.io.File
 
 class Wall(
@@ -85,9 +86,6 @@ class Wall(
         }
         else -> HITWConst.DEFAULT_WALL_TRAVEL_LIFESPAN
     }
-        set(value) {
-            field = value
-        }
     var lifespanTraveled = 0
     /** The wall's signed position on its travel axis, relative to `HITWConst.Locations.SPAWN`. */
     var axisPositionFromSpawn = HITWConst.Locations.axisSpawnPosition(directionWallComesFrom)
@@ -98,8 +96,22 @@ class Wall(
     /** Whether the wall should be stopped from moving. */
     var shouldBeStopped: Boolean = false
 
-    /** Prevents repeated handling of stopped psych walls. */
+    /** Prevents repeated handling of stopped walls. */
     var isBeingHandled: Boolean = false
+
+    /** Prevents a new move from starting before the previous delayed move has finished. */
+    private var isMoveInProgress: Boolean = false
+
+    /** Marks walls that have been removed from the arena. */
+    internal var isDeleted: Boolean = false
+
+    private data class PendingMove(
+        val task: BukkitTask,
+        val buttonLocations: List<Location>
+    )
+
+    /** Tracks delayed move tasks so they can be canceled and cleaned up if the wall is deleted. */
+    private val pendingMoves: MutableList<PendingMove> = mutableListOf()
 
     //endregion
 
@@ -252,6 +264,23 @@ class Wall(
         return locations
     }
 
+    /** Marks the wall as deleted and cancels any delayed movement that has not yet completed. */
+    fun markDeleted() {
+        isDeleted = true
+        cancelPendingMoves()
+    }
+
+    /** Cancels delayed movement tasks and removes any buttons they already placed. */
+    private fun cancelPendingMoves() {
+        pendingMoves.forEach { pendingMove ->
+            pendingMove.task.cancel()
+            clearMoveButtons(pendingMove.buttonLocations)
+        }
+
+        pendingMoves.clear()
+        isMoveInProgress = false
+    }
+
 
     /** Advances the wall's lifespan counters and signed axis position by one step. */
     private fun updateLifespans() {
@@ -271,111 +300,148 @@ class Wall(
      * If the wall has a lifespan of 0, it will be stopped, but not necessarily removed from the game. The game logic handles the logic for removing the wall.
      */
     fun move() {
-        fun powerOnAndOffButton(block: Block) {
-            val state: BlockState = block.state
+        if (!canStartMove()) return
 
-            val powerableState: Powerable = state.blockData as Powerable
+        val buttonLocations = placeMoveButtons()
+        scheduleMoveCompletion(buttonLocations)
+    }
 
-            // Change the state of the button to powered if it is not already powered
-            if (!powerableState.isPowered) {
-                powerableState.isPowered = true // Power the button
-                state.blockData = powerableState
-                state.update(true, true) // Update the block state
-
-                // Now we turn off the button after a short delay of X ticks to simulate the button being pressed which activates the piston.
-            }
-        }
-
-        // -------------------------------------------------------------------------------------------- //
+    /** Returns `true` when the wall can start a new move on this tick. */
+    private fun canStartMove(): Boolean {
+        if (isDeleted) return false
+        if (isMoveInProgress) return false
 
         if (lifespanRemaining <= 0) {
-            this.shouldBeStopped = true // If the wall has reached its lifespan, it should be stopped (and it'll get removed).
-
-            // We will not continue with the logic of moving the wall, since it has reached its lifespan.
-            return
+            shouldBeStopped = true
+            return false
         }
 
-        //region ----Moving Wall Logic - add and Press Buttons on Pistons---------------------------------------------------
+        return true
+    }
 
+    /** Places the buttons that power the wall's pistons and returns their locations. */
+    private fun placeMoveButtons(): List<Location> {
+        val buttonLocations = mutableListOf<Location>()
 
-        // We'll create a list of locations where the buttons will be placed. this will be used when we want to eventually remove the buttons.
-        val buttonLocations: MutableList<Location> = mutableListOf()
+        locationOfPistons.forEach { pistonLocation ->
+            val buttonLocation = getButtonLocationBehindPiston(pistonLocation)
 
-        // We'll iterate through the locations of all pistons. we'll add behind them a stone button and activate the buttons on their faces.
-        locationOfPistons.forEach { loc ->
-            // the direction the wall is facing is the same as the direction the piston is facing. calculate the button location based on the direction the wall is facing.
-            val buttonLocation: Location = when (directionWallIsFacing) {
-                Direction.SOUTH -> loc.clone().add(0.0, 0.0, -1.0)
-                Direction.NORTH -> loc.clone().add(0.0, 0.0, 1.0)
-                Direction.WEST -> loc.clone().add(1.0, 0.0, 0.0)
-                Direction.EAST -> loc.clone().add(-1.0, 0.0, 0.0)
-            }
-
-            // Check if the block behind the piston is air, if it is not, then we can't place a button there.
-            // this will typically happen if two walls have collided with each other.
             if (buttonLocation.block.type != Material.AIR) {
-                val game = MinigamePlugin.plugin.getInstanceOfMinigame(MinigamePlugin.Companion.MinigameType.HOLE_IN_THE_WALL) as HoleInTheWall
-
-                game.pauseGame()
-
-                if (HITWConst.IS_IN_DEVELOPMENT)
-                    Bukkit.getServer().broadcast(
-                        Component.text("Two walls have seemed to collide. Cleaning the arena and pausing.").color(
-                            NamedTextColor.YELLOW))
+                reportWallCollision()
             }
 
-            // Update the button location to the list of button locations.
             buttonLocations.add(buttonLocation)
-
-            // Get the block behind the piston where we will place the button.
-            val buttonBlock: Block = buttonLocation.block
-            buttonBlock.type = Material.STONE_BUTTON
-
-            // now we need the button to lay flat against the piston, so we need to set the block data of the button to face *against* the piston.
-            val data = buttonBlock.blockData as Switch
-
-            data.facing = when (directionWallIsFacing) {
-                Direction.SOUTH -> BlockFace.NORTH
-                Direction.NORTH -> BlockFace.SOUTH
-                Direction.WEST -> BlockFace.EAST
-                Direction.EAST -> BlockFace.WEST
-            }
-            // set the direction of the button to face the piston.
-            buttonBlock.blockData = data
-
-            // Now we can power the button to activate the piston.
-            powerOnAndOffButton(buttonBlock)
+            placeAndPowerButton(buttonLocation)
         }
-        //endregion
 
-        // IMPORTANT: We need to let the pistons extend before we move the wall region, so we will wait for a lil before excecuting the entire logic of this function..
+        return buttonLocations
+    }
 
-        Bukkit.getScheduler().runTaskLater(MinigamePlugin.plugin, Runnable {
-        // region ---Update the region of the wall based on the wall direction, since in the physical world, the slime wall has moved.
+    /** Returns the block location directly behind the piston for the current facing direction. */
+    private fun getButtonLocationBehindPiston(pistonLocation: Location): Location {
+        return when (directionWallIsFacing) {
+            Direction.SOUTH -> pistonLocation.clone().add(0.0, 0.0, -1.0)
+            Direction.NORTH -> pistonLocation.clone().add(0.0, 0.0, 1.0)
+            Direction.WEST -> pistonLocation.clone().add(1.0, 0.0, 0.0)
+            Direction.EAST -> pistonLocation.clone().add(-1.0, 0.0, 0.0)
+        }
+    }
 
-        //shift the wall region in the direction it is facing by 1 block.
+    /** Puts a button behind the piston and powers it once to trigger the piston extension. */
+    private fun placeAndPowerButton(buttonLocation: Location) {
+        val buttonBlock: Block = buttonLocation.block
+        buttonBlock.type = Material.STONE_BUTTON
+
+        val data = buttonBlock.blockData as Switch
+        data.facing = when (directionWallIsFacing) {
+            Direction.SOUTH -> BlockFace.NORTH
+            Direction.NORTH -> BlockFace.SOUTH
+            Direction.WEST -> BlockFace.EAST
+            Direction.EAST -> BlockFace.WEST
+        }
+        buttonBlock.blockData = data
+
+        powerOnAndOffButton(buttonBlock)
+    }
+
+    /** Powers a button once to activate the piston it is attached to. */
+    private fun powerOnAndOffButton(block: Block) {
+        val state: BlockState = block.state
+        val powerableState: Powerable = state.blockData as Powerable
+
+        if (!powerableState.isPowered) {
+            powerableState.isPowered = true
+            state.blockData = powerableState
+            state.update(true, true)
+        }
+    }
+
+    /** Handles the collision case where a button cannot be placed because another block is there. */
+    private fun reportWallCollision() {
+        val game = MinigamePlugin.plugin.getInstanceOfMinigame(MinigamePlugin.Companion.MinigameType.HOLE_IN_THE_WALL) as HoleInTheWall
+
+        game.pauseGame()
+
+        if (HITWConst.IS_IN_DEVELOPMENT) {
+            Bukkit.getServer().broadcast(
+                Component.text("Two walls have seemed to collide. Cleaning the arena and pausing.").color(
+                    NamedTextColor.YELLOW
+                )
+            )
+        }
+    }
+
+    /** Schedules the wall's actual movement after the pistons have had time to extend. */
+    private fun scheduleMoveCompletion(buttonLocations: List<Location>) {
+        isMoveInProgress = true
+
+        var scheduledTask: BukkitTask? = null
+        scheduledTask = Bukkit.getScheduler().runTaskLater(MinigamePlugin.plugin, Runnable {
+            try {
+                completeDeferredMove(buttonLocations)
+            } finally {
+                isMoveInProgress = false
+                scheduledTask?.let { task ->
+                    pendingMoves.removeAll { it.task == task }
+                }
+            }
+        }, 2L)
+
+        pendingMoves.add(PendingMove(scheduledTask, buttonLocations))
+    }
+
+    /** Finishes the delayed part of the wall move if the wall still exists. */
+    private fun completeDeferredMove(buttonLocations: List<Location>) {
+        if (isDeleted) return
+
+        shiftWallRegion()
+        clearMoveButtons(buttonLocations)
+        movePistonsForward()
+        updateLifespans()
+    }
+
+    /** Moves the wall region one block forward along its travel direction. */
+    private fun shiftWallRegion() {
         when (directionWallIsFacing) {
             Direction.SOUTH -> wallRegion.shift(BlockVector3.at(0, 0, 1))
             Direction.NORTH -> wallRegion.shift(BlockVector3.at(0, 0, -1))
             Direction.WEST -> wallRegion.shift(BlockVector3.at(-1, 0, 0))
             Direction.EAST -> wallRegion.shift(BlockVector3.at(1, 0, 0))
         }
-        //endregion
+    }
 
-        //region --- Update the Pistons' location so that they match the new wall location and aren't left behind.
-
-
-        // First things first, we want to remove the buttons that were placed behind the pistons, since if we move the pistons, the buttons will be dropped as items.
+    /** Removes the temporary buttons that were used to trigger the move. */
+    private fun clearMoveButtons(buttonLocations: List<Location>) {
         buttonLocations.forEach { location ->
             location.block.type = Material.AIR
         }
+    }
 
-
+    /** Moves the pistons to the next wall position after the wall has shifted. */
+    private fun movePistonsForward() {
         locationOfPistons.forEach { location ->
-            // First, we need to remove the pistons from their current locations so that they can be moved to their new locations.
             location.block.type = Material.AIR
 
-            //then we need to update the location of the piston in the list so that it matches the new wall location.
             when (directionWallIsFacing) {
                 Direction.SOUTH -> location.add(0.0, 0.0, 1.0)
                 Direction.NORTH -> location.add(0.0, 0.0, -1.0)
@@ -383,11 +449,8 @@ class Wall(
                 Direction.EAST -> location.add(1.0, 0.0, 0.0)
             }
 
-            // If the lifespan is greater than 0, we will move the pistons to their new locations. this is to ensure that no weird scenarios happen - such as pistons being left behind when the wall is being deleted. (recall this method is inside a BukkitRunnable, so it is delayed and independent of the main thread actions).
             if (lifespanRemaining > 0) {
-                // Now we physically move the pistons to their new locations.
                 location.block.type = Material.PISTON
-                // Set the piston block data to face the direction the wall is facing.
                 val pistonData = location.block.blockData as Piston
                 pistonData.facing = when (directionWallIsFacing) {
                     Direction.SOUTH -> BlockFace.SOUTH
@@ -399,15 +462,10 @@ class Wall(
                 location.block.blockData = pistonData
             }
         }
-        //endregion
-
-        updateLifespans()
-
-        } , 2L)
     }
 
     /** Highlights the wall's bounding corners for debugging. */
-    fun showBlocks() {
+    internal fun showBlocks() {
         fun putBlock(location: Location) {
             location.block.type = Material.DIAMOND_BLOCK
         }
