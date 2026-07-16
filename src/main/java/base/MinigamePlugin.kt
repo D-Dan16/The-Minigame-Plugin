@@ -16,6 +16,7 @@ import base.minigames.parkour_dash.ParkourDash
 import base.minigames.parkour_dash.ParkourDashCommands
 import base.minigames.parkour_dash.ParkourDashCourseCreatorListener
 import base.minigames.parkour_dash.GameEvents
+import base.minigames.hole_in_the_wall.debug.HITWDevLogger
 import org.bukkit.Bukkit
 import org.bukkit.Difficulty
 import org.bukkit.GameMode
@@ -99,6 +100,8 @@ class MinigamePlugin : JavaPlugin() {
             listOfMinigames.forEach {
                 it.nukeArena()
             }
+
+        HITWDevLogger.shutdown()
     }
 
     fun getSchematicsBaseFolder(minigame: MinigameType): File {

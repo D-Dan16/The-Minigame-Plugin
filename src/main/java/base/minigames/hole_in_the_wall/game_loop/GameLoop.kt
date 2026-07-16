@@ -55,7 +55,7 @@ internal fun HoleInTheWall.startRepeatingGameLoop() {
             updateWallLifecycleIfNeeded()
             // Resolve wall-to-wall conflicts after movement but before spawning the next wall.
 //            forceTwoCloseWallsToStop()
-            stopNecessaryWallsAtStopSign()
+//            stopNecessaryWallsAtStopSign()
 
             //--Add new walls to the game
             // We cap the number of possible walls that are in the arena incase that the generator goes for some reason nuts

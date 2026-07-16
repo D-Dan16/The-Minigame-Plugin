@@ -1,16 +1,13 @@
 package base.minigames.hole_in_the_wall.game_loop.walls
 
 import base.minigames.hole_in_the_wall.HITWConst
+import base.minigames.hole_in_the_wall.debug.HITWDevLogger
 import base.minigames.hole_in_the_wall.game_loop.GameLoopRuntimeState.curWallDifficultyInPack
 import base.minigames.hole_in_the_wall.game_loop.walls.spawning.SpawnerRuntimeState
 import base.minigames.hole_in_the_wall.models.Wall
 import base.minigames.hole_in_the_wall.wall_types.WallType
 import base.utils.additions.Direction
 import base.utils.other.BuildLoader
-import net.kyori.adventure.text.Component
-import net.kyori.adventure.text.format.NamedTextColor
-import net.kyori.adventure.text.logger.slf4j.ComponentLogger.logger
-import org.bukkit.Bukkit
 import java.io.File
 import kotlin.random.Random
 import base.minigames.hole_in_the_wall.game_loop.walls.runtime.WallsRuntimeState
@@ -33,8 +30,7 @@ fun createNewWall() {
 
 
     newWall.showBlocks() // Show the corners of the wall for debugging purposes
-    Bukkit.getServer().broadcast(Component.text("flipped: ${newWall.isFlipped}. DirectionWallCome: ${newWall.directionWallComesFrom}").color(
-        NamedTextColor.DARK_AQUA))
+    HITWDevLogger.wall(newWall, "debug spawned via createNewWall(); $newWall)")
 }
 
 /** Queues a new wall of the given direction for the normal spawn flow. */
@@ -47,6 +43,7 @@ fun createNewWall(direction: Direction, wallTypes: Collection<WallType> = emptyL
     val newWall = Wall(wallFile, direction, shouldBeFlipped, wallTypes.toMutableList()) // Create a new wall
 
     SpawnerRuntimeState.upcomingWalls.add(newWall) // Add the new wall to the list of upcoming walls
+    HITWDevLogger.wall(newWall, "queued for spawn; $newWall")
 }
 
 /** Loads a wall into the arena and registers it as an active wall. */
@@ -55,6 +52,7 @@ fun bringWallToLife(wall: Wall) {
     wall.makeWallExist()
     // Add the new wall to the bucket for the direction it came from.
     WallsRuntimeState.existingWalls.add(wall)
+    HITWDevLogger.wall(wall, "brought to life; region=${wall.wallRegion.minimumPoint}..${wall.wallRegion.maximumPoint}")
 }
 
 /** Deletes every active wall from the arena. */
@@ -70,7 +68,9 @@ fun deleteWall(wall: Wall) {
     val hasWallBeenDeleted = WallsRuntimeState.existingWalls.remove(wall)
 
     if (!hasWallBeenDeleted) {
-        logger().warn("HITW: Wall deletion failed, wall not found in the alive walls list")
+        HITWDevLogger.warn("wall#${wall.debugId} deletion failed; wall not found in the alive walls list")
+    } else {
+        HITWDevLogger.wall(wall, "deleted from existingWalls")
     }
 }
 

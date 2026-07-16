@@ -1,6 +1,7 @@
 package base.minigames.hole_in_the_wall.game_loop.walls.runtime
 
 import base.minigames.hole_in_the_wall.HITWConst.Timers
+import base.minigames.hole_in_the_wall.debug.HITWDevLogger
 import base.minigames.hole_in_the_wall.game_loop.GameLoopRuntimeState.tickCount
 import base.minigames.hole_in_the_wall.game_loop.GameLoopRuntimeState.wallSpeed
 import base.minigames.hole_in_the_wall.game_loop.walls.deleteWall
@@ -44,15 +45,21 @@ internal fun updateWallLifecycleIfNeeded() {
     wallsToDelete.forEach { deleteWall(it) }
 }
 
+
 private fun handleStayingPsychWalls() {
-    // Check if there are any alive walls
-    if (getMovingWalls().isNotEmpty())
+    if (WallsRuntimeState.stayingPsychWalls.isEmpty())
         return
 
-    val index = WallsRuntimeState.stayingPsychWalls.indices.randomOrNull() ?: return
-    val psychWallToRemove = WallsRuntimeState.stayingPsychWalls.removeAt(index)
-    psychWallToRemove.shouldBeStopped = false
+    // Check if there are any walls at mid that interrupt going to mid.
+    if (isAWallCloseOrAtMid())
+        return
+
+    val psychWallToRemove = WallsRuntimeState.stayingPsychWalls.removeAt(WallsRuntimeState.stayingPsychWalls.indices.random())
+    psychWallToRemove.isStopped = false
     psychWallToRemove.isBeingHandled = false
+
+    HITWDevLogger.wall(psychWallToRemove, "psych wall re-moving.")
+
 }
 
 private fun applyRemovalForWallWithoutLifespan(wall: Wall) {
@@ -82,9 +89,9 @@ private fun executeWallTypeSpecificActions(existingWalls: List<Wall>) {
 }
 
 private fun getMovingWalls(): List<Wall> {
-    return WallsRuntimeState.existingWalls.allWalls().filter { !it.shouldBeStopped }
+    return WallsRuntimeState.existingWalls.allWalls().filter { !it.isStopped }
 }
 
 private fun getStoppedWalls(): List<Wall> {
-    return WallsRuntimeState.existingWalls.allWalls().filter { it.shouldBeStopped }
+    return WallsRuntimeState.existingWalls.allWalls().filter { it.isStopped }
 }

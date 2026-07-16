@@ -4,18 +4,14 @@ import base.utils.extensions_for_classes.toBlockVector
 import base.minigames.hole_in_the_wall.game_loop.walls.runtime.WallReference
 import com.sk89q.worldedit.math.BlockVector3
 import com.sk89q.worldedit.regions.CuboidRegion
-import com.sk89q.worldedit.regions.Region
-import com.sk89q.worldedit.regions.Regions
-import jdk.javadoc.internal.doclets.toolkit.taglets.snippet.Parser
 import org.bukkit.Bukkit.getWorld
 import org.bukkit.Location
 import org.bukkit.World
 import base.utils.additions.Direction
 
-
 object HITWConst {
     /** Whether the plugin is running in development mode. */
-    const val IS_IN_DEVELOPMENT: Boolean = false
+    const val IS_IN_DEVELOPMENT: Boolean = true
 
     const val PLATFORMS_FOLDER: String = "platforms"
     const val EASY_WALLPACK_FOLDER: String = "easy"
@@ -35,7 +31,7 @@ object HITWConst {
     /** Default travel lifespan for a regular wall. */
     const val DEFAULT_WALL_TRAVEL_LIFESPAN: Int = 24
     /** Default travel lifespan for a psych wall that dies when stopped. */
-    const val PSYCH_WALL_TRAVEL_LIFESPAN: Int = 6
+    const val STOPPED_PSYCH_WALL_TRAVEL_LIFESPAN: Int = 6
 
     const val MINIMUM_SPACE_BETWEEN_2_WALLS_FROM_THE_SAME_DIRECTION_FROM_SPAWN = 6
 
@@ -113,6 +109,11 @@ object HITWConst {
                 PLATFORM_MIN_HORIZONTAL_OFFSET,
                 PLATFORM_MAX_HORIZONTAL_OFFSET
             )
+
+            val NORTH_LINE_BETWEEN_STOP_SIGN_AND_PLATFORM: CuboidRegion = NORTH_STOP_SIGN_REGION.clone().apply { shift(BlockVector3(0,0,1))}
+            val EAST_LINE_BETWEEN_STOP_SIGN_AND_PLATFORM: CuboidRegion = EAST_STOP_SIGN_REGION.clone().apply { shift(BlockVector3(-1,0,0))}
+            val SOUTH_LINE_BETWEEN_STOP_SIGN_AND_PLATFORM: CuboidRegion = SOUTH_STOP_SIGN_REGION.clone().apply { shift(BlockVector3(0,0,-1))}
+            val WEST_LINE_BETWEEN_STOP_SIGN_AND_PLATFORM: CuboidRegion = WEST_STOP_SIGN_REGION.clone().apply { shift(BlockVector3(1,0,0))}
 
             val ABOVE_PLATFORM_REGION: CuboidRegion = CuboidRegion(
                 PLATFORM.clone().add(ABOVE_PLATFORM_MIN_HORIZONTAL_OFFSET.toDouble(), ABOVE_PLATFORM_MIN_Y_OFFSET.toDouble(), ABOVE_PLATFORM_MIN_HORIZONTAL_OFFSET.toDouble()).toBlockVector(),

@@ -23,7 +23,6 @@ internal fun HoleInTheWall.manageWallSpawning() {
 
             val wantedState: WallSpawnerState =
                 setOf(WallSpawnerState.INTENDING_TO_CREATE_1_WALL, WallSpawnerState.INTENDING_TO_CREATE_MULTIPLE_WALLS_AT_ONCE).random()
-//                WallSpawnerState.INTENDING_TO_CREATE_MULTIPLE_WALLS_AT_ONCE
 
             attemptChangingStateTo(wantedState)
         }
@@ -63,7 +62,8 @@ internal fun HoleInTheWall.manageWallSpawning() {
         }
 
         WallSpawnerState.INTENDING_TO_CREATE_MULTIPLE_WALLS_AT_ONCE -> {
-            val wallsToSpawn = (2..4).random()
+            val wallsToSpawn =
+                (2..4).random()
             val directionToChooseFrom = Direction.entries.shuffled().toMutableList()
 
             var createdRealWall = false

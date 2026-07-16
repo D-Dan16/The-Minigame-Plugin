@@ -3,6 +3,7 @@ package base.minigames.hole_in_the_wall.models
 import base.MinigamePlugin
 import base.minigames.hole_in_the_wall.HITWConst
 import base.minigames.hole_in_the_wall.HoleInTheWall
+import base.minigames.hole_in_the_wall.debug.HITWDevLogger
 import base.minigames.hole_in_the_wall.game_loop.walls.runtime.WallReference
 import base.utils.additions.Direction
 import base.utils.other.BuildLoader
@@ -24,6 +25,7 @@ import org.bukkit.block.data.type.Piston
 import org.bukkit.block.data.type.Switch
 import org.bukkit.scheduler.BukkitTask
 import java.io.File
+import java.util.concurrent.atomic.AtomicInteger
 
 class Wall(
     val wallFile: File,
@@ -32,7 +34,14 @@ class Wall(
     val isFlipped: Boolean = false,
     val wallTypes: MutableList<WallType> = mutableListOf()
 ) {
+    companion object {
+        private val nextDebugId = AtomicInteger(1)
+    }
+
     //region -- Properties --
+    /** Stable identifier used for dev logging. */
+    val debugId: Int = nextDebugId.getAndIncrement()
+
     /** The current direction the wall comes from. */
     var directionWallComesFrom: Direction = directionWallComesFrom
         set(direction) {
@@ -79,10 +88,10 @@ class Wall(
     /** How many blocks the wall travels before it stops moving. */
     var lifespanRemaining = when {
         this.hasWallType<PsychWallType>() -> {
-            if (this.getWallType<PsychWallType>()!!.shouldRemoveWhenStopped)
-                HITWConst.PSYCH_WALL_TRAVEL_LIFESPAN
-            else
+            if (this.getWallType<PsychWallType>()!!.isResumed)
                 HITWConst.DEFAULT_WALL_TRAVEL_LIFESPAN
+            else
+                HITWConst.STOPPED_PSYCH_WALL_TRAVEL_LIFESPAN
         }
         else -> HITWConst.DEFAULT_WALL_TRAVEL_LIFESPAN
     }
@@ -94,7 +103,7 @@ class Wall(
     /** Whether the wall should be removed from the game when it stops moving. */
     var shouldBeRemoved: Boolean = false
     /** Whether the wall should be stopped from moving. */
-    var shouldBeStopped: Boolean = false
+    var isStopped: Boolean = false
 
     /** Prevents repeated handling of stopped walls. */
     var isBeingHandled: Boolean = false
@@ -151,6 +160,16 @@ class Wall(
             }
         }
     }
+
+    fun distanceTravelledFromSpawn(): Int {
+        val spawnPosition = HITWConst.Locations.axisSpawnPosition(directionWallComesFrom)
+
+        return when (directionWallComesFrom) {
+            Direction.SOUTH, Direction.EAST -> spawnPosition - axisPositionFromSpawn
+            Direction.NORTH, Direction.WEST -> axisPositionFromSpawn - spawnPosition
+        }
+    }
+
 
     /**
      * A wall has fully passed the middle ring only once both occupied axis cells are outside it.
@@ -303,6 +322,7 @@ class Wall(
         if (!canStartMove()) return
 
         val buttonLocations = placeMoveButtons()
+//        HITWDevLogger.wall(this, "move scheduled with ${buttonLocations.size} buttons")
         scheduleMoveCompletion(buttonLocations)
     }
 
@@ -312,7 +332,7 @@ class Wall(
         if (isMoveInProgress) return false
 
         if (lifespanRemaining <= 0) {
-            shouldBeStopped = true
+            isStopped = true
             return false
         }
 
@@ -381,6 +401,7 @@ class Wall(
         val game = MinigamePlugin.plugin.getInstanceOfMinigame(MinigamePlugin.Companion.MinigameType.HOLE_IN_THE_WALL) as HoleInTheWall
 
         game.pauseGame()
+        HITWDevLogger.wall(this, "collision detected while placing move button")
 
         if (HITWConst.IS_IN_DEVELOPMENT) {
             Bukkit.getServer().broadcast(
@@ -412,12 +433,16 @@ class Wall(
 
     /** Finishes the delayed part of the wall move if the wall still exists. */
     private fun completeDeferredMove(buttonLocations: List<Location>) {
-        if (isDeleted) return
+        if (isDeleted) {
+            HITWDevLogger.wall(this, "deferred move skipped because wall was deleted")
+            return
+        }
 
         shiftWallRegion()
         clearMoveButtons(buttonLocations)
         movePistonsForward()
         updateLifespans()
+        HITWDevLogger.wall(this, "lifespanRemaining=$lifespanRemaining")
     }
 
     /** Moves the wall region one block forward along its travel direction. */
@@ -486,4 +511,9 @@ class Wall(
         putBlock(min)
         putBlock(max)
     }
+
+    override fun toString(): String {
+        return "{dir=$directionWallComesFrom, lifespanRem=$lifespanRemaining, wallTypes=$wallTypes}"
+    }
 }
+

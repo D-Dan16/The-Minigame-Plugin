@@ -12,85 +12,6 @@ import com.sk89q.worldedit.regions.CuboidRegion
 import kotlin.math.abs
 
 /**
- * Derived occupancy for the current tick.
- *
- * This is rebuilt from the live wall set, so it should be treated as a snapshot rather than
- * a source of truth. The axes let us reason about walls that share the same travel line.
- */
-@Suppress("ArrayInDataClass")
-internal data class WallAxisOccupancyGrid(
-    val xAxis: Array<WallReference>,
-    val zAxis: Array<WallReference>
-) {
-    /** Marks the wall on the axis array that matches its arena axis. */
-    fun markWall(wall: Wall) {
-        when (wall.getArenaAxis()) {
-            HITWConst.Locations.ArenaAxis.X -> wall.markOnAxisOccupancy(xAxis)
-            HITWConst.Locations.ArenaAxis.Z -> wall.markOnAxisOccupancy(zAxis)
-        }
-    }
-
-    /** Returns the walls that currently occupy the middle ring on either axis. */
-    fun wallsAtMiddle(): Set<Wall> {
-        val wallsAtMiddle = mutableSetOf<Wall>()
-
-        collectWallsWithinMiddleRange(xAxis, HITWConst.Locations.ArenaAxis.X, wallsAtMiddle)
-        collectWallsWithinMiddleRange(zAxis, HITWConst.Locations.ArenaAxis.Z, wallsAtMiddle)
-
-        return wallsAtMiddle
-    }
-
-    /** Returns `true` when at least one wall currently occupies the middle ring. */
-    fun hasWallAtMiddle(): Boolean {
-        return wallsAtMiddle().isNotEmpty()
-    }
-
-    /** Returns the single direction represented by the wall at the middle ring, if unambiguous. */
-    fun getDirectionOfWallAtMid(): Direction? {
-        return wallsAtMiddle()
-            .map { it.directionWallComesFrom }
-            .distinct()
-            .singleOrNull()
-    }
-
-    /** Collects all walls that fall within the middle-ring span on the given axis. */
-    private fun collectWallsWithinMiddleRange(
-        axis: Array<WallReference>,
-        arenaAxis: HITWConst.Locations.ArenaAxis,
-        wallsAtMiddle: MutableSet<Wall>
-    ) {
-        val middleAxisIndices = middleAxisIndicesFor(arenaAxis)
-
-        middleAxisIndices.forEach { index ->
-            val wallRef = axis.getOrNull(index)?.wallRef ?: return@forEach
-            wallsAtMiddle.add(wallRef)
-        }
-    }
-
-    /** Converts the middle-ring world coordinates into axis-array indices. */
-    private fun middleAxisIndicesFor(axis: HITWConst.Locations.ArenaAxis): IntRange {
-        val middleRange = when (axis) {
-            HITWConst.Locations.ArenaAxis.X ->
-                PlatformGeometry.ABOVE_PLATFORM_REGION.minimumPoint.x()..
-                    PlatformGeometry.ABOVE_PLATFORM_REGION.maximumPoint.x()
-
-            HITWConst.Locations.ArenaAxis.Z ->
-                PlatformGeometry.ABOVE_PLATFORM_REGION.minimumPoint.z()..
-                    PlatformGeometry.ABOVE_PLATFORM_REGION.maximumPoint.z()
-        }
-
-        val start = HITWConst.Locations.relativeCoordinateToAxisIndex(axis, middleRange.first)
-        val end = HITWConst.Locations.relativeCoordinateToAxisIndex(axis, middleRange.last)
-
-        return start..end
-    }
-}
-
-data class WallReference(
-    val wallRef: Wall?
-)
-
-/**
  * Rebuilds a per-axis occupancy snapshot from the current wall set.
  *
  * The wall set is the source of truth; this structure is a derived view used by collision-style
@@ -113,12 +34,12 @@ internal fun buildWallAxisOccupancyGrid(
  * Resolves close-wall conflicts on both axes.
  *
  * Same-direction walls:
- * - stop the wall that is further back on the travel axis
- * - resume it once it is no longer close to any wall on that axis
+ * - Stop the wall that is further back on the travel axis
+ * - Resume it once it is no longer close to any wall on that axis
  *
  * Opposing-direction walls:
- * - if exactly one wall has crossed the middle ring, kill that wall immediately
- * - if both have crossed it, remove the one that is closer to the arena center
+ * - If exactly one wall has crossed the middle ring, kill that wall immediately
+ * - If both have crossed it, remove the one that is closer to the arena center
  */
 internal fun HoleInTheWall.forceTwoCloseWallsToStop() {
     val wallsDeletedThisPass = mutableSetOf<Wall>()
@@ -145,16 +66,16 @@ private fun HoleInTheWall.stopSameDirectionWallsThatAreTooClose(wallsOnAxis: Lis
             val frontWall = orderedFromBackToFront[index + 1]
 
             if (!wallsAreTooClose(backWall, frontWall)) continue
-            if (backWall.shouldBeStopped) continue
+            if (backWall.isStopped) continue
 
             // Only the trailing wall gets paused; the front wall keeps moving.
-            backWall.shouldBeStopped = true
+            backWall.isStopped = true
 
             activateTaskAfterConditionIsMet(
                 condition = { !isWallTooCloseToAnyOtherWall(backWall) },
                 conditionToCancel = { backWall !in WallsRuntimeState.existingWalls.allWalls() },
                 action = Runnable {
-                    backWall.shouldBeStopped = false
+                    backWall.isStopped = false
                     backWall.isBeingHandled = false
                 },
                 listOfRunnablesToAddTo = runnables
@@ -190,7 +111,7 @@ private fun stopOpposingWallsThatAreTooClose(
             if (wallToRemove in wallsDeletedThisPass) continue
 
             // The wall that reached the middle ring is stopped and deleted immediately.
-            wallToRemove.shouldBeStopped = true
+            wallToRemove.isStopped = true
             wallsDeletedThisPass.add(wallToRemove)
             deleteWall(wallToRemove)
         }
@@ -256,16 +177,16 @@ internal fun HoleInTheWall.stopNecessaryWallsAtStopSign() {
             val stopSign: CuboidRegion = getStopSignRegion(direction)
 
             for (wall in walls) {
-                if (wall.shouldBeStopped) continue
+                if (wall.isStopped) continue
                 if (!stopSign.overlaps(wall.wallRegion)) continue
 
                 // Stop the wall until the danger is over. A wall should only get one watcher at a time.
-                wall.shouldBeStopped = true
+                wall.isStopped = true
                 activateTaskAfterConditionIsMet(
                     condition = { isAWallAtMiddle().not() },
                     conditionToCancel = { wall !in WallsRuntimeState.existingWalls.allWalls() },
                     action = {
-                        wall.shouldBeStopped = false
+                        wall.isStopped = false
                         wall.isBeingHandled = false
                     },
                     listOfRunnablesToAddTo = runnables
@@ -296,4 +217,9 @@ internal fun CuboidRegion.overlaps(other: CuboidRegion): Boolean {
 /** Returns `true` when any wall currently occupies the middle ring. */
 internal fun isAWallAtMiddle() : Boolean {
     return buildWallAxisOccupancyGrid().hasWallAtMiddle()
+}
+
+internal fun isAWallCloseOrAtMid() : Boolean {
+    val wallAxisOccupancyGrid = buildWallAxisOccupancyGrid()
+    return wallAxisOccupancyGrid.hasWallAtMiddle() || wallAxisOccupancyGrid.isAWallCloseToMid()
 }

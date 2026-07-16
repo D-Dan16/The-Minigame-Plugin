@@ -3,6 +3,7 @@ package base.minigames.hole_in_the_wall
 import base.minigames.hole_in_the_wall.HITWConst.Timers
 import base.minigames.hole_in_the_wall.HITWConst.WallSpawnerState
 import base.minigames.MinigameSkeleton
+import base.minigames.hole_in_the_wall.debug.HITWDevLogger
 import base.minigames.hole_in_the_wall.game_loop.GameLoopRuntimeState
 import base.minigames.hole_in_the_wall.game_loop.GameLoopRuntimeState.gameLoopRunnable
 import base.minigames.hole_in_the_wall.game_loop.GameLoopRuntimeState.startOnFinalPlatformStage
@@ -41,6 +42,7 @@ class HoleInTheWall (val plugin: Plugin) : MinigameSkeleton() {
         this.mapName = nameOfMap
         super.start(player)
 
+        HITWDevLogger.initialize()
         startRepeatingGameLoop()
     }
 
