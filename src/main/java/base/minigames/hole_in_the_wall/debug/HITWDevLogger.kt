@@ -7,6 +7,8 @@ import java.io.BufferedWriter
 import java.io.File
 import java.io.FileOutputStream
 import java.io.OutputStreamWriter
+import java.io.PrintWriter
+import java.io.StringWriter
 import java.nio.charset.StandardCharsets
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -72,6 +74,23 @@ object HITWDevLogger {
         synchronized(lock) {
             if (writer == null) initialize()
             writeLine("WARN | $message")
+        }
+    }
+
+    /** Logs an exception and its complete stack trace to the HITW dev log. */
+    fun error(message: String, throwable: Throwable) {
+        if (!HITWConst.Development.IS_IN_DEVELOPMENT) return
+        synchronized(lock) {
+            if (writer == null) initialize()
+            writeLine("ERROR | $message")
+
+            val stackTrace = StringWriter().also { stringWriter ->
+                throwable.printStackTrace(PrintWriter(stringWriter))
+            }.toString().trimEnd()
+
+            stackTrace.lineSequence().forEach { line ->
+                writeLine("ERROR | $line")
+            }
         }
     }
 

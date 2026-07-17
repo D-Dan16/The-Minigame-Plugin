@@ -2,8 +2,8 @@ package base.minigames.hole_in_the_wall
 
 import base.commands.MinigameCommandsSkeleton
 import base.minigames.hole_in_the_wall.HITWConst.ArenaFiles.availableMaps
-import base.minigames.hole_in_the_wall.game_loop.walls.clearWalls
-import base.minigames.hole_in_the_wall.game_loop.walls.createNewWall
+import base.minigames.hole_in_the_wall.game_loop.walls.wall_creating.clearWalls
+import base.minigames.hole_in_the_wall.game_loop.walls.wall_creating.createNewWall
 import org.bukkit.command.Command
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player

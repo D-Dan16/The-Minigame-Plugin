@@ -11,8 +11,6 @@ import org.bukkit.Bukkit.getWorld
 import org.bukkit.Location
 import org.bukkit.World
 import base.utils.additions.Direction
-import com.google.common.collect.Queues
-import java.util.Queue
 
 object HITWConst {
     object Development {
@@ -40,6 +38,8 @@ object HITWConst {
         const val DEFAULT_WALL_TRAVEL_LIFESPAN: Int = 24
         /** Default travel lifespan for a psych wall that dies when stopped. */
         const val STOPPED_PSYCH_WALL_TRAVEL_LIFESPAN: Int = 6
+        const val LATE_DECAYED_WALL_LIFESPAN = 30
+        val FAST_DECAYED_WALL_LIFESPAN_RANGE = 10..20
     }
 
     object WallSpawning {

@@ -3,7 +3,7 @@ package base.minigames.hole_in_the_wall.game_loop.walls.runtime
 import base.minigames.hole_in_the_wall.HITWConst
 import base.minigames.hole_in_the_wall.models.Wall
 import base.minigames.hole_in_the_wall.models.WallsByDirections
-import base.minigames.hole_in_the_wall.wall_types.PsychWallType
+import base.minigames.hole_in_the_wall.wall_types.PsychWall
 import base.utils.additions.Direction
 
 internal object WallsRuntimeState {
@@ -23,6 +23,9 @@ internal object WallsRuntimeState {
     internal var nextPsychWallResumeAttemptTick: Int = 0
 
     fun reset() {
+        existingWalls.allWalls().forEach {
+            it.markDeleted()
+        }
         existingWalls.clear()
         locationsOfWalls = buildWallAxisOccupancyGrid()
         stayingPsychWalls.clear()
@@ -136,7 +139,7 @@ internal data class WallAxisOccupancyGrid(
         val corridors = stopSignCorridors()
         val waitingPsychWalls = corridors
             .mapNotNull { it.wallAtStopSign() }
-            .filter { it.isStopped && it.hasWallType<PsychWallType>() }
+            .filter { it.isStopped && it.hasWallType<PsychWall>() }
             .toSet()
 
         return corridors.any { corridor ->

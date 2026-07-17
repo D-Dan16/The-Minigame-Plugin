@@ -3,7 +3,7 @@ package base.minigames.hole_in_the_wall.game_loop.walls.spawning
 import base.minigames.hole_in_the_wall.HITWConst
 import base.minigames.hole_in_the_wall.game_loop.walls.runtime.WallsRuntimeState
 import base.minigames.hole_in_the_wall.models.Wall
-import base.minigames.hole_in_the_wall.wall_types.PsychWallType
+import base.minigames.hole_in_the_wall.wall_types.PsychWall
 import base.utils.additions.Direction
 
 /**
@@ -77,7 +77,7 @@ private fun movesUntilPsychWallCanResume(): Int {
 
 private fun isWaitingResumedPsychWall(wall: Wall): Boolean {
     return wall.isStopped &&
-        wall.getWallType<PsychWallType>()?.isResumed == true
+        wall.getWallType<PsychWall>()?.canResume == true
 }
 
 private fun isInPsychResumeExclusionZone(wall: Wall): Boolean {
