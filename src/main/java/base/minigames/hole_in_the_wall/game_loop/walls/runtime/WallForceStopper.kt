@@ -4,7 +4,7 @@ package base.minigames.hole_in_the_wall.game_loop.walls.runtime
 import base.minigames.hole_in_the_wall.HITWConst
 import base.minigames.hole_in_the_wall.HITWConst.Locations.PlatformGeometry
 import base.minigames.hole_in_the_wall.HoleInTheWall
-import base.minigames.hole_in_the_wall.game_loop.walls.deleteWall
+import base.minigames.hole_in_the_wall.game_loop.walls.wall_creating.deleteWall
 import base.minigames.hole_in_the_wall.models.Wall
 import base.utils.additions.Direction
 import base.utils.additions.activateTaskAfterConditionIsMet
@@ -88,7 +88,7 @@ private fun HoleInTheWall.stopSameDirectionWallsThatAreTooClose(wallsOnAxis: Lis
  * Stops and removes the wall that is closest to the arena center when opposing walls collide
  * too closely.
  */
-private fun stopOpposingWallsThatAreTooClose(
+internal fun stopOpposingWallsThatAreTooClose(
     wallsOnAxis: List<Wall>,
     wallsDeletedThisPass: MutableSet<Wall>
 ) {

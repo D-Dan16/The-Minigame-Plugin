@@ -3,6 +3,7 @@ package base.minigames.hole_in_the_wall.game_loop
 import base.minigames.hole_in_the_wall.HITWConst
 import base.minigames.hole_in_the_wall.HITWConst.Timers
 import base.minigames.hole_in_the_wall.HoleInTheWall
+import base.minigames.hole_in_the_wall.debug.HITWDevLogger
 import base.minigames.hole_in_the_wall.currentPlatformRegion
 import base.minigames.hole_in_the_wall.platformSchematics
 import base.minigames.hole_in_the_wall.game_loop.GameLoopRuntimeState.gameLoopRunnable
@@ -40,24 +41,29 @@ internal fun HoleInTheWall.startRepeatingGameLoop() {
 
     gameLoopRunnable = object : BukkitRunnable() {
         override fun run() {
-            tickCount++
-            timeLeft -= 1.0 / 20.0
-            timeElapsed += 1.0 / 20.0
+            try {
+                tickCount++
+                timeLeft -= 1.0 / 20.0
+                timeElapsed += 1.0 / 20.0
 
-            if (timeLeft <= 0)
-                endGame()
+                if (timeLeft <= 0)
+                    endGame()
 
-            updateGameState()
-            // Resolve wall-to-wall conflicts after movement but before spawning the next wall.
-//            forceTwoCloseWallsToStop()
-//            stopNecessaryWallsAtStopSign()
+                updateGameState()
+                // Resolve wall-to-wall conflicts after movement but before spawning the next wall.
+                //            forceTwoCloseWallsToStop()
+                //            stopNecessaryWallsAtStopSign()
 
-            //--Add new walls to the game
-            // We cap the number of possible walls that are in the arena incase that the generator goes for some reason nuts
-            if (existingWalls.size < HITWConst.Walls.HARD_CAP_MAX_POSSIBLE_AMOUNT_OF_WALLS)
-                manageWallSpawning()
+                //--Add new walls to the game
+                // We cap the number of possible walls that are in the arena incase that the generator goes for some reason nuts
+                if (existingWalls.size < HITWConst.Walls.HARD_CAP_MAX_POSSIBLE_AMOUNT_OF_WALLS)
+                    manageWallSpawning()
 
-            WallsRuntimeState.locationsOfWalls = buildWallAxisOccupancyGrid()
+                WallsRuntimeState.locationsOfWalls = buildWallAxisOccupancyGrid()
+            } catch (throwable: Throwable) {
+                HITWDevLogger.error("Unhandled exception in HITW game loop", throwable)
+                throw throwable
+            }
         }
 
         private fun updateGameState() {

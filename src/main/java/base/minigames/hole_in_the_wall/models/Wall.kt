@@ -5,9 +5,11 @@ import base.minigames.hole_in_the_wall.HITWConst
 import base.minigames.hole_in_the_wall.HoleInTheWall
 import base.minigames.hole_in_the_wall.debug.HITWDevLogger
 import base.minigames.hole_in_the_wall.game_loop.walls.runtime.WallReference
+import base.minigames.hole_in_the_wall.wall_types.EarlyDecayedWall
+import base.minigames.hole_in_the_wall.wall_types.LateDecayedWall
 import base.utils.additions.Direction
 import base.utils.other.BuildLoader
-import base.minigames.hole_in_the_wall.wall_types.PsychWallType
+import base.minigames.hole_in_the_wall.wall_types.PsychWall
 import base.minigames.hole_in_the_wall.wall_types.WallType
 import com.sk89q.worldedit.math.BlockVector3
 import com.sk89q.worldedit.regions.CuboidRegion
@@ -70,7 +72,7 @@ class Wall(
             // Create the wall region based on the clipboard's dimensions.
             wallRegion = BuildLoader.getRotatedRegion(holder)
         }
-    private lateinit var directionWallIsFacing: Direction
+    internal lateinit var directionWallIsFacing: Direction
     private var spawnLocation: Location = getWallSpawnPosition(directionWallComesFrom)
 
     /** Returns the spawn location for a wall coming from the given direction. */
@@ -87,11 +89,12 @@ class Wall(
 
     /** How many blocks the wall travels before it stops moving. */
     var lifespanRemaining = when {
-        this.hasWallType<PsychWallType>() -> {
-            if (this.getWallType<PsychWallType>()!!.isResumed)
-                HITWConst.Walls.DEFAULT_WALL_TRAVEL_LIFESPAN
-            else
-                HITWConst.Walls.STOPPED_PSYCH_WALL_TRAVEL_LIFESPAN
+        this.hasWallType<EarlyDecayedWall>() || hasWallType<LateDecayedWall>()-> {
+            getWallType<EarlyDecayedWall>()?.initialTravelLifespan ?:
+            getWallType<LateDecayedWall>()!!.initialTravelLifespan
+        }
+        this.hasWallType<PsychWall>() -> {
+            getWallType<PsychWall>()!!.initialTravelLifespan
         }
         else -> HITWConst.Walls.DEFAULT_WALL_TRAVEL_LIFESPAN
     }
@@ -205,6 +208,9 @@ class Wall(
             BuildLoader.mirrorClipboardHolder(holder, directionWallIsFacing)
         }
 
+        // give the wall behaviors a ref to the wall so they can operate on it
+        wallTypes.forEach { it.thisWall = this }
+
         // -------------------------------------------------------------------------------------------- //
     }
 
@@ -216,6 +222,8 @@ class Wall(
 
         // Get the locations of all pistons in the wall region. important that this is done after the wall region is set (which it is only after loading the schem), since the method relies on the wall region to get the piston locations.
         locationOfPistons = getPistonLocations()
+
+        wallTypes.forEach { it.activateRunnables() }
     }
 
     /** Replaces the current wall type set with the provided types, deduplicated by id. */
@@ -228,6 +236,8 @@ class Wall(
             }
         }
     }
+
+    fun hasAnyWallTypes() = wallTypes.isNotEmpty()
 
     /** Adds a wall type if another type with the same id is not already present. */
     fun addWallType(type: WallType) {
@@ -283,10 +293,11 @@ class Wall(
         return locations
     }
 
-    /** Marks the wall as deleted and cancels any delayed movement that has not yet completed. */
+    /** Marks the wall as deleted and cancels any delayed tasks that have not yet been completed. */
     fun markDeleted() {
         isDeleted = true
         cancelPendingMoves()
+        wallTypes.forEach { it.clearRunnables() }
     }
 
     /** Cancels delayed movement tasks and removes any buttons they already placed. */
@@ -455,7 +466,7 @@ class Wall(
         }
     }
 
-    /** Removes the temporary buttons that were used to trigger the move. */
+    /** Removes the temporary buttons used to trigger the move. */
     private fun clearMoveButtons(buttonLocations: List<Location>) {
         buttonLocations.forEach { location ->
             location.block.type = Material.AIR

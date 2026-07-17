@@ -1,9 +1,9 @@
 package base.minigames.hole_in_the_wall
 
 import base.MinigamePlugin
-import base.minigames.hole_in_the_wall.game_loop.walls.WallPack
+import base.minigames.hole_in_the_wall.game_loop.walls.wall_creating.WallPack
 import base.minigames.hole_in_the_wall.game_loop.GameLoopRuntimeState.initializePlatformProgression
-import base.minigames.hole_in_the_wall.game_loop.walls.wallPackDifficulties
+import base.minigames.hole_in_the_wall.game_loop.walls.wall_creating.wallPackDifficulties
 import base.utils.other.BuildLoader
 import com.sk89q.worldedit.regions.Region
 import java.io.File
