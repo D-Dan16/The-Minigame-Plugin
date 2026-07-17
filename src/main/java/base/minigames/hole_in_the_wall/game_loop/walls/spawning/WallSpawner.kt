@@ -3,6 +3,7 @@ package base.minigames.hole_in_the_wall.game_loop.walls.spawning
 import base.minigames.hole_in_the_wall.HITWConst
 import base.minigames.hole_in_the_wall.HITWConst.WallSpawnerState
 import base.minigames.hole_in_the_wall.HoleInTheWall
+import base.minigames.hole_in_the_wall.game_loop.GameLoopRuntimeState
 import base.minigames.hole_in_the_wall.game_loop.walls.bringWallToLife
 import base.minigames.hole_in_the_wall.game_loop.walls.createNewWall
 import base.minigames.hole_in_the_wall.game_loop.walls.runtime.WallsRuntimeState
@@ -18,7 +19,7 @@ internal fun HoleInTheWall.manageWallSpawning() {
     when (SpawnerRuntimeState.stateOfWallSpawner) {
         WallSpawnerState.IDLE -> {
             if (!isGameRunning) return
-            if (WallsRuntimeState.existingWalls.size >= HITWConst.HARD_CAP_MAX_POSSIBLE_AMOUNT_OF_WALLS) return
+            if (WallsRuntimeState.existingWalls.size >= HITWConst.Walls.HARD_CAP_MAX_POSSIBLE_AMOUNT_OF_WALLS) return
             if (SpawnerRuntimeState.upcomingWalls.isNotEmpty()) return
 
             val wantedState: WallSpawnerState =
@@ -62,8 +63,7 @@ internal fun HoleInTheWall.manageWallSpawning() {
         }
 
         WallSpawnerState.INTENDING_TO_CREATE_MULTIPLE_WALLS_AT_ONCE -> {
-            val wallsToSpawn =
-                (2..4).random()
+            val wallsToSpawn = GameLoopRuntimeState.multiWallSelectionRange.random()
             val directionToChooseFrom = Direction.entries.shuffled().toMutableList()
 
             var createdRealWall = false

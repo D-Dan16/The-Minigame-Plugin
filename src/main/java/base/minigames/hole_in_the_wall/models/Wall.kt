@@ -89,11 +89,11 @@ class Wall(
     var lifespanRemaining = when {
         this.hasWallType<PsychWallType>() -> {
             if (this.getWallType<PsychWallType>()!!.isResumed)
-                HITWConst.DEFAULT_WALL_TRAVEL_LIFESPAN
+                HITWConst.Walls.DEFAULT_WALL_TRAVEL_LIFESPAN
             else
-                HITWConst.STOPPED_PSYCH_WALL_TRAVEL_LIFESPAN
+                HITWConst.Walls.STOPPED_PSYCH_WALL_TRAVEL_LIFESPAN
         }
-        else -> HITWConst.DEFAULT_WALL_TRAVEL_LIFESPAN
+        else -> HITWConst.Walls.DEFAULT_WALL_TRAVEL_LIFESPAN
     }
     var lifespanTraveled = 0
     /** The wall's signed position on its travel axis, relative to `HITWConst.Locations.SPAWN`. */
@@ -403,7 +403,7 @@ class Wall(
         game.pauseGame()
         HITWDevLogger.wall(this, "collision detected while placing move button")
 
-        if (HITWConst.IS_IN_DEVELOPMENT) {
+        if (HITWConst.Development.IS_IN_DEVELOPMENT) {
             Bukkit.getServer().broadcast(
                 Component.text("Two walls have seemed to collide. Cleaning the arena and pausing.").color(
                     NamedTextColor.YELLOW
@@ -516,4 +516,3 @@ class Wall(
         return "{dir=$directionWallComesFrom, lifespanRem=$lifespanRemaining, wallTypes=$wallTypes}"
     }
 }
-

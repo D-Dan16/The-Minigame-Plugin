@@ -1,7 +1,7 @@
 package base.minigames.hole_in_the_wall
 
 import base.commands.MinigameCommandsSkeleton
-import base.minigames.hole_in_the_wall.HITWConst.availableMaps
+import base.minigames.hole_in_the_wall.HITWConst.ArenaFiles.availableMaps
 import base.minigames.hole_in_the_wall.game_loop.walls.clearWalls
 import base.minigames.hole_in_the_wall.game_loop.walls.createNewWall
 import org.bukkit.command.Command

@@ -56,7 +56,7 @@ private fun hasWaitingPsychWallInTheSameDirection(upcomingWall: Wall): Boolean {
  */
 private fun wouldBeCaughtBeforeItCanResume(waitingPsychWall: Wall): Boolean {
     val safeFollowerMoves = waitingPsychWall.distanceTravelledFromSpawn() -
-        HITWConst.MINIMUM_SPACE_BETWEEN_2_WALLS_FROM_THE_SAME_DIRECTION_FROM_SPAWN
+        HITWConst.WallSpawning.MINIMUM_SPACE_BETWEEN_2_WALLS_FROM_THE_SAME_DIRECTION_FROM_SPAWN
 
     return movesUntilPsychWallCanResume() > safeFollowerMoves
 }

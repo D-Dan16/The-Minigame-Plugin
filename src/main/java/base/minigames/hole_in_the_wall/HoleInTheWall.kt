@@ -1,12 +1,11 @@
 package base.minigames.hole_in_the_wall
 
-import base.minigames.hole_in_the_wall.HITWConst.Timers
 import base.minigames.hole_in_the_wall.HITWConst.WallSpawnerState
 import base.minigames.MinigameSkeleton
 import base.minigames.hole_in_the_wall.debug.HITWDevLogger
+import base.minigames.hole_in_the_wall.game_loop.GameLoopProgressionProfile
 import base.minigames.hole_in_the_wall.game_loop.GameLoopRuntimeState
 import base.minigames.hole_in_the_wall.game_loop.GameLoopRuntimeState.gameLoopRunnable
-import base.minigames.hole_in_the_wall.game_loop.GameLoopRuntimeState.startOnFinalPlatformStage
 import base.minigames.hole_in_the_wall.game_loop.GameLoopRuntimeState.wallSpeed
 import base.minigames.hole_in_the_wall.game_loop.walls.runtime.WallsRuntimeState
 import base.minigames.hole_in_the_wall.game_loop.walls.spawning.SpawnerRuntimeState
@@ -43,19 +42,17 @@ class HoleInTheWall (val plugin: Plugin) : MinigameSkeleton() {
         super.start(player)
 
         HITWDevLogger.initialize()
+        HITWDevLogger.log("~~~~~~~~~~~~~~~~~~~ New Game ~~~~~~~~~~~~~~~~~~~")
         startRepeatingGameLoop()
     }
 
     fun startFastMode(player: Player, mapName: String) {
-        wallSpeed = Timers.WALL_SPEED.last()
-        GameLoopRuntimeState.wallSpeedIndex = Timers.WALL_SPEED_UP_LANDMARKS.last()
-        GameLoopRuntimeState.curWallDifficultyInPack = HITWConst.WallDifficulty.VERY_HARD
-        startOnFinalPlatformStage = true
-
+        GameLoopRuntimeState.applyProgression(GameLoopProgressionProfile.FINAL)
         this.start(player, mapName)
     }
 
     override fun endGame() {
+        HITWDevLogger.log("~~~~~~~~~~~~~~~~~~~ Game Over ~~~~~~~~~~~~~~~~~~~")
         super.endGame()
         nukeArena()
     }
@@ -65,6 +62,7 @@ class HoleInTheWall (val plugin: Plugin) : MinigameSkeleton() {
     }
 
     override fun pauseGame() {
+        HITWDevLogger.log("~~~~~~~~~~~~~~~~~~~ Game Paused ~~~~~~~~~~~~~~~~~~~")
         super.pauseGame()
 
         // Cancel the periodic task that updates the game state and handles all game events - such as wall movement, wall spawning, and wall deletion.
@@ -73,6 +71,7 @@ class HoleInTheWall (val plugin: Plugin) : MinigameSkeleton() {
 
 
     override fun resumeGame() {
+        HITWDevLogger.log("~~~~~~~~~~~~~~~~~~~ Game Resumed ~~~~~~~~~~~~~~~~~~~")
         super.resumeGame()
         // resume the periodic task that updates the game state and handles all game events - such as wall movement, wall spawning, and wall deletion.
         startRepeatingGameLoop()
@@ -84,9 +83,9 @@ class HoleInTheWall (val plugin: Plugin) : MinigameSkeleton() {
 
     override fun prepareGameSetting() {
         fun preparePlayer(player: Player) {
-            player.gameMode = if (HITWConst.IS_IN_DEVELOPMENT) GameMode.CREATIVE else GameMode.ADVENTURE
+            player.gameMode = if (HITWConst.Development.IS_IN_DEVELOPMENT) GameMode.CREATIVE else GameMode.ADVENTURE
 
-            if (!HITWConst.IS_IN_DEVELOPMENT) {
+            if (!HITWConst.Development.IS_IN_DEVELOPMENT) {
                 player.teleport(HITWConst.Locations.SPAWN)
             }
 

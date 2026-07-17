@@ -15,7 +15,7 @@ import java.time.format.DateTimeFormatter
  * Dev-only logger for Hole In The Wall lifecycle tracing.
  *
  * Writes to a file under the plugin data folder and stays silent unless
- * [HITWConst.IS_IN_DEVELOPMENT] is enabled.
+ * [HITWConst.Development.IS_IN_DEVELOPMENT] is enabled.
  */
 object HITWDevLogger {
     private val timestampFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
@@ -26,7 +26,7 @@ object HITWDevLogger {
 
     /** Initializes the log file. Safe to call multiple times. */
     fun initialize() {
-        if (!HITWConst.IS_IN_DEVELOPMENT) return
+        if (!HITWConst.Development.IS_IN_DEVELOPMENT) return
 
         synchronized(lock) {
             if (writer != null) return
@@ -59,7 +59,7 @@ object HITWDevLogger {
 
     /** Logs a plain dev message. */
     fun log(message: String) {
-        if (!HITWConst.IS_IN_DEVELOPMENT) return
+        if (!HITWConst.Development.IS_IN_DEVELOPMENT) return
         synchronized(lock) {
             if (writer == null) initialize()
             writeLine("INFO | $message")
@@ -68,7 +68,7 @@ object HITWDevLogger {
 
     /** Logs a warning-level dev message. */
     fun warn(message: String) {
-        if (!HITWConst.IS_IN_DEVELOPMENT) return
+        if (!HITWConst.Development.IS_IN_DEVELOPMENT) return
         synchronized(lock) {
             if (writer == null) initialize()
             writeLine("WARN | $message")
@@ -84,7 +84,7 @@ object HITWDevLogger {
     fun currentLogFile(): File? = logFile
 
     private fun writeLine(message: String) {
-        if (!HITWConst.IS_IN_DEVELOPMENT) return
+        if (!HITWConst.Development.IS_IN_DEVELOPMENT) return
 
         val now = LocalDateTime.now().format(timestampFormatter)
         writer?.apply {

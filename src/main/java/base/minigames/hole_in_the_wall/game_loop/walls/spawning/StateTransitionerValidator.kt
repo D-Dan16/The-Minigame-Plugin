@@ -56,6 +56,6 @@ internal fun HoleInTheWall.attemptChangingStateTo(wantedState: HITWConst.WallSpa
 
     SpawnerRuntimeState.stateOfWallSpawner = wantedState
 
-    if (HITWConst.IS_IN_DEVELOPMENT)
+    if (HITWConst.Development.IS_IN_DEVELOPMENT)
         Bukkit.getServer().broadcast(Component.text("state = ${SpawnerRuntimeState.stateOfWallSpawner}").color(NamedTextColor.GRAY))
 }

@@ -2,7 +2,7 @@ package base.minigames.hole_in_the_wall.game_loop.walls
 
 import base.minigames.hole_in_the_wall.HITWConst
 import base.minigames.hole_in_the_wall.debug.HITWDevLogger
-import base.minigames.hole_in_the_wall.game_loop.GameLoopRuntimeState.curWallDifficultyInPack
+import base.minigames.hole_in_the_wall.game_loop.GameLoopRuntimeState.wallDifficulty
 import base.minigames.hole_in_the_wall.game_loop.walls.spawning.SpawnerRuntimeState
 import base.minigames.hole_in_the_wall.models.Wall
 import base.minigames.hole_in_the_wall.wall_types.WallType
@@ -84,7 +84,7 @@ private fun pickWeightedWallFileForCurrentDifficulty(): File {
         throw IllegalStateException("No wall schematics are available for the current difficulty")
     }
 
-    return when (curWallDifficultyInPack) {
+    return when (wallDifficulty) {
         HITWConst.WallDifficulty.EASY ->
             fallbackPools(wallPackDifficulties.easy)
 
@@ -108,7 +108,5 @@ private fun pickWeightedWallFileForCurrentDifficulty(): File {
                 in 90..96 -> fallbackPools(wallPackDifficulties.medium, wallPackDifficulties.hard, wallPackDifficulties.very_hard, wallPackDifficulties.easy)
                 else -> fallbackPools(wallPackDifficulties.easy, wallPackDifficulties.medium, wallPackDifficulties.hard, wallPackDifficulties.very_hard)
             }
-
-        else -> fallbackPools(wallPackDifficulties.easy)
     }
 }
