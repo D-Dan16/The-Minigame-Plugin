@@ -2,7 +2,7 @@ package base.minigames.hole_in_the_wall.debug
 
 import base.MinigamePlugin
 import base.minigames.hole_in_the_wall.HITWConst
-import base.minigames.hole_in_the_wall.models.Wall
+import base.minigames.hole_in_the_wall.models.wall.Wall
 import java.io.BufferedWriter
 import java.io.File
 import java.io.FileOutputStream

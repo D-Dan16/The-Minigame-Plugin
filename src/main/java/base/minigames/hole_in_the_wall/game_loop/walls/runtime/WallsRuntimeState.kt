@@ -1,7 +1,8 @@
 package base.minigames.hole_in_the_wall.game_loop.walls.runtime
 
 import base.minigames.hole_in_the_wall.HITWConst
-import base.minigames.hole_in_the_wall.models.Wall
+import base.minigames.hole_in_the_wall.game_loop.GameLoopRuntimeState.tickCount
+import base.minigames.hole_in_the_wall.models.wall.Wall
 import base.minigames.hole_in_the_wall.models.WallsByDirections
 import base.minigames.hole_in_the_wall.wall_types.PsychWall
 import base.utils.additions.Direction
@@ -11,7 +12,7 @@ internal object WallsRuntimeState {
     internal var locationsOfWalls: WallAxisOccupancyGrid = buildWallAxisOccupancyGrid()
 
     /**
-     * Psyche walls that: shouldRemoveWhenStopped=false
+     * Psych walls that: shouldRemoveWhenStopped=false
      */
     internal val stayingPsychWalls: MutableList<Wall> = mutableListOf()
 
@@ -30,6 +31,18 @@ internal object WallsRuntimeState {
         locationsOfWalls = buildWallAxisOccupancyGrid()
         stayingPsychWalls.clear()
         nextPsychWallResumeAttemptTick = 0
+    }
+
+    /**
+     * A batch mate that is actively moving owns the batch's current centre-crossing turn.
+     * Stopped Psych walls must wait for that wall to finish before one of them can resume.
+     */
+    fun hasActivelyMovingBatchMate(wall: Wall): Boolean {
+        return existingWalls.allWalls().any { otherWall ->
+            otherWall !== wall &&
+                otherWall.spawnBatch === wall.spawnBatch &&
+                otherWall.isActivelyMoving(tickCount)
+        }
     }
 }
 
@@ -139,7 +152,7 @@ internal data class WallAxisOccupancyGrid(
         val corridors = stopSignCorridors()
         val waitingPsychWalls = corridors
             .mapNotNull { it.wallAtStopSign() }
-            .filter { it.isStopped && it.hasWallType<PsychWall>() }
+            .filter { it.isMovementHalted && it.hasWallType<PsychWall>() }
             .toSet()
 
         return corridors.any { corridor ->

@@ -3,7 +3,8 @@ package base.minigames.hole_in_the_wall.wall_types
 import base.MinigamePlugin
 import base.minigames.hole_in_the_wall.HITWConst
 import base.minigames.hole_in_the_wall.debug.HITWDevLogger
-import base.minigames.hole_in_the_wall.models.Wall
+import base.minigames.hole_in_the_wall.models.wall.Wall
+import base.minigames.hole_in_the_wall.models.wall.WallState
 import base.utils.additions.Direction
 import org.bukkit.Location
 import org.bukkit.Material
@@ -18,28 +19,55 @@ import kotlin.random.Random
  * the wall's entire lifespan. A type may still choose to act only during a small
  * window of that lifespan once its behavior is implemented.
  */
-interface WallType {
-    var thisWall: Wall
+abstract class WallType {
+    lateinit var thisWall: Wall
+    protected val hasWall: Boolean
+        get() = ::thisWall.isInitialized
     /** Stable identifier for this wall type. */
-    val id: String
+    abstract val id: String
 
-    val initialTravelLifespan: Int
-    var runnables: MutableList<BukkitRunnable>
+    abstract val initialTravelLifespan: Int
+    private val runnables: MutableList<BukkitRunnable> = mutableListOf()
 
-    fun activateRunnables() {}
+    open fun activateRunnables() {}
     fun clearRunnables() {
         runnables.forEach { it.cancel() }
         runnables.clear()
     }
 
-    fun repeatedlyEmitParticles(particle: Particle, particleData: Any? = null, taskInterval: Long = 20L) {
+    internal fun repeatedlyEmitParticlesBeforeSpawn(particle: Particle, particleData: Any? = null, taskInterval: Long = 20L) {
         runnables += object : BukkitRunnable() {
             override fun run() {
                 try {
-                    if (thisWall.isDeleted) {
+                    if (thisWall.state != WallState.Queued) {
                         cancel()
                         return
                     }
+
+                    // The schematic is deliberately not pasted during the warning, so there are
+                    // no non-air wall blocks to inspect yet. Highlight the future wall volume.
+                    spawnParticlesInWallRegion(particle, particleData)
+                } catch (throwable: Throwable) {
+                    HITWDevLogger.error(
+                        "Unhandled exception in particle task for wall#${thisWall.debugId} ($id)",
+                        throwable
+                    )
+                    throw throwable
+                }
+            }
+        }.also { it.runTaskTimer(MinigamePlugin.plugin, 0L, taskInterval) }
+    }
+
+    internal fun repeatedlyEmitParticles(particle: Particle, particleData: Any? = null, taskInterval: Long = 20L) {
+        runnables += object : BukkitRunnable() {
+            override fun run() {
+                try {
+                    if (thisWall.state == WallState.Deleted) {
+                        cancel()
+                        return
+                    }
+                    if (thisWall.state != WallState.Spawned) return
+
                     spawnParticlesOnWall(particle, particleData)
                 } catch (throwable: Throwable) {
                     HITWDevLogger.error(
@@ -54,7 +82,7 @@ interface WallType {
 
 
     /** Spawns [particleAmountOnBlock] particles in every non-air block of this wall. */
-    fun spawnParticlesOnWall(particle: Particle, data: Any? = null, particleAmountOnBlock: Int = 1) {
+    internal fun spawnParticlesOnWall(particle: Particle, data: Any? = null, particleAmountOnBlock: Int = 1) {
         for (x in thisWall.wallRegion.minimumPoint.x()..thisWall.wallRegion.maximumPoint.x()) {
             for (y in thisWall.wallRegion.minimumPoint.y()..thisWall.wallRegion.maximumPoint.y()) {
                 for (z in thisWall.wallRegion.minimumPoint.z()..thisWall.wallRegion.maximumPoint.z()) {
@@ -63,6 +91,22 @@ interface WallType {
                     if (location.block.type != Material.AIR) {
                         HITWConst.Locations.WORLD.spawnParticle(particle, location, particleAmountOnBlock, data)
                     }
+                }
+            }
+        }
+    }
+
+    /** Spawns particles throughout the wall's future region, including its openings. */
+    private fun spawnParticlesInWallRegion(particle: Particle, data: Any? = null) {
+        for (x in thisWall.wallRegion.minimumPoint.x()..thisWall.wallRegion.maximumPoint.x()) {
+            for (y in thisWall.wallRegion.minimumPoint.y()..thisWall.wallRegion.maximumPoint.y()) {
+                for (z in thisWall.wallRegion.minimumPoint.z()..thisWall.wallRegion.maximumPoint.z()) {
+                    HITWConst.Locations.WORLD.spawnParticle(
+                        particle,
+                        calcParticlePosition(x, y, z),
+                        1,
+                        data
+                    )
                 }
             }
         }

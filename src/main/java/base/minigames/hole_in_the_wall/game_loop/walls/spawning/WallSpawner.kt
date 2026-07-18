@@ -3,17 +3,15 @@ package base.minigames.hole_in_the_wall.game_loop.walls.spawning
 import base.minigames.hole_in_the_wall.HITWConst
 import base.minigames.hole_in_the_wall.HITWConst.WallSpawnerState
 import base.minigames.hole_in_the_wall.HoleInTheWall
-import base.minigames.hole_in_the_wall.game_loop.GameLoopRuntimeState
-import base.minigames.hole_in_the_wall.game_loop.walls.wall_creating.bringWallToLife
-import base.minigames.hole_in_the_wall.game_loop.walls.wall_creating.createNewWall
+import base.minigames.hole_in_the_wall.game_loop.walls.wall_creating.spawnWall
 import base.minigames.hole_in_the_wall.game_loop.walls.runtime.WallsRuntimeState
 import base.minigames.hole_in_the_wall.game_loop.walls.wall_creating.designWallBehaviorAndCreateIt
-import base.minigames.hole_in_the_wall.wall_types.EarlyDecayedWall
-import base.minigames.hole_in_the_wall.wall_types.LateDecayedWall
-import base.minigames.hole_in_the_wall.wall_types.PsychWall
-import base.minigames.hole_in_the_wall.wall_types.WallType
+import base.minigames.hole_in_the_wall.models.wall.Wall
+import base.minigames.hole_in_the_wall.wall_types.JumpscareWall
 import base.utils.additions.Direction
 import base.utils.additions.activateTaskAfterConditionIsMet
+import base.utils.extensions_for_classes.getNextWeighted
+import org.bukkit.scheduler.BukkitRunnable
 import kotlin.random.Random
 
 
@@ -44,32 +42,39 @@ internal fun HoleInTheWall.manageWallSpawning() {
     when (SpawnerRuntimeState.stateOfWallSpawner) {
         WallSpawnerState.IDLE -> {
             if (!isGameRunning) return
-            if (WallsRuntimeState.existingWalls.size >= HITWConst.Walls.HARD_CAP_MAX_POSSIBLE_AMOUNT_OF_WALLS) return
+            if (WallsRuntimeState.existingWalls.size >= HITWConst.WallSpawning.HARD_CAP_MAX_POSSIBLE_AMOUNT_OF_WALLS) return
             if (SpawnerRuntimeState.upcomingWalls.isNotEmpty()) return
 
             val wantedState: WallSpawnerState =
-                setOf(WallSpawnerState.INTENDING_TO_CREATE_1_WALL, WallSpawnerState.INTENDING_TO_CREATE_MULTIPLE_WALLS_AT_ONCE).random()
+                WallSpawnerState.INTENDING_TO_CREATE_MULTIPLE_WALLS_AT_ONCE
+//                setOf(WallSpawnerState.INTENDING_TO_CREATE_1_WALL, WallSpawnerState.INTENDING_TO_CREATE_MULTIPLE_WALLS_AT_ONCE).random()
 
             attemptChangingStateTo(wantedState)
         }
 
         WallSpawnerState.INTENDING_TO_CREATE_1_WALL -> {
-            val randomDir = Direction.entries.random()
             val directionOfLast = WallsRuntimeState.existingWalls.allWalls().lastOrNull()?.directionWallComesFrom
-            val chosenDir = if (directionOfLast != null) setOf(directionOfLast,randomDir).random() else randomDir
+            val chosenDir = directionOfLast?.let { lastDirection ->
+                Random.getNextWeighted(
+                    Direction.entries.associateWith { direction ->
+                        if (direction == lastDirection) 3 else 1
+                    }
+                )
+            } ?: Direction.entries.random()
 
             designWallBehaviorAndCreateIt(mutableListOf(chosenDir), WallSpawnerState.INTENDING_TO_CREATE_1_WALL)
 
             scheduleStateTransition(
                 condition = ::isSafeToSpawnWall,
-                targetState = WallSpawnerState.SPAWNING_1_WALL
+                targetState = WallSpawnerState.SPAWNING_1_WALL,
+                onSafetyConfirmed = ::startJumpscareWarnings
             )
 
             attemptChangingStateTo(WallSpawnerState.WAITING_A_LIL_TILL_WALL_HAS_SPACE_TO_SPAWN)
         }
 
         WallSpawnerState.SPAWNING_1_WALL -> {
-            bringWallToLife(SpawnerRuntimeState.upcomingWalls[0])
+            SpawnerRuntimeState.upcomingWalls.firstOrNull()?.let(::spawnWall)
             SpawnerRuntimeState.upcomingWalls.clear()
 
             attemptChangingStateTo(WallSpawnerState.IDLE)
@@ -92,15 +97,16 @@ internal fun HoleInTheWall.manageWallSpawning() {
 
             scheduleStateTransition(
                 condition = ::isSafeToSpawnWall,
-                targetState = WallSpawnerState.SPAWNING_MULTIPLE_WALLS_AT_ONCE
+                targetState = WallSpawnerState.SPAWNING_MULTIPLE_WALLS_AT_ONCE,
+                onSafetyConfirmed = ::startJumpscareWarnings
             )
 
             attemptChangingStateTo(WallSpawnerState.WAITING_A_LIL_TILL_WALL_HAS_SPACE_TO_SPAWN)
 
         }
         WallSpawnerState.SPAWNING_MULTIPLE_WALLS_AT_ONCE -> {
-            SpawnerRuntimeState.upcomingWalls.forEach {
-                bringWallToLife(it)
+            SpawnerRuntimeState.upcomingWalls.toList().forEach {
+                spawnWall(it)
             }
             SpawnerRuntimeState.upcomingWalls.clear()
 
@@ -113,11 +119,45 @@ internal fun HoleInTheWall.manageWallSpawning() {
 
 
 /** Schedules a transition to the target wall spawner state once the condition becomes true. */
-fun HoleInTheWall.scheduleStateTransition(condition: () -> Boolean, targetState: WallSpawnerState) {
+fun HoleInTheWall.scheduleStateTransition(
+    condition: () -> Boolean,
+    targetState: WallSpawnerState,
+    onSafetyConfirmed: () -> Long = { 0L },
+) {
     activateTaskAfterConditionIsMet(
         condition = condition,
-        action = { attemptChangingStateTo(targetState) },
+        action = {
+            val warningDuration = onSafetyConfirmed()
+            if (warningDuration == 0L) {
+                attemptChangingStateTo(targetState)
+            } else {
+                scheduleDelayedStateTransition(targetState, warningDuration)
+            }
+        },
         actionToDoIfCanceled = { attemptChangingStateTo(WallSpawnerState.SWAPPING_TO_IDLE_WHEN_THERE_ARE_NO_EXISTING_WALLS) },
         listOfRunnablesToAddTo = runnables
     )
+}
+
+/** Starts all queued Jumpscare wall type warnings and returns the longest required warning duration. */
+private fun startJumpscareWarnings(): Long {
+    val jumpscareWalls = SpawnerRuntimeState.upcomingWalls.mapNotNull { it.getWallType<JumpscareWall>() }
+    jumpscareWalls.forEach(JumpscareWall::beginSpawnWarning)
+    return jumpscareWalls.maxOfOrNull(JumpscareWall::warningDurationTicks) ?: 0L
+}
+
+/** Keeps the post-warning transition cancellable when the game ends. */
+private fun HoleInTheWall.scheduleDelayedStateTransition(targetState: WallSpawnerState, delayTicks: Long) {
+    lateinit var task: BukkitRunnable
+    task = object : BukkitRunnable() {
+        override fun run() {
+            runnables.remove(task)
+            if (isGameRunning && !isGamePaused) {
+                attemptChangingStateTo(targetState)
+            }
+        }
+    }
+
+    runnables += task
+    task.runTaskLater(plugin, delayTicks)
 }

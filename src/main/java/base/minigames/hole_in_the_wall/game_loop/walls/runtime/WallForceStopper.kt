@@ -5,7 +5,7 @@ import base.minigames.hole_in_the_wall.HITWConst
 import base.minigames.hole_in_the_wall.HITWConst.Locations.PlatformGeometry
 import base.minigames.hole_in_the_wall.HoleInTheWall
 import base.minigames.hole_in_the_wall.game_loop.walls.wall_creating.deleteWall
-import base.minigames.hole_in_the_wall.models.Wall
+import base.minigames.hole_in_the_wall.models.wall.Wall
 import base.utils.additions.Direction
 import base.utils.additions.activateTaskAfterConditionIsMet
 import com.sk89q.worldedit.regions.CuboidRegion
@@ -66,16 +66,16 @@ private fun HoleInTheWall.stopSameDirectionWallsThatAreTooClose(wallsOnAxis: Lis
             val frontWall = orderedFromBackToFront[index + 1]
 
             if (!wallsAreTooClose(backWall, frontWall)) continue
-            if (backWall.isStopped) continue
+            if (backWall.isMovementHalted) continue
 
             // Only the trailing wall gets paused; the front wall keeps moving.
-            backWall.isStopped = true
+            backWall.isMovementHalted = true
 
             activateTaskAfterConditionIsMet(
                 condition = { !isWallTooCloseToAnyOtherWall(backWall) },
                 conditionToCancel = { backWall !in WallsRuntimeState.existingWalls.allWalls() },
                 action = Runnable {
-                    backWall.isStopped = false
+                    backWall.isMovementHalted = false
                     backWall.isBeingHandled = false
                 },
                 listOfRunnablesToAddTo = runnables
@@ -111,7 +111,7 @@ internal fun stopOpposingWallsThatAreTooClose(
             if (wallToRemove in wallsDeletedThisPass) continue
 
             // The wall that reached the middle ring is stopped and deleted immediately.
-            wallToRemove.isStopped = true
+            wallToRemove.isMovementHalted = true
             wallsDeletedThisPass.add(wallToRemove)
             deleteWall(wallToRemove)
         }
@@ -166,7 +166,7 @@ private fun Wall.getWallBounds(): IntRange {
 
 
 /**
- * Stop non-Psyche Walls at the stop signs if they would collide with a wall at mid
+ * Stop non-Psych Walls at the stop signs if they would collide with a wall at mid
  */
 internal fun HoleInTheWall.stopNecessaryWallsAtStopSign() {
     val wallGrid = buildWallAxisOccupancyGrid()
@@ -177,16 +177,16 @@ internal fun HoleInTheWall.stopNecessaryWallsAtStopSign() {
             val stopSign: CuboidRegion = getStopSignRegion(direction)
 
             for (wall in walls) {
-                if (wall.isStopped) continue
+                if (wall.isMovementHalted) continue
                 if (!stopSign.overlaps(wall.wallRegion)) continue
 
                 // Stop the wall until the danger is over. A wall should only get one watcher at a time.
-                wall.isStopped = true
+                wall.isMovementHalted = true
                 activateTaskAfterConditionIsMet(
                     condition = { isAWallAtMiddle().not() },
                     conditionToCancel = { wall !in WallsRuntimeState.existingWalls.allWalls() },
                     action = {
-                        wall.isStopped = false
+                        wall.isMovementHalted = false
                         wall.isBeingHandled = false
                     },
                     listOfRunnablesToAddTo = runnables

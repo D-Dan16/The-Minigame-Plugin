@@ -1,5 +1,6 @@
 package base.minigames.hole_in_the_wall.models
 
+import base.minigames.hole_in_the_wall.models.wall.Wall
 import base.utils.additions.Direction
 import java.util.EnumMap
 

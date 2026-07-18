@@ -2,7 +2,7 @@ package base.minigames.hole_in_the_wall.game_loop.walls.spawning
 
 import base.minigames.hole_in_the_wall.HITWConst
 import base.minigames.hole_in_the_wall.game_loop.walls.runtime.WallsRuntimeState
-import base.minigames.hole_in_the_wall.models.Wall
+import base.minigames.hole_in_the_wall.models.wall.Wall
 import base.minigames.hole_in_the_wall.wall_types.PsychWall
 import base.utils.additions.Direction
 
@@ -76,7 +76,7 @@ private fun movesUntilPsychWallCanResume(): Int {
 }
 
 private fun isWaitingResumedPsychWall(wall: Wall): Boolean {
-    return wall.isStopped &&
+    return wall.isMovementHalted &&
         wall.getWallType<PsychWall>()?.canResume == true
 }
 
@@ -86,7 +86,7 @@ private fun isInPsychResumeExclusionZone(wall: Wall): Boolean {
 }
 
 private fun movesUntilWallClearsPsychResumeZone(wall: Wall): Int {
-    if (wall.isStopped) return Int.MAX_VALUE
+    if (wall.isMovementHalted) return Int.MAX_VALUE
 
     val exclusionZone = psychResumeExclusionZone(wall.directionWallComesFrom)
     val occupiedPositions = wall.occupiedAxisPositions()

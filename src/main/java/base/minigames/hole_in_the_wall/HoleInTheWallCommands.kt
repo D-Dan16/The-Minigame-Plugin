@@ -18,7 +18,6 @@ class HoleInTheWallCommands(private val holeInTheWall: HoleInTheWall) : Minigame
         END,
         NUKE_ARENA,
         SET,
-        SPAWN_WALL,
         CLEAR_WALLS
         ;
 
@@ -88,7 +87,6 @@ class HoleInTheWallCommands(private val holeInTheWall: HoleInTheWall) : Minigame
                     else -> return error(sender, "Unknown setting: ${args[1]}.")
                 }
             }
-            SubCommands.SPAWN_WALL -> createNewWall()
             SubCommands.CLEAR_WALLS -> clearWalls()
 
             else -> return error(sender, "Unknown command.")

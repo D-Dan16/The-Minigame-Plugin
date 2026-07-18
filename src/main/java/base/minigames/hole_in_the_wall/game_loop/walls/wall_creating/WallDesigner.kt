@@ -4,9 +4,11 @@ import base.minigames.hole_in_the_wall.HITWConst
 import base.minigames.hole_in_the_wall.HITWConst.WallSpawnerState
 import base.minigames.hole_in_the_wall.game_loop.GameLoopRuntimeState
 import base.minigames.hole_in_the_wall.wall_types.EarlyDecayedWall
-import base.minigames.hole_in_the_wall.wall_types.LateDecayedWall
+import base.minigames.hole_in_the_wall.wall_types.JumpscareWall
+import base.minigames.hole_in_the_wall.wall_types.RammingWall
 import base.minigames.hole_in_the_wall.wall_types.PsychWall
 import base.minigames.hole_in_the_wall.wall_types.WallType
+import base.minigames.hole_in_the_wall.models.wall.WallSpawnBatch
 import base.utils.additions.Direction
 import java.io.File
 import kotlin.random.Random
@@ -24,6 +26,8 @@ internal fun designWallBehaviorAndCreateIt(directionToChooseFrom: MutableList<Di
         else -> throw IllegalStateException("Unexpected state: $wallSpawnerState")
     }
 
+    // This batch remains attached to its walls after the spawner has cleared `upcomingWalls`.
+    val spawnBatch = WallSpawnBatch()
     var createdRealWall = false
     repeat(wallsToSpawn) {
         val wallTypes = mutableListOf<WallType>()
@@ -36,10 +40,14 @@ internal fun designWallBehaviorAndCreateIt(directionToChooseFrom: MutableList<Di
 
         //Assign other wall types to the wall
         if (Random.nextBoolean()) {
-            wallTypes += setOf(EarlyDecayedWall(), LateDecayedWall()).random()
+            wallTypes += setOf(EarlyDecayedWall(), RammingWall()).random()
+        }
+        if (Random.nextBoolean()) {
+            wallTypes += JumpscareWall()
         }
 
-        createNewWall(directionToChooseFrom.removeFirst(), wallTypes)
+
+        createNewWall(directionToChooseFrom.removeFirst(), wallTypes, spawnBatch)
     }
 }
 

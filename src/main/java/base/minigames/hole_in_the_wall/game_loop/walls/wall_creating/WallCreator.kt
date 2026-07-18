@@ -2,47 +2,45 @@ package base.minigames.hole_in_the_wall.game_loop.walls.wall_creating
 
 import base.minigames.hole_in_the_wall.debug.HITWDevLogger
 import base.minigames.hole_in_the_wall.game_loop.walls.spawning.SpawnerRuntimeState
-import base.minigames.hole_in_the_wall.models.Wall
+import base.minigames.hole_in_the_wall.models.wall.Wall
+import base.minigames.hole_in_the_wall.models.wall.WallSpawnBatch
 import base.minigames.hole_in_the_wall.wall_types.WallType
 import base.utils.additions.Direction
 import base.utils.other.BuildLoader
-import java.io.File
 import kotlin.random.Random
 import base.minigames.hole_in_the_wall.game_loop.walls.runtime.WallsRuntimeState
 
-/** Creates a wall immediately for debugging, bypassing the normal spawn flow. */
-fun createNewWall() {
-    val wallFile = pickWeightedWallFileForCurrentDifficulty()
-    val direction = Direction.entries.toTypedArray().random() // Randomly select a direction for the wall to come from
-    val shouldBeFlipped: Boolean = Random.nextBoolean() // Randomly decide if the wall should be flipped
-    val newWall = Wall(wallFile, direction, shouldBeFlipped) // Create a new wall
-
-    bringWallToLife(newWall) // Make the wall exist in the world by loading the schematic
-
-
-    newWall.showBlocks() // Show the corners of the wall for debugging purposes
-    HITWDevLogger.wall(newWall, "debug spawned via createNewWall(); $newWall)")
-}
-
 /** Queues a new wall of the given direction for the normal spawn flow. */
-fun createNewWall(direction: Direction, wallTypes: Collection<WallType> = emptyList()) {
+fun createNewWall(
+    direction: Direction,
+    wallTypes: Collection<WallType> = emptyList(),
+    spawnBatch: WallSpawnBatch,
+) {
     val wallFile = pickWeightedWallFileForCurrentDifficulty()
 
     val shouldBeFlipped: Boolean = Random.nextBoolean() // Randomly decide if the wall should be flipped
 
-    val newWall = Wall(wallFile, direction, shouldBeFlipped, wallTypes.toMutableList()) // Create a new wall
+    val newWall = Wall(wallFile, direction, shouldBeFlipped, wallTypes.toMutableList(), spawnBatch)
 
     SpawnerRuntimeState.upcomingWalls.add(newWall) // Add the new wall to the list of upcoming walls
     HITWDevLogger.wall(newWall, "queued for spawn; $newWall")
 }
 
 /** Loads a wall into the arena and registers it as an active wall. */
-fun bringWallToLife(wall: Wall) {
+fun spawnWall(wall: Wall) {
     // Make the wall exist in the world by loading the schematic
-    wall.makeWallExist()
+    wall.spawn()
     // Add the new wall to the bucket for the direction it came from.
     WallsRuntimeState.existingWalls.add(wall)
     HITWDevLogger.wall(wall, "brought to life; region=${wall.wallRegion.minimumPoint}..${wall.wallRegion.maximumPoint}")
+}
+
+/** Removes a queued wall before its schematic is pasted, cancelling any pre-spawn effects. */
+fun discardQueuedWall(wall: Wall, reason: String) {
+    if (!SpawnerRuntimeState.upcomingWalls.remove(wall)) return
+
+    wall.markDeleted()
+    HITWDevLogger.wall(wall, "discarded before spawn; $reason")
 }
 
 /** Deletes every active wall from the arena. */
@@ -63,4 +61,3 @@ fun deleteWall(wall: Wall) {
         HITWDevLogger.wall(wall, "deleted from existingWalls")
     }
 }
-

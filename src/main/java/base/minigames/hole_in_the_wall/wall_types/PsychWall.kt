@@ -4,9 +4,7 @@ import base.minigames.hole_in_the_wall.HITWConst
 import base.minigames.hole_in_the_wall.debug.HITWDevLogger
 import base.minigames.hole_in_the_wall.game_loop.walls.runtime.getStopSignRegion
 import base.minigames.hole_in_the_wall.game_loop.walls.runtime.overlaps
-import base.minigames.hole_in_the_wall.models.Wall
 import com.sk89q.worldedit.regions.CuboidRegion
-import org.bukkit.scheduler.BukkitRunnable
 
 /**
  * Wall type for a wall that can stop before it reaches the platform.
@@ -16,20 +14,18 @@ import org.bukkit.scheduler.BukkitRunnable
  *
  * Doesn't emit any particles
  */
-data class PsychWall(
+class PsychWall(
     /** If True, the wall will later resume moving after stopping before the middle, otherwise, the wall will very shortly decay and remove itself*/
     var canResume: Boolean = false,
-) : WallType {
+) : WallType() {
     override val id: String = "psych"
     override fun toString(): String = "$id(isResumed=$canResume)"
-    override lateinit var thisWall: Wall
-    override var runnables: MutableList<BukkitRunnable> = mutableListOf()
 
     override val initialTravelLifespan: Int
         get() = if (canResume) {
-            HITWConst.Walls.DEFAULT_WALL_TRAVEL_LIFESPAN
+            HITWConst.WallLifespans.DEFAULT_WALL_TRAVEL_LIFESPAN
         } else {
-            HITWConst.Walls.STOPPED_PSYCH_WALL_TRAVEL_LIFESPAN
+            HITWConst.WallLifespans.STOPPED_PSYCH_WALL_TRAVEL_LIFESPAN
         }
 
     /**
@@ -41,7 +37,7 @@ data class PsychWall(
      * Stop Psych Walls at the stop signs
      */
     internal fun stopPsychWallAtStopSign() {
-        if (::thisWall.isInitialized.not())
+        if (!hasWall)
             return
 
         if (hasDoneAPsych)
@@ -51,8 +47,7 @@ data class PsychWall(
 
         if (stopSign.overlaps(thisWall.wallRegion) ) {
             HITWDevLogger.wall(thisWall,"psych wall has reached ${thisWall.directionWallComesFrom} stop sign ")
-            thisWall.isStopped = true
-            hasDoneAPsych = true
+            thisWall.isMovementHalted = true
         }
     }
 }

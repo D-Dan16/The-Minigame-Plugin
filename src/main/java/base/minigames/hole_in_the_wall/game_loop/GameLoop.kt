@@ -56,7 +56,7 @@ internal fun HoleInTheWall.startRepeatingGameLoop() {
 
                 //--Add new walls to the game
                 // We cap the number of possible walls that are in the arena incase that the generator goes for some reason nuts
-                if (existingWalls.size < HITWConst.Walls.HARD_CAP_MAX_POSSIBLE_AMOUNT_OF_WALLS)
+                if (existingWalls.size < HITWConst.WallSpawning.HARD_CAP_MAX_POSSIBLE_AMOUNT_OF_WALLS)
                     manageWallSpawning()
 
                 WallsRuntimeState.locationsOfWalls = buildWallAxisOccupancyGrid()

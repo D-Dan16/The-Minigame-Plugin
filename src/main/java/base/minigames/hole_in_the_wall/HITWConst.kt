@@ -30,23 +30,26 @@ object HITWConst {
         val availableMaps: List<String> = listOf("Map1", "Map2", "Map3")
     }
 
-    object Walls {
-        /** Maximum number of walls that can exist at once. */
-        const val HARD_CAP_MAX_POSSIBLE_AMOUNT_OF_WALLS: Int = 6
-
+    object WallLifespans {
         /** Default travel lifespan for a regular wall. */
         const val DEFAULT_WALL_TRAVEL_LIFESPAN: Int = 24
         /** Default travel lifespan for a psych wall that dies when stopped. */
         const val STOPPED_PSYCH_WALL_TRAVEL_LIFESPAN: Int = 6
-        const val LATE_DECAYED_WALL_LIFESPAN = 30
+        /** Extra travel lifespan that lets a Ramming wall continue past the middle. */
+        const val RAMMING_WALL_LIFESPAN = 30
         val FAST_DECAYED_WALL_LIFESPAN_RANGE = 10..20
+
+        const val JUMPSCARE_WALL_LIFESPAN_SHORTENER = 8
     }
 
     object WallSpawning {
+        /** Maximum number of walls that can exist at once. */
+        const val HARD_CAP_MAX_POSSIBLE_AMOUNT_OF_WALLS: Int = 6
+
         const val MINIMUM_SPACE_BETWEEN_2_WALLS_FROM_THE_SAME_DIRECTION_FROM_SPAWN = 6
 
-        const val TRAVEL_DISTANCE_THAT_LETS_YOU_SPAWN_A_WALL_FROM_AN_ADJACENT_DIRECTION: Int = Walls.DEFAULT_WALL_TRAVEL_LIFESPAN - 7 //25
-        const val TRAVEL_DISTANCE_THAT_LETS_YOU_SPAWN_A_WALL_FROM_THE_DIRECTION_THIS_WALL_IS_FACING: Int = Walls.DEFAULT_WALL_TRAVEL_LIFESPAN - 4 //15
+        const val TRAVEL_DISTANCE_THAT_LETS_YOU_SPAWN_A_WALL_FROM_AN_ADJACENT_DIRECTION: Int = WallLifespans.DEFAULT_WALL_TRAVEL_LIFESPAN - 7 //25
+        const val TRAVEL_DISTANCE_THAT_LETS_YOU_SPAWN_A_WALL_FROM_THE_DIRECTION_THIS_WALL_IS_FACING: Int = WallLifespans.DEFAULT_WALL_TRAVEL_LIFESPAN - 4 //15
 
         val MULTIPLE_WALL_WAVE_NUMBERS: ArrayDeque<IntRange> = ArrayDeque(listOf(2..2, 2..3, 2..4, 3..4))
     }
@@ -70,6 +73,7 @@ object HITWConst {
     }
 
     object Timers {
+
         /** Delay before the game starts, in ticks. */
         const val DELAY_BEFORE_STARTING_GAME: Long = 2*20
         /** Game duration in seconds. */
@@ -89,16 +93,7 @@ object HITWConst {
         /**
          * delay until decay for Psych walls that don't reach mid and ran out of lifespan
          */
-        val DEAD_PSYCHE_WALL_TIME_TILL_DECAY_RANGE: IntRange = 0..3
-
-        // *after the game knows that the wall can safely spawn in that direction, we'll make it wait extra for randomness
-        /** Random delay range before spawning from the same direction. */
-        val DELAY_BEFORE_SPAWNING_A_WALL_FROM_THE_SAME_DIRECTION: LongRange = 0L..12L
-        /** Random delay range before spawning from a different direction. */
-        val DELAY_BEFORE_SPAWNING_A_WALL_FROM_A_DIFFERENT_DIRECTION: LongRange = 0L..5L
-
-        /** Delay before taking action on a stopped wall that has not entered the center. */
-        val STOPPED_WALL_DELAY_BEFORE_ACTION_DEALT: LongRange = 1L*20..2L*20
+        const val DEAD_PSYCH_WALL_TIME_TILL_DECAY: Long = (1.5*20).toLong()
     }
 
     object Locations {
@@ -190,7 +185,13 @@ object HITWConst {
         val WEST_WALL_SPAWN: Location = PLATFORM.clone().add(-DISTANCE_OF_WALL_FROM_CENTER_OF_PLATFORM, 1.0, 0.0)
         val EAST_WALL_SPAWN: Location = PLATFORM.clone().add(DISTANCE_OF_WALL_FROM_CENTER_OF_PLATFORM + 1.0, 1.0, -1.0)
 
-        enum class ArenaAxis { X, Z }
+        enum class ArenaAxis {
+            X, Z;
+
+            override fun toString(): String {
+                return if (this === X) "xAxis" else "zAxis"
+            }
+        }
 
         private val X_AXIS_RELATIVE_MIN_TO_SPAWN: Int = WEST_WALL_SPAWN.clone().blockX - SPAWN.blockX
         private val X_AXIS_RELATIVE_MAX_TO_SPAWN: Int = EAST_WALL_SPAWN.clone().blockX - SPAWN.blockX
