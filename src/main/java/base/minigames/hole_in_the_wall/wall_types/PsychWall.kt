@@ -4,6 +4,7 @@ import base.minigames.hole_in_the_wall.HITWConst
 import base.minigames.hole_in_the_wall.debug.HITWDevLogger
 import base.minigames.hole_in_the_wall.game_loop.walls.runtime.getStopSignRegion
 import base.minigames.hole_in_the_wall.game_loop.walls.runtime.overlaps
+import base.utils.additions.delayTheFollowing
 import com.sk89q.worldedit.regions.CuboidRegion
 
 /**
@@ -45,9 +46,27 @@ class PsychWall(
 
         val stopSign: CuboidRegion = getStopSignRegion(thisWall.directionWallComesFrom)
 
-        if (stopSign.overlaps(thisWall.wallRegion) ) {
-            HITWDevLogger.wall(thisWall,"psych wall has reached ${thisWall.directionWallComesFrom} stop sign ")
-            thisWall.isMovementHalted = true
+        if (!stopSign.overlaps(thisWall.wallRegion))
+            return
+
+        // This method runs every wall-speed tick. Once a wall has stopped at its sign, avoid
+        // logging and scheduling its decay again; the lifecycle will delete it when that one
+        // decay timer finishes.
+        if (thisWall.isMovementHalted)
+            return
+
+        HITWDevLogger.wall(thisWall,"psych wall has reached ${thisWall.directionWallComesFrom} stop sign ")
+        thisWall.isMovementHalted = true
+
+        // A non-resumable Psych wall decays when it reaches its stop sign, even if it still
+        // has movement lifespan remaining. Otherwise it would wait forever and could later be
+        // incorrectly resumed into a following wall.
+        if (!canResume) {
+            thisWall.isBeingHandled = true
+            HITWConst.Timers.DEAD_PSYCH_WALL_TIME_TILL_DECAY delayTheFollowing {
+                thisWall.shouldBeRemoved = true
+                thisWall.isBeingHandled = false
+            }
         }
     }
 }

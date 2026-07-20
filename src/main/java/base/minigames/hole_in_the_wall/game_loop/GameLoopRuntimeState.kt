@@ -1,6 +1,7 @@
 package base.minigames.hole_in_the_wall.game_loop
 
 import base.minigames.hole_in_the_wall.HITWConst
+import base.minigames.hole_in_the_wall.wall_types.WallTypeDefinition
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.title.Title
@@ -16,16 +17,19 @@ internal enum class GameLoopProgressionProfile(
     val wallDifficulty: HITWConst.WallDifficulty,
     /** The initial index in the multi-wall wave progression. */
     val multiWallWaveStage: Int,
+    /** The initial stage in the wall-type pool progression. */
+    val wallTypePoolStage: Int,
     /** The platform schematic to load before the game loop starts. */
     val platformStart: PlatformStart,
 ) {
     /** A normal game, beginning at the first stage of every progression. */
-    INITIAL(0, HITWConst.WallDifficulty.EASY, 0, PlatformStart.FIRST),
+    INITIAL(0, HITWConst.WallDifficulty.EASY, 0, 0, PlatformStart.FIRST),
     /** Fast mode, beginning at the final stage of every progression. */
     FINAL(
         HITWConst.Timers.WALL_SPEED.lastIndex,
         HITWConst.WallDifficulty.VERY_HARD,
         HITWConst.WallSpawning.MULTIPLE_WALL_WAVE_NUMBERS.lastIndex,
+        HITWConst.WallSpawning.MAX_WALL_TYPE_POOL_SIZE - HITWConst.WallSpawning.INITIAL_WALL_TYPE_POOL_SIZE,
         PlatformStart.FINAL,
     ),
 }
@@ -40,8 +44,8 @@ internal enum class PlatformStart {
  * Mutable state owned by the Hole in the Wall game loop.
  *
  * Time values are updated every tick. The progression cursors control the staged increases in
- * speed, wall difficulty, wave size, and platform decay; [reset] restores their initial state
- * between games.
+ * speed, wall difficulty, wave size, available wall types, and platform decay; [reset] restores
+ * their initial state between games.
  */
 internal object GameLoopRuntimeState {
     /** Remaining game duration in seconds. */
@@ -66,7 +70,6 @@ internal object GameLoopRuntimeState {
             }
 
             field = value
-            announceWallSpeed(value)
         }
 
     /** Timed cursor for the configured wall-speed stages. */
@@ -75,6 +78,15 @@ internal object GameLoopRuntimeState {
     internal var wallDifficultyProgression = newWallDifficultyProgression()
     /** Timed cursor for the configured multi-wall wave-size stages. */
     internal var multipleWallWaveProgression = newMultiWallWaveProgression()
+    /** Timed cursor for the number of wall types currently available to the wall designer. */
+    internal var wallTypePoolProgression = newWallTypePoolProgression()
+    /** Random order in which non-Psych wall types are added after the guaranteed Psych type. */
+    private val wallTypePoolOrder: MutableList<WallTypeDefinition> = newWallTypePoolOrder()
+    /** Mutable pool of wall-type definitions the wall designer may use for new walls. */
+    internal val availableWallTypes: MutableList<WallTypeDefinition> =
+        wallTypePoolOrder.take(HITWConst.WallSpawning.INITIAL_WALL_TYPE_POOL_SIZE).toMutableList()
+    /** Prevents the initially selected wall type from being announced again after a resume. */
+    internal var hasAnnouncedInitialWallType = false
     /** Timed cursor for platform schematic stages; initialized after the map is loaded. */
     internal lateinit var platformProgression: TimedProgression<Int>
     /** Requested initial platform stage, consumed by [initializePlatformProgression]. */
@@ -86,12 +98,15 @@ internal object GameLoopRuntimeState {
     /** Current inclusive range for the number of walls in a multi-wall wave. */
     internal val multiWallSelectionRange
         get() = multipleWallWaveProgression.current
-
     /** Applies the supplied start profile and recreates each progression at its requested stage. */
     fun applyProgression(progression: GameLoopProgressionProfile) {
         wallSpeedProgression = newWallSpeedProgression(progression.wallSpeedStage)
         wallDifficultyProgression = newWallDifficultyProgression(progression.wallDifficulty.ordinal)
         multipleWallWaveProgression = newMultiWallWaveProgression(progression.multiWallWaveStage)
+        wallTypePoolProgression = newWallTypePoolProgression(progression.wallTypePoolStage)
+        wallTypePoolOrder.clear()
+        wallTypePoolOrder += newWallTypePoolOrder()
+        refreshAvailableWallTypes()
         wallSpeed = wallSpeedProgression.current
         platformStart = progression.platformStart
     }
@@ -122,6 +137,7 @@ internal object GameLoopRuntimeState {
         timeLeft = HITWConst.Timers.GAME_DURATION.toDouble()
         timeElapsed = 0.0
         tickCount = 0
+        hasAnnouncedInitialWallType = false
         applyProgression(GameLoopProgressionProfile.INITIAL)
     }
 
@@ -143,14 +159,30 @@ internal object GameLoopRuntimeState {
         initialStage,
     )
 
-    private fun announceWallSpeed(speed: Int) {
-        val message = Component.text("Wall speed set to $speed ticks").color(NamedTextColor.AQUA)
-        val title = Title.title(
-            Component.empty(),
-            message,
-            Title.Times.times(Duration.ofMillis(300), Duration.ofMillis(2000), Duration.ofMillis(300)),
-        )
-        Bukkit.getOnlinePlayers().forEach { it.showTitle(title) }
-        Bukkit.getServer().broadcast(message)
+    private fun newWallTypePoolProgression(initialStage: Int = 0) = TimedProgression(
+        stages = (HITWConst.WallSpawning.INITIAL_WALL_TYPE_POOL_SIZE..HITWConst.WallSpawning.MAX_WALL_TYPE_POOL_SIZE).toList(),
+        advancementTimeMarks = HITWConst.Timers.WALL_TYPE_POOL_INCREASE_LANDMARKS.toList(),
+        initialStage = initialStage,
+    )
+
+    /** Guarantees Psych while randomly choosing the non-Psych wall types used by this game. */
+    private fun newWallTypePoolOrder(): MutableList<WallTypeDefinition> {
+        val psychWallType = WallTypeDefinition.PSYCH
+        val randomNonPsychWallTypes = WallTypeDefinition.entries
+            .filterNot {it === WallTypeDefinition.PSYCH}
+            .shuffled()
+            .take(HITWConst.WallSpawning.MAX_WALL_TYPE_POOL_SIZE - 1)
+
+        require(randomNonPsychWallTypes.size == HITWConst.WallSpawning.MAX_WALL_TYPE_POOL_SIZE - 1) {
+            "The wall-type pool needs enough non-Psych wall types to reach its maximum size"
+        }
+
+        return (listOf(psychWallType) + randomNonPsychWallTypes).toMutableList()
+    }
+
+    /** Synchronizes the mutable pool with the current timed progression stage. */
+    internal fun refreshAvailableWallTypes() {
+        availableWallTypes.clear()
+        availableWallTypes += wallTypePoolOrder.take(wallTypePoolProgression.current)
     }
 }

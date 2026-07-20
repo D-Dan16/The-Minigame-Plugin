@@ -45,9 +45,10 @@ internal fun HoleInTheWall.manageWallSpawning() {
             if (WallsRuntimeState.existingWalls.size >= HITWConst.WallSpawning.HARD_CAP_MAX_POSSIBLE_AMOUNT_OF_WALLS) return
             if (SpawnerRuntimeState.upcomingWalls.isNotEmpty()) return
 
-            val wantedState: WallSpawnerState =
-                WallSpawnerState.INTENDING_TO_CREATE_MULTIPLE_WALLS_AT_ONCE
-//                setOf(WallSpawnerState.INTENDING_TO_CREATE_1_WALL, WallSpawnerState.INTENDING_TO_CREATE_MULTIPLE_WALLS_AT_ONCE).random()
+            val wantedState = setOf(
+                WallSpawnerState.INTENDING_TO_CREATE_MULTIPLE_WALLS_AT_ONCE,
+                WallSpawnerState.INTENDING_TO_CREATE_1_WALL,
+            ).random()
 
             attemptChangingStateTo(wantedState)
         }

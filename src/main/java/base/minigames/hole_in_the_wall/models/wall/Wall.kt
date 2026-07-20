@@ -274,13 +274,12 @@ class Wall(
     private fun calculateInitialLifespan(): Int {
         // Decide the base lifespan
         var baseLifespan = when {
+            hasWallType<PsychWall>() -> {
+                getWallType<PsychWall>()!!.initialTravelLifespan
+            }
             hasWallType<EarlyDecayedWall>() || hasWallType<RammingWall>() -> {
                 getWallType<EarlyDecayedWall>()?.initialTravelLifespan
                     ?: getWallType<RammingWall>()!!.initialTravelLifespan
-            }
-
-            hasWallType<PsychWall>() -> {
-                getWallType<PsychWall>()!!.initialTravelLifespan
             }
 
             else -> HITWConst.WallLifespans.DEFAULT_WALL_TRAVEL_LIFESPAN

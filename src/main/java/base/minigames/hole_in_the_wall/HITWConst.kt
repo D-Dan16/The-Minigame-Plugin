@@ -15,7 +15,7 @@ import base.utils.additions.Direction
 object HITWConst {
     object Development {
         /** Whether the plugin is running in development mode. */
-        const val IS_IN_DEVELOPMENT: Boolean = false
+        const val IS_IN_DEVELOPMENT: Boolean = true
     }
 
     object ArenaFiles {
@@ -45,6 +45,10 @@ object HITWConst {
     object WallSpawning {
         /** Maximum number of walls that can exist at once. */
         const val HARD_CAP_MAX_POSSIBLE_AMOUNT_OF_WALLS: Int = 6
+        /** A game begins with Psych plus one randomly selected non-Psych wall type. */
+        const val INITIAL_WALL_TYPE_POOL_SIZE: Int = 2
+        /** The wall designer can use at most this many wall types in one game. */
+        const val MAX_WALL_TYPE_POOL_SIZE: Int = 4
 
         const val MINIMUM_SPACE_BETWEEN_2_WALLS_FROM_THE_SAME_DIRECTION_FROM_SPAWN = 6
 
@@ -73,7 +77,6 @@ object HITWConst {
     }
 
     object Timers {
-
         /** Delay before the game starts, in ticks. */
         const val DELAY_BEFORE_STARTING_GAME: Long = 2*20
         /** Game duration in seconds. */
@@ -84,7 +87,9 @@ object HITWConst {
         /** Wall speed increase landmarks in seconds. */
         val WALL_SPEED_UP_LANDMARKS: IntArray = intArrayOf(15, 30, 45, 60, 75, 100)
         /** Wall difficulty increase landmarks in seconds. */
-        val INCREASE_WALL_DIFFICULTY_LANDMARKS: IntArray = intArrayOf(20, 45, 70)
+        val INCREASE_WALL_DIFFICULTY_LANDMARKS: IntArray = intArrayOf(25, 45, 70)
+        /** Time marks for the two types added after the initial two-type pool. */
+        val WALL_TYPE_POOL_INCREASE_LANDMARKS: IntArray = intArrayOf(40, 80)
 
         val PLATFORM_SHRINKAGE_LANDMARKS: IntArray = intArrayOf(35, 75)
 

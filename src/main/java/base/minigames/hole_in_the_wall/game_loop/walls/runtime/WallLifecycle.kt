@@ -31,14 +31,22 @@ internal fun updateWallLifecycleIfNeeded() {
 
         wall.isBeingHandled = true
 
-        if (wall.lifespanRemaining <= 0)
+        if (wall.shouldBeRemoved) {
+            wallsToDelete += wall
+            continue
+        }
+
+        val psychWall = wall.getWallType<PsychWall>()
+
+        if (wall.lifespanRemaining <= 0) {
             applyRemovalForWallWithoutLifespan(wall)
+        }
 
         if (wall.shouldBeRemoved)
             wallsToDelete.add(wall)
 
         if (
-            wall.hasWallType<PsychWall>() &&
+            psychWall?.canResume == true &&
             !wall.shouldBeRemoved &&
             !WallsRuntimeState.stayingPsychWalls.contains(wall)
         )
@@ -73,21 +81,7 @@ private fun handleStayingPsychWalls() {
 }
 
 private fun applyRemovalForWallWithoutLifespan(wall: Wall) {
-    when {
-        wall.hasWallType<PsychWall>() -> {
-            // There are 2 types of psych walls that ran out of lifespan - those that don't reach the mid-platform, and those that passed the mid.
-            // So those that have passed mid, we will immediately remove them, otherwise, we will decay them at a small delay.
-            if (wall.getWallType<PsychWall>()!!.hasDoneAPsych) {
-                wall.shouldBeRemoved = true
-            } else {
-                Timers.DEAD_PSYCH_WALL_TIME_TILL_DECAY delayTheFollowing {
-                    wall.shouldBeRemoved = true
-                    wall.isBeingHandled = false
-                }
-            }
-        }
-        else -> wall.shouldBeRemoved = true
-    }
+    wall.shouldBeRemoved = true
 }
 
 /** Runs wall-type-specific stop behavior for any currently existing walls. */

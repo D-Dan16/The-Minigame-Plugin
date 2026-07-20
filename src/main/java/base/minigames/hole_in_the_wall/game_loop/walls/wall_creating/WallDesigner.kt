@@ -3,11 +3,8 @@ package base.minigames.hole_in_the_wall.game_loop.walls.wall_creating
 import base.minigames.hole_in_the_wall.HITWConst
 import base.minigames.hole_in_the_wall.HITWConst.WallSpawnerState
 import base.minigames.hole_in_the_wall.game_loop.GameLoopRuntimeState
-import base.minigames.hole_in_the_wall.wall_types.EarlyDecayedWall
-import base.minigames.hole_in_the_wall.wall_types.JumpscareWall
-import base.minigames.hole_in_the_wall.wall_types.RammingWall
-import base.minigames.hole_in_the_wall.wall_types.PsychWall
 import base.minigames.hole_in_the_wall.wall_types.WallType
+import base.minigames.hole_in_the_wall.wall_types.WallTypeDefinition
 import base.minigames.hole_in_the_wall.models.wall.WallSpawnBatch
 import base.utils.additions.Direction
 import java.io.File
@@ -35,22 +32,29 @@ internal fun designWallBehaviorAndCreateIt(directionToChooseFrom: MutableList<Di
         if (!createdRealWall) {
             createdRealWall = true
         } else {
-            wallTypes += PsychWall(Random.nextBoolean())
+            wallTypes += GameLoopRuntimeState.availableWallTypes
+                .first { it === WallTypeDefinition.PSYCH }
+                .create()
         }
 
-        //Assign other wall types to the wall
-        if (Random.nextBoolean()) {
-            wallTypes += setOf(EarlyDecayedWall(), RammingWall()).random()
-        }
-        if (Random.nextBoolean()) {
-            wallTypes += JumpscareWall()
-        }
-
+        addOptionalAvailableWallTypes(wallTypes)
 
         createNewWall(directionToChooseFrom.removeFirst(), wallTypes, spawnBatch)
     }
 }
 
+/** Adds one random type from each available mutually exclusive group, preserving optional types. */
+private fun addOptionalAvailableWallTypes(wallTypes: MutableList<WallType>) {
+    GameLoopRuntimeState.availableWallTypes
+        .filterNot { it === WallTypeDefinition.PSYCH }
+        .groupBy { it.mutuallyExclusiveGroup ?: it }
+        .values
+        .forEach { choices ->
+            if (Random.nextBoolean()) {
+                wallTypes += choices.random().create()
+            }
+        }
+}
 
 /** Chooses a schematic file using the current difficulty weighting rules. */
 internal fun pickWeightedWallFileForCurrentDifficulty(): File {

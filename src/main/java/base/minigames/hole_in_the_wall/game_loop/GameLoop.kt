@@ -15,14 +15,18 @@ import base.minigames.hole_in_the_wall.game_loop.GameLoopRuntimeState.wallDiffic
 import base.minigames.hole_in_the_wall.game_loop.GameLoopRuntimeState.wallSpeedProgression
 import base.minigames.hole_in_the_wall.game_loop.GameLoopRuntimeState.multipleWallWaveProgression
 import base.minigames.hole_in_the_wall.game_loop.GameLoopRuntimeState.platformProgression
+import base.minigames.hole_in_the_wall.game_loop.GameLoopRuntimeState.wallTypePoolProgression
 import base.minigames.hole_in_the_wall.game_loop.walls.runtime.WallsRuntimeState
 import base.minigames.hole_in_the_wall.game_loop.walls.runtime.updateWallLifecycleIfNeeded
 import base.minigames.hole_in_the_wall.game_loop.walls.runtime.WallsRuntimeState.existingWalls
 import base.minigames.hole_in_the_wall.game_loop.walls.runtime.buildWallAxisOccupancyGrid
 import base.minigames.hole_in_the_wall.game_loop.walls.spawning.manageWallSpawning
+import base.minigames.hole_in_the_wall.wall_types.WallTypeDefinition
 import base.resources.Colors
 import base.utils.other.BuildLoader
 import base.utils.additions.delayTheFollowing
+import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.format.TextColor
 import net.kyori.adventure.text.logger.slf4j.ComponentLogger.logger
 import org.bukkit.Sound
 import org.bukkit.scheduler.BukkitRunnable
@@ -46,13 +50,15 @@ internal fun HoleInTheWall.startRepeatingGameLoop() {
                 timeLeft -= 1.0 / 20.0
                 timeElapsed += 1.0 / 20.0
 
-                if (timeLeft <= 0)
+                if (timeLeft <= 0) {
                     endGame()
+                    return
+                }
 
                 updateGameState()
                 // Resolve wall-to-wall conflicts after movement but before spawning the next wall.
-                //            forceTwoCloseWallsToStop()
-                //            stopNecessaryWallsAtStopSign()
+                //forceTwoCloseWallsToStop()
+                //stopNecessaryWallsAtStopSign()
 
                 //--Add new walls to the game
                 // We cap the number of possible walls that are in the arena incase that the generator goes for some reason nuts
@@ -67,13 +73,35 @@ internal fun HoleInTheWall.startRepeatingGameLoop() {
         }
 
         private fun updateGameState() {
+            announceInitialWallTypeIfNeeded()
             updateWallSpeedIfNeeded()
             updateWallDifficultyIfNeeded()
+            updateAvailableWallTypesIfNeeded()
             updatePlatformStatusIfNeeded()
 
             updateWallLifecycleIfNeeded()
 
             updateAmountOfWallsInAMultiWallWaveThatCanAppear()
+        }
+
+        /** Announces the non-Psych wall type selected for the initial pool. */
+        private fun announceInitialWallTypeIfNeeded() {
+            if (GameLoopRuntimeState.hasAnnouncedInitialWallType) return
+            if (GameLoopRuntimeState.availableWallTypes.size != HITWConst.WallSpawning.INITIAL_WALL_TYPE_POOL_SIZE) return
+
+            val initialNonPsychWallType = GameLoopRuntimeState.availableWallTypes
+                .firstOrNull { it !== WallTypeDefinition.PSYCH }
+                ?: return
+
+            announceMessage(
+                content = "Initial Wall Type: ${initialNonPsychWallType.displayName}",
+                color = Colors.TitleColors.ORANGE,
+                duration = 1500L,
+            )
+            players.forEach { player ->
+                player.sendMessage(orangeMessage(initialNonPsychWallType.description))
+            }
+            GameLoopRuntimeState.hasAnnouncedInitialWallType = true
         }
 
         /** Shrinks the platform when the next shrinkage landmark is reached. */
@@ -107,6 +135,22 @@ internal fun HoleInTheWall.startRepeatingGameLoop() {
             }
         }
 
+        /** Adds the next configured wall type to the designer's pool at its progression mark. */
+        private fun updateAvailableWallTypesIfNeeded() {
+            if (!wallTypePoolProgression.advanceIfDue(timeElapsed)) return
+
+            GameLoopRuntimeState.refreshAvailableWallTypes()
+            val newWallType = GameLoopRuntimeState.availableWallTypes.last()
+            announceMessage(
+                "New Wall Type: ${newWallType.displayName}",
+                color = Colors.TitleColors.ORANGE,
+                duration = 1500L
+            )
+            players.forEach { player ->
+                player.sendMessage(orangeMessage(newWallType.description))
+            }
+        }
+
         private fun updateAmountOfWallsInAMultiWallWaveThatCanAppear() {
             multipleWallWaveProgression.advanceIfDue(timeElapsed)
         }
@@ -114,6 +158,11 @@ internal fun HoleInTheWall.startRepeatingGameLoop() {
 
     gameLoopRunnable?.runTaskTimer(plugin, Timers.DELAY_BEFORE_STARTING_GAME, 1L)
 }
+
+private fun orangeMessage(description: String): Component = Component.text(
+    "--> $description",
+    TextColor.fromHexString(Colors.TitleColors.ORANGE),
+)
 
 /** Removes the current platform schematic and loads the requested stage. */
 internal fun shrinkPlatform(platformStage: Int) {

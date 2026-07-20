@@ -20,7 +20,7 @@ import org.bukkit.Particle
  * Consistently emits TRIAL_OMEN particles for easy detection
  */
 class RammingWall : WallType() {
-    override val id: String = "ramming_wall"
+    override val id: String = "ramming"
     override fun toString(): String = id
 
     override val initialTravelLifespan: Int
@@ -54,7 +54,7 @@ class RammingWall : WallType() {
 
     /**
      * A warned Jumpscare wall reserves a real region before it is pasted. If this Ramming wall
-     * reaches that region first, it consumes the queued wall instead of allowing a block clash.
+     * reaches that region first, it consumes the queued wall instead of allowing a potential block clash.
      */
     private fun ramQueuedJumpscareWallsBeforeTheySpawn() {
         SpawnerRuntimeState.upcomingWalls

@@ -152,7 +152,10 @@ internal data class WallAxisOccupancyGrid(
         val corridors = stopSignCorridors()
         val waitingPsychWalls = corridors
             .mapNotNull { it.wallAtStopSign() }
-            .filter { it.isMovementHalted && it.hasWallType<PsychWall>() }
+            .filter {
+                it.isMovementHalted &&
+                    it.getWallType<PsychWall>()?.canResume == true
+            }
             .toSet()
 
         return corridors.any { corridor ->
