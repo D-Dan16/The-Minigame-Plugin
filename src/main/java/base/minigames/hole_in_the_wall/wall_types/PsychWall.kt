@@ -22,13 +22,6 @@ class PsychWall(
     override val id: String = "psych"
     override fun toString(): String = "$id(isResumed=$canResume)"
 
-    override val initialTravelLifespan: Int
-        get() = if (canResume) {
-            HITWConst.WallLifespans.DEFAULT_WALL_TRAVEL_LIFESPAN
-        } else {
-            HITWConst.WallLifespans.STOPPED_PSYCH_WALL_TRAVEL_LIFESPAN
-        }
-
     /**
      * is used so that a psych wall that stops, then returns to moving won't get stopped immediately again
      */

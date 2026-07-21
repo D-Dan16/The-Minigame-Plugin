@@ -1,6 +1,5 @@
 package base.minigames.hole_in_the_wall.wall_types
 
-import base.minigames.hole_in_the_wall.HITWConst
 import base.minigames.hole_in_the_wall.game_loop.GameLoopRuntimeState
 import org.bukkit.Particle
 
@@ -12,9 +11,6 @@ import org.bukkit.Particle
 class JumpscareWall : WallType() {
     override val id: String = "jumpscare"
     override fun toString(): String = id
-
-    override val initialTravelLifespan: Int
-        get() = HITWConst.WallLifespans.DEFAULT_WALL_TRAVEL_LIFESPAN
 
     /**
      * Both phases are measured from the current speed when the phase begins, so a speed change

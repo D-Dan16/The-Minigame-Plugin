@@ -44,7 +44,7 @@ internal fun buildWallAxisOccupancyGrid(
 internal fun HoleInTheWall.forceTwoCloseWallsToStop() {
     val wallsDeletedThisPass = mutableSetOf<Wall>()
 
-    val wallsByAxis = WallsRuntimeState.existingWalls.allWalls().groupBy { it.getArenaAxis() }
+    val wallsByAxis = WallsRuntimeState.existingWalls.allWalls().groupBy { it.axisLocation.axis }
 
     for (wallsOnAxis in wallsByAxis.values) {
         if (wallsOnAxis.size < 2) continue
@@ -125,7 +125,7 @@ private fun wallToRemoveFromOpposingPair(firstWall: Wall, secondWall: Wall): Wal
     return when (wallsThatPassedMiddleRing.size) {
         1 -> wallsThatPassedMiddleRing.single()
         // Defensive fallback: if both have crossed the middle ring, remove the one closer to center.
-        2 -> listOf(firstWall, secondWall).minByOrNull { abs(it.axisPositionFromSpawn) }
+        2 -> listOf(firstWall, secondWall).minByOrNull { abs(it.axisLocation.coordinate) }
         else -> null
     }
 }
@@ -133,8 +133,8 @@ private fun wallToRemoveFromOpposingPair(firstWall: Wall, secondWall: Wall): Wal
 /** Returns a score that orders walls from back to front along their travel axis. */
 private fun Wall.backnessScore(): Int {
     return when (directionWallComesFrom) {
-        Direction.SOUTH, Direction.EAST -> axisPositionFromSpawn
-        Direction.NORTH, Direction.WEST -> -axisPositionFromSpawn
+        Direction.SOUTH, Direction.EAST -> axisLocation.coordinate
+        Direction.NORTH, Direction.WEST -> -axisLocation.coordinate
     }
 }
 
@@ -142,7 +142,7 @@ private fun Wall.backnessScore(): Int {
 private fun isWallTooCloseToAnyOtherWall(wall: Wall): Boolean {
     return WallsRuntimeState.existingWalls.allWalls().any { other ->
         other !== wall &&
-            other.getArenaAxis() == wall.getArenaAxis() &&
+            other.axisLocation.axis == wall.axisLocation.axis &&
             wallsAreTooClose(wall, other)
     }
 }
@@ -158,7 +158,7 @@ private fun wallsAreTooClose(firstWall: Wall, secondWall: Wall): Boolean {
 
 /** Returns the inclusive axis bounds covered by this wall's region. */
 private fun Wall.getWallBounds(): IntRange {
-    return when (getArenaAxis()) {
+    return when (axisLocation.axis) {
         HITWConst.Locations.ArenaAxis.X -> wallRegion.minimumPoint.x()..wallRegion.maximumPoint.x()
         HITWConst.Locations.ArenaAxis.Z -> wallRegion.minimumPoint.z()..wallRegion.maximumPoint.z()
     }

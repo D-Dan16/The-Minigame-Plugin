@@ -23,9 +23,6 @@ class RammingWall : WallType() {
     override val id: String = "ramming"
     override fun toString(): String = id
 
-    override val initialTravelLifespan: Int
-        get() = HITWConst.WallLifespans.RAMMING_WALL_LIFESPAN
-
     override fun activateRunnables() {
         repeatedlyEmitParticles(Particle.TRIAL_OMEN)
     }
@@ -72,7 +69,7 @@ class RammingWall : WallType() {
 
     /** Returns whether [otherWall] overlaps this wall, or is separated from it by at most two blocks. */
     private fun isWithinRammingRange(otherWall: Wall): Boolean {
-        if (otherWall.state == WallState.Deleted || otherWall.getArenaAxis() != thisWall.getArenaAxis()) return false
+        if (otherWall.state == WallState.Deleted || otherWall.axisLocation.axis != thisWall.axisLocation.axis) return false
 
         val thisWallBounds = thisWall.axisBounds()
         val otherWallBounds = otherWall.axisBounds()
@@ -82,7 +79,7 @@ class RammingWall : WallType() {
     }
 
     private fun Wall.axisBounds(): IntRange {
-        return when (getArenaAxis()) {
+        return when (axisLocation.axis) {
             HITWConst.Locations.ArenaAxis.X -> wallRegion.minimumPoint.x()..wallRegion.maximumPoint.x()
             HITWConst.Locations.ArenaAxis.Z -> wallRegion.minimumPoint.z()..wallRegion.maximumPoint.z()
         }

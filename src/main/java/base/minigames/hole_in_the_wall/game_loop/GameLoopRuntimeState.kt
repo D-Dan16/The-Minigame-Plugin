@@ -170,12 +170,13 @@ internal object GameLoopRuntimeState {
         val psychWallType = WallTypeDefinition.PSYCH
         val randomNonPsychWallTypes = WallTypeDefinition.entries
             .filterNot {it === WallTypeDefinition.PSYCH}
+            .filter { it.isTurned }
             .shuffled()
             .take(HITWConst.WallSpawning.MAX_WALL_TYPE_POOL_SIZE - 1)
 
-        require(randomNonPsychWallTypes.size == HITWConst.WallSpawning.MAX_WALL_TYPE_POOL_SIZE - 1) {
-            "The wall-type pool needs enough non-Psych wall types to reach its maximum size"
-        }
+//        require(randomNonPsychWallTypes.size == HITWConst.WallSpawning.MAX_WALL_TYPE_POOL_SIZE - 1) {
+//            "The wall-type pool needs enough non-Psych wall types to reach its maximum size"
+//        }
 
         return (listOf(psychWallType) + randomNonPsychWallTypes).toMutableList()
     }

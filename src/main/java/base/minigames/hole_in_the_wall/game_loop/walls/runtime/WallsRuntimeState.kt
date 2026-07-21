@@ -3,6 +3,7 @@ package base.minigames.hole_in_the_wall.game_loop.walls.runtime
 import base.minigames.hole_in_the_wall.HITWConst
 import base.minigames.hole_in_the_wall.game_loop.GameLoopRuntimeState.tickCount
 import base.minigames.hole_in_the_wall.models.wall.Wall
+import base.minigames.hole_in_the_wall.models.wall.WallAxisCoordinate
 import base.minigames.hole_in_the_wall.models.WallsByDirections
 import base.minigames.hole_in_the_wall.wall_types.PsychWall
 import base.utils.additions.Direction
@@ -84,7 +85,7 @@ internal data class WallAxisOccupancyGrid(
 
     /** Marks the wall on the axis array that matches its arena axis. */
     fun markWall(wall: Wall) {
-        when (wall.getArenaAxis()) {
+        when (wall.axisLocation.axis) {
             HITWConst.Locations.ArenaAxis.X -> wall.markOnAxisOccupancy(xAxis)
             HITWConst.Locations.ArenaAxis.Z -> wall.markOnAxisOccupancy(zAxis)
         }
@@ -154,7 +155,9 @@ internal data class WallAxisOccupancyGrid(
             .mapNotNull { it.wallAtStopSign() }
             .filter {
                 it.isMovementHalted &&
-                    it.getWallType<PsychWall>()?.canResume == true
+                    it.getWallType<PsychWall>()?.let { psychWall ->
+                        psychWall.canResume && !psychWall.hasDoneAPsych
+                    } == true
             }
             .toSet()
 
@@ -168,29 +171,40 @@ internal data class WallAxisOccupancyGrid(
         val x = HITWConst.Locations.ArenaAxis.X
         val z = HITWConst.Locations.ArenaAxis.Z
 
+        fun relativeToSpawn(axis: HITWConst.Locations.ArenaAxis, worldCoordinate: Int): Int {
+            val spawnCoordinate = when (axis) {
+                HITWConst.Locations.ArenaAxis.X -> HITWConst.Locations.SPAWN.blockX
+                HITWConst.Locations.ArenaAxis.Z -> HITWConst.Locations.SPAWN.blockZ
+            }
+            return worldCoordinate - spawnCoordinate
+        }
+
         return listOf(
-            WallCorridor(zAxis, z, geometry.NORTH_STOP_SIGN_REGION.minimumPoint.z(), geometry.NORTH_LINE_BETWEEN_STOP_SIGN_AND_PLATFORM.minimumPoint.z()),
-            WallCorridor(xAxis, x, geometry.EAST_STOP_SIGN_REGION.minimumPoint.x(), geometry.EAST_LINE_BETWEEN_STOP_SIGN_AND_PLATFORM.minimumPoint.x()),
-            WallCorridor(zAxis, z, geometry.SOUTH_STOP_SIGN_REGION.minimumPoint.z(), geometry.SOUTH_LINE_BETWEEN_STOP_SIGN_AND_PLATFORM.minimumPoint.z()),
-            WallCorridor(xAxis, x, geometry.WEST_STOP_SIGN_REGION.minimumPoint.x(), geometry.WEST_LINE_BETWEEN_STOP_SIGN_AND_PLATFORM.minimumPoint.x())
+            WallCorridor(zAxis, WallAxisCoordinate(relativeToSpawn(z, geometry.NORTH_STOP_SIGN_REGION.minimumPoint.z()), z), WallAxisCoordinate(relativeToSpawn(z, geometry.NORTH_LINE_BETWEEN_STOP_SIGN_AND_PLATFORM.minimumPoint.z()), z)),
+            WallCorridor(xAxis, WallAxisCoordinate(relativeToSpawn(x, geometry.EAST_STOP_SIGN_REGION.minimumPoint.x()), x), WallAxisCoordinate(relativeToSpawn(x, geometry.EAST_LINE_BETWEEN_STOP_SIGN_AND_PLATFORM.minimumPoint.x()), x)),
+            WallCorridor(zAxis, WallAxisCoordinate(relativeToSpawn(z, geometry.SOUTH_STOP_SIGN_REGION.minimumPoint.z()), z), WallAxisCoordinate(relativeToSpawn(z, geometry.SOUTH_LINE_BETWEEN_STOP_SIGN_AND_PLATFORM.minimumPoint.z()), z)),
+            WallCorridor(xAxis, WallAxisCoordinate(relativeToSpawn(x, geometry.WEST_STOP_SIGN_REGION.minimumPoint.x()), x), WallAxisCoordinate(relativeToSpawn(x, geometry.WEST_LINE_BETWEEN_STOP_SIGN_AND_PLATFORM.minimumPoint.x()), x))
         )
     }
 
     private class WallCorridor(
         private val occupancy: Array<WallReference>,
-        private val axis: HITWConst.Locations.ArenaAxis,
-        private val stopSignCoordinate: Int,
-        platformSideCoordinate: Int
+        private val stopSign: WallAxisCoordinate,
+        platformSide: WallAxisCoordinate
     ) {
-        private val coordinates =
-            minOf(stopSignCoordinate, platformSideCoordinate)..maxOf(stopSignCoordinate, platformSideCoordinate)
+        init {
+            require(stopSign.axis == platformSide.axis) { "A wall corridor must stay on one axis." }
+        }
 
-        fun wallAtStopSign(): Wall? = wallAt(stopSignCoordinate)
+        private val coordinates =
+            minOf(stopSign.coordinate, platformSide.coordinate)..maxOf(stopSign.coordinate, platformSide.coordinate)
+
+        fun wallAtStopSign(): Wall? = wallAt(stopSign.coordinate)
 
         fun walls(): List<Wall> = coordinates.mapNotNull(::wallAt)
 
         private fun wallAt(coordinate: Int): Wall? {
-            val index = HITWConst.Locations.relativeCoordinateToAxisIndex(axis, coordinate)
+            val index = HITWConst.Locations.relativeCoordinateToAxisIndex(stopSign.axis, coordinate)
             return occupancy.getOrNull(index)?.wallRef
         }
     }

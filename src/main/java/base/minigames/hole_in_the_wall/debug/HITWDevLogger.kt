@@ -17,7 +17,7 @@ import java.time.format.DateTimeFormatter
  * Dev-only logger for Hole In The Wall lifecycle tracing.
  *
  * Writes to a file under the plugin data folder and stays silent unless
- * [HITWConst.Development.IS_IN_DEVELOPMENT] is enabled.
+ * [HITWConst.Development._DEVELOPMENT] is enabled.
  */
 object HITWDevLogger {
     private val timestampFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME

@@ -20,6 +20,7 @@ import base.minigames.hole_in_the_wall.game_loop.walls.runtime.WallsRuntimeState
 import base.minigames.hole_in_the_wall.game_loop.walls.runtime.updateWallLifecycleIfNeeded
 import base.minigames.hole_in_the_wall.game_loop.walls.runtime.WallsRuntimeState.existingWalls
 import base.minigames.hole_in_the_wall.game_loop.walls.runtime.buildWallAxisOccupancyGrid
+import base.minigames.hole_in_the_wall.game_loop.walls.runtime.stopNecessaryWallsAtStopSign
 import base.minigames.hole_in_the_wall.game_loop.walls.spawning.manageWallSpawning
 import base.minigames.hole_in_the_wall.wall_types.WallTypeDefinition
 import base.resources.Colors

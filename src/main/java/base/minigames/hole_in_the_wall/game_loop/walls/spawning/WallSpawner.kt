@@ -58,7 +58,7 @@ internal fun HoleInTheWall.manageWallSpawning() {
             val chosenDir = directionOfLast?.let { lastDirection ->
                 Random.getNextWeighted(
                     Direction.entries.associateWith { direction ->
-                        if (direction == lastDirection) 3 else 1
+                        if (direction == lastDirection) 6 else 1
                     }
                 )
             } ?: Direction.entries.random()

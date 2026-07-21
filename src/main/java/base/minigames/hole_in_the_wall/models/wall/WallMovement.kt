@@ -4,14 +4,18 @@ import base.MinigamePlugin
 import base.minigames.hole_in_the_wall.HITWConst
 import base.minigames.hole_in_the_wall.HoleInTheWall
 import base.minigames.hole_in_the_wall.debug.HITWDevLogger
-import base.minigames.hole_in_the_wall.game_loop.walls.runtime.WallsRuntimeState
+import base.minigames.hole_in_the_wall.wall_types.RepeaterWall
+import base.minigames.hole_in_the_wall.wall_types.WallType
 import base.utils.additions.Direction
+import base.utils.additions.PausableBukkitRunnable
+import base.utils.other.BuildLoader
 import com.sk89q.worldedit.math.BlockVector3
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.Bukkit
 import org.bukkit.Location
 import org.bukkit.Material
+import org.bukkit.Particle
 import org.bukkit.block.Block
 import org.bukkit.block.BlockFace
 import org.bukkit.block.BlockState
@@ -19,6 +23,7 @@ import org.bukkit.block.data.Powerable
 import org.bukkit.block.data.type.Piston
 import org.bukkit.block.data.type.Switch
 import org.bukkit.scheduler.BukkitTask
+import org.bukkit.scheduler.BukkitRunnable
 
 /** A scheduled move and the temporary buttons it placed. */
 internal data class PendingMove(
@@ -159,7 +164,8 @@ private fun Wall.completeDeferredMove(buttonLocations: List<Location>) {
     clearMoveButtons(buttonLocations)
     movePistonsForward()
     advanceOneStep()
-    HITWDevLogger.wall(this, "lifespanRemaining=$lifespanRemaining | ${getArenaAxis()}: ${this.axisPositionFromSpawn}")
+    updateDebugIdDisplayLocation()
+    HITWDevLogger.wall(this, "lifespanRemaining=$lifespanRemaining | $axisLocation")
 }
 
 private fun Wall.shiftWallRegion() {
@@ -197,4 +203,127 @@ private fun Wall.movePistonsForward() {
             location.block.blockData = pistonData
         }
     }
+}
+
+/**
+ * Halts this wall, emits particles before and after its teleport, and pauses only the animation
+ * timeline when [game] is paused. The visual particle task intentionally continues while paused.
+ */
+internal fun Wall.playTeleportAnimation(
+    destination: WallAxisCoordinate,
+    newDirWallComesFrom: Direction,
+    game: HoleInTheWall,
+    animationOwner: WallType,
+    particle: Particle = Particle.WITCH,
+    particleAmountOnBlock: Int = 1,
+    particlePhaseTicks: Int = 14,
+    onTeleport: () -> Unit = {}
+) {
+    require(particlePhaseTicks > 0) { "Particle phase must last at least one tick." }
+
+    HITWDevLogger.wall(this, "start wall teleporting")
+
+    val wasMovementHalted = isMovementHalted
+    isMovementHalted = true
+    isBeingHandled = true
+    cancelPendingMoves()
+
+    var elapsedAnimationTicks = 0
+
+    lateinit var teleportTimeline: PausableBukkitRunnable
+    val particleTask = startTeleportParticleTask(animationOwner, particle, particleAmountOnBlock)
+
+    fun finishAnimation() {
+        particleTask.cancel()
+        animationOwner.runnables.remove(particleTask)
+        animationOwner.cancelPausableRunnable(teleportTimeline)
+
+        if (state == WallState.Spawned) {
+            isMovementHalted = wasMovementHalted
+            isBeingHandled = false
+
+            this.getWallType<RepeaterWall>()!!.finishedTeleportation = true
+        }
+    }
+
+    teleportTimeline = PausableBukkitRunnable(MinigamePlugin.plugin, periodTicks = 1L) {
+        if (state != WallState.Spawned) {
+            finishAnimation()
+            return@PausableBukkitRunnable
+        }
+
+        when (elapsedAnimationTicks++) {
+            particlePhaseTicks -> {
+                teleportWall(destination, newDirWallComesFrom)
+                onTeleport()
+            }
+            particlePhaseTicks * 2 -> finishAnimation()
+        }
+    }
+    animationOwner.registerPausableRunnable(teleportTimeline, game.pausableRunnables)
+}
+
+/** Starts the visual part of a teleport animation; unlike its timeline, this remains active while paused. */
+private fun Wall.startTeleportParticleTask(
+    animationOwner: WallType,
+    particle: Particle,
+    particleAmountOnBlock: Int
+): BukkitRunnable = object : BukkitRunnable() {
+    override fun run() {
+        if (state != WallState.Spawned) {
+            cancel()
+            return
+        }
+
+        animationOwner.spawnParticlesDirectlyOnWall(particle, particleAmountOnBlock)
+    }
+}.also { particleTask ->
+    animationOwner.runnables += particleTask
+    particleTask.runTaskTimer(MinigamePlugin.plugin, 0L, 1L)
+}
+
+/**
+ * Teleports the wall to a specified destination and updates its direction accordingly.
+ *
+ * @param destination The target axis coordinate where the wall should be teleported. Must align with the axis
+ *                    corresponding to the given incoming direction.
+ * @param newDirWallComesFrom The direction in which the wall is considered to be coming from at the destination.
+ *                            This determines how the wall's position and orientation are adjusted.
+ *
+ * @throws IllegalStateException if the wall is not in the `Spawned` state when this method is called.
+ * @throws IllegalArgumentException if the destination axis does not match the axis derived from the incoming direction.
+ */
+fun Wall.teleportWall(destination: WallAxisCoordinate, newDirWallComesFrom: Direction) {
+    check(state == WallState.Spawned) { "Wall#$debugId cannot teleport from state $state" }
+    destination.requireMatches(newDirWallComesFrom)
+
+    cancelPendingMoves()
+    BuildLoader.deleteSchematic(wallRegion.minimumPoint, wallRegion.maximumPoint)
+    HITWDevLogger.wall(this, "wall teleporting to $destination from $newDirWallComesFrom")
+
+    updateDirection(newDirWallComesFrom)
+    rebuildSchematicAt(worldLocationFor(destination, newDirWallComesFrom))
+    axisLocation = destination
+    BuildLoader.loadSchematic(holder)
+    initializeWallMotion()
+    updateDebugIdDisplayLocation()
+}
+
+private fun WallAxisCoordinate.requireMatches(direction: Direction) {
+    require(axis == axisForDirection(direction)) {
+        "Destination axis $axis does not match incoming direction $direction"
+    }
+}
+
+private fun Wall.worldLocationFor(destination: WallAxisCoordinate, direction: Direction): Location =
+    spawnAnchorFor(direction).apply {
+        when (destination.axis) {
+            HITWConst.Locations.ArenaAxis.X -> x = HITWConst.Locations.SPAWN.blockX + destination.coordinate.toDouble()
+            HITWConst.Locations.ArenaAxis.Z -> z = HITWConst.Locations.SPAWN.blockZ + destination.coordinate.toDouble()
+        }
+    }
+
+private fun axisForDirection(direction: Direction): HITWConst.Locations.ArenaAxis = when (direction) {
+    Direction.NORTH, Direction.SOUTH -> HITWConst.Locations.ArenaAxis.Z
+    Direction.EAST, Direction.WEST -> HITWConst.Locations.ArenaAxis.X
 }

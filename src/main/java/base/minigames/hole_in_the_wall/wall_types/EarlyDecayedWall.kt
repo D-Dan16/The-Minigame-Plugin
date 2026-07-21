@@ -16,8 +16,6 @@ import org.bukkit.Particle
 class EarlyDecayedWall : WallType() {
     override val id: String = "early_decayed"
     override fun toString(): String = id
-    override val initialTravelLifespan: Int
-        get() = HITWConst.WallLifespans.FAST_DECAYED_WALL_LIFESPAN_RANGE.random()
 
     override fun activateRunnables() {
         repeatedlyEmitParticles(Particle.RAID_OMEN)

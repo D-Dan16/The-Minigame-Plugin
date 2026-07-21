@@ -11,6 +11,9 @@ import base.minigames.hole_in_the_wall.game_loop.walls.runtime.WallsRuntimeState
 import base.minigames.hole_in_the_wall.game_loop.walls.spawning.SpawnerRuntimeState
 import base.minigames.hole_in_the_wall.game_loop.walls.spawning.SpawnerRuntimeState.stateOfWallSpawner
 import base.minigames.hole_in_the_wall.game_loop.startRepeatingGameLoop
+import base.resources.Colors
+import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.format.TextColor
 import org.bukkit.GameMode
 import org.bukkit.entity.Player
 import org.bukkit.plugin.Plugin
@@ -49,6 +52,30 @@ class HoleInTheWall (val plugin: Plugin) : MinigameSkeleton() {
     fun startFastMode(player: Player, mapName: String) {
         GameLoopRuntimeState.applyProgression(GameLoopProgressionProfile.FINAL)
         this.start(player, mapName)
+        announceHardModeWallTypes()
+    }
+
+    /** Announces every wall type selected for this hard-mode game. */
+    private fun announceHardModeWallTypes() {
+        val selectedWallTypes = GameLoopRuntimeState.availableWallTypes.toList()
+        val wallTypeNames = selectedWallTypes.joinToString { it.displayName }
+
+        announceMessage(
+            content = "Hard Mode Wall Types",
+            subContent = wallTypeNames,
+            color = Colors.TitleColors.ORANGE,
+            duration = 3000L,
+        )
+        players.forEach { player ->
+            selectedWallTypes.forEach { wallType ->
+                player.sendMessage(
+                    Component.text(
+                        "${wallType.displayName}\n--> ${wallType.description}",
+                        TextColor.fromHexString(Colors.TitleColors.ORANGE),
+                    )
+                )
+            }
+        }
     }
 
     override fun endGame() {

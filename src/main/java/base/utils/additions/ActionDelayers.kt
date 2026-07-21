@@ -102,6 +102,14 @@ class PausableBukkitRunnable(
         remainingTicks = max(0, remainingTicks - elapsedTicksInCycle)
     }
 
+    /** Permanently stops this runnable so it cannot resume with its owning minigame. */
+    fun cancel() {
+        task?.cancel()
+        task = null
+        isPaused = true
+        shouldNotBeUsed = true
+    }
+
     /**
      * Resets the runnable to its initial state.
      * This cancels any running task and resets all internal state variables to their initial values.

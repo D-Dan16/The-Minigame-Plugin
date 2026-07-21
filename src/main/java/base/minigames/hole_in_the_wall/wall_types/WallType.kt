@@ -6,6 +6,7 @@ import base.minigames.hole_in_the_wall.debug.HITWDevLogger
 import base.minigames.hole_in_the_wall.models.wall.Wall
 import base.minigames.hole_in_the_wall.models.wall.WallState
 import base.utils.additions.Direction
+import base.utils.additions.PausableBukkitRunnable
 import org.bukkit.Location
 import org.bukkit.Material
 import org.bukkit.Particle
@@ -26,13 +27,31 @@ abstract class WallType {
     /** Stable identifier for this wall type. */
     abstract val id: String
 
-    abstract val initialTravelLifespan: Int
-    private val runnables: MutableList<BukkitRunnable> = mutableListOf()
+    internal val runnables: MutableList<BukkitRunnable> = mutableListOf()
+    private val registeredPausableRunnables =
+        mutableMapOf<PausableBukkitRunnable, MutableCollection<PausableBukkitRunnable>>()
 
     open fun activateRunnables() {}
     fun clearRunnables() {
         runnables.forEach { it.cancel() }
         runnables.clear()
+        registeredPausableRunnables.keys.toList().forEach(::cancelPausableRunnable)
+    }
+
+    /** Registers a pausable task with both this wall type and the owning minigame. */
+    internal fun registerPausableRunnable(
+        runnable: PausableBukkitRunnable,
+        minigameRunnables: MutableCollection<PausableBukkitRunnable>
+    ) {
+        registeredPausableRunnables[runnable] = minigameRunnables
+        minigameRunnables += runnable
+        runnable.start()
+    }
+
+    /** Stops a pausable task and removes it from its owning minigame. */
+    internal fun cancelPausableRunnable(runnable: PausableBukkitRunnable) {
+        runnable.cancel()
+        registeredPausableRunnables.remove(runnable)?.remove(runnable)
     }
 
     internal fun repeatedlyEmitParticlesBeforeSpawn(particle: Particle, particleData: Any? = null, taskInterval: Long = 20L) {
@@ -90,6 +109,24 @@ abstract class WallType {
 
                     if (location.block.type != Material.AIR) {
                         HITWConst.Locations.WORLD.spawnParticle(particle, location, particleAmountOnBlock, data)
+                    }
+                }
+            }
+        }
+    }
+
+    /** Spawns particles at the centres of the wall's current non-air blocks, without an offset. */
+    internal fun spawnParticlesDirectlyOnWall(particle: Particle, particleAmountOnBlock: Int = 1) {
+        for (x in thisWall.wallRegion.minimumPoint.x()..thisWall.wallRegion.maximumPoint.x()) {
+            for (y in thisWall.wallRegion.minimumPoint.y()..thisWall.wallRegion.maximumPoint.y()) {
+                for (z in thisWall.wallRegion.minimumPoint.z()..thisWall.wallRegion.maximumPoint.z()) {
+                    val block = HITWConst.Locations.WORLD.getBlockAt(x, y, z)
+                    if (block.type != Material.AIR) {
+                        HITWConst.Locations.WORLD.spawnParticle(
+                            particle,
+                            block.location.clone().add(0.5, 0.5, 0.5),
+                            particleAmountOnBlock
+                        )
                     }
                 }
             }

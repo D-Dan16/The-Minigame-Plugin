@@ -4,6 +4,7 @@ import base.minigames.hole_in_the_wall.HITWConst
 import base.minigames.hole_in_the_wall.game_loop.walls.runtime.WallsRuntimeState
 import base.minigames.hole_in_the_wall.models.wall.Wall
 import base.minigames.hole_in_the_wall.wall_types.PsychWall
+import base.minigames.hole_in_the_wall.wall_types.RepeaterWall
 import base.utils.additions.Direction
 
 /**
@@ -29,6 +30,13 @@ internal fun isSafeToSpawnWall(): Boolean {
         return false
     }
 
+    // A repeater re-enters from its own stop sign. Its return path can conflict with walls
+    // from any direction, so defer the whole batch until the teleport is complete. The normal
+    // position-based checks below then evaluate the repeater at its new location.
+    if (hasPendingRepeaterTeleport()) {
+        return false
+    }
+
     val directionsExistingWallsHave = WallsRuntimeState.existingWalls.directionsInUse()
     if (directionsExistingWallsHave.isEmpty()) return true
 
@@ -47,6 +55,12 @@ private fun hasWaitingPsychWallInTheSameDirection(upcomingWall: Wall): Boolean {
         .filter(::isWaitingResumedPsychWall)
 
     return waitingPsychWalls.any(::wouldBeCaughtBeforeItCanResume)
+}
+
+private fun hasPendingRepeaterTeleport(): Boolean {
+    return WallsRuntimeState.existingWalls
+        .allWalls()
+        .any { wall -> wall.getWallType<RepeaterWall>()?.hasPendingTeleport() == true }
 }
 
 /**
@@ -135,7 +149,7 @@ private fun isExistingWallFarEnoughFromSpawn(
 
     return HITWConst.Locations.hasReachedAxisPosition(
         existingWall.directionWallComesFrom,
-        existingWall.axisPositionFromSpawn,
+        existingWall.axisLocation.coordinate,
         requiredAxisPosition
     )
 }

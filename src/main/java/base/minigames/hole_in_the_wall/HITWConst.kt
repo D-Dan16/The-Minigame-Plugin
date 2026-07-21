@@ -15,7 +15,7 @@ import base.utils.additions.Direction
 object HITWConst {
     object Development {
         /** Whether the plugin is running in development mode. */
-        const val IS_IN_DEVELOPMENT: Boolean = true
+        const val IS_IN_DEVELOPMENT: Boolean = false
     }
 
     object ArenaFiles {
@@ -40,6 +40,11 @@ object HITWConst {
         val FAST_DECAYED_WALL_LIFESPAN_RANGE = 10..20
 
         const val JUMPSCARE_WALL_LIFESPAN_SHORTENER = 8
+    }
+
+    object RepeaterWall {
+        /** Number of blocks before the facing-side stop sign where a repeater may teleport. */
+        const val TELEPORT_TRIGGER_BLOCKS_BEFORE_STOP_SIGN = 7
     }
 
     object WallSpawning {
@@ -237,6 +242,14 @@ object HITWConst {
                 Direction.WEST -> WEST_WALL_SPAWN.clone().blockX - SPAWN.blockX
                 Direction.EAST -> EAST_WALL_SPAWN.clone().blockX - SPAWN.blockX
             }
+        }
+
+        /** Returns the stop-sign coordinate on [direction]'s travel axis, relative to player spawn. */
+        fun stopSignAxisPosition(direction: Direction): Int = when (direction) {
+            Direction.NORTH -> PlatformGeometry.NORTH_STOP_SIGN_REGION.minimumPoint.z() - SPAWN.blockZ
+            Direction.SOUTH -> PlatformGeometry.SOUTH_STOP_SIGN_REGION.minimumPoint.z() - SPAWN.blockZ
+            Direction.EAST -> PlatformGeometry.EAST_STOP_SIGN_REGION.minimumPoint.x() - SPAWN.blockX
+            Direction.WEST -> PlatformGeometry.WEST_STOP_SIGN_REGION.minimumPoint.x() - SPAWN.blockX
         }
 
         fun axisPositionAfterTravelFromSpawn(direction: Direction, travelDistanceFromSpawn: Int): Int {

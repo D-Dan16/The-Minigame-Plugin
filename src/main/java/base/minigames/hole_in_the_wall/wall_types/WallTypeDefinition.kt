@@ -1,5 +1,6 @@
 package base.minigames.hole_in_the_wall.wall_types
 
+import base.minigames.hole_in_the_wall.HITWConst
 import org.bukkit.Color
 import kotlin.random.Random
 
@@ -37,7 +38,24 @@ internal enum class WallTypeDefinition(
         createWallType = { PsychWall(Random.nextBoolean()) },
         description = "A wall that can stop before it reaches the platform. May decay, or stay. Always comes in groups of walls"
     ),
+    REPEATER(
+        displayName = "Repeater",
+        createWallType = ::RepeaterWall,
+        description = "A wall that while at mid decides to teleport back to a place it already has been at."
+    ),
     ;
+
+    /**
+     * Whether this wall type can be selected for a new game.
+     *
+     * Keep this as a computed property: editing its getter can be applied through HotSwap, unlike
+     * a value stored on the enum instances, which were constructed before the class was redefined.
+    */
+    val isTurned: Boolean
+        get() = when (this) {
+//            RAMMING, -> false
+            else -> true
+        }
 
     fun create(): WallType = createWallType()
 }
