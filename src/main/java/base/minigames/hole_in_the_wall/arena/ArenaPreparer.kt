@@ -1,6 +1,8 @@
-package base.minigames.hole_in_the_wall
+package base.minigames.hole_in_the_wall.arena
 
 import base.MinigamePlugin
+import base.minigames.hole_in_the_wall.HITWConst
+import base.minigames.hole_in_the_wall.HoleInTheWall
 import base.minigames.hole_in_the_wall.game_loop.walls.wall_creating.WallPack
 import base.minigames.hole_in_the_wall.game_loop.GameLoopRuntimeState.initializePlatformProgression
 import base.minigames.hole_in_the_wall.game_loop.walls.wall_creating.wallPackDifficulties
@@ -71,9 +73,13 @@ internal fun HoleInTheWall.arenaPreparer() {
                 HITWConst.ArenaFiles.PLATFORMS_FOLDER -> {
                     platformSchematics = component.listFiles()
                         ?.filterNotNull()
+                        ?.filter { it.isFile && it.extension.equals("schem", ignoreCase = true) }
                         ?.sortedBy { it.name.lowercase() }
                         ?.toTypedArray()
                         ?: throw IOException("No platform schematics found in ${component.name}")
+                    if (platformSchematics.size != 3) {
+                        throw IOException("Platform folder ${component.absolutePath} must contain exactly 3 .schem files")
+                    }
                 }
                 HITWConst.ArenaFiles.WALLPACK_FOLDER -> {
                     wallPackDifficulties = pickWallPackDifficultyFiles(component)

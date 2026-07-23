@@ -8,6 +8,8 @@ import base.minigames.disco_mayhem.DiscoMayhem
 import base.minigames.disco_mayhem.DiscoMayhemCommands
 import base.minigames.hole_in_the_wall.HoleInTheWall
 import base.minigames.hole_in_the_wall.HoleInTheWallCommands
+import base.minigames.hole_in_the_wall.arena.PlatformStagePreviewer
+import base.minigames.hole_in_the_wall.arena.WallPackPreviewer
 import base.minigames.MinigameSkeleton
 import base.minigames.maze_hunt.MazeHunt
 import base.minigames.maze_hunt.MazeHuntCommands
@@ -81,9 +83,9 @@ class MinigamePlugin : JavaPlugin() {
         getCommand("mg_blueprint_bazaar")?.setExecutor(
             BlueprintBazaarCommands(blueprintBazaar)
         )
-        getCommand("mg_hole_in_the_wall")?.setExecutor(
-            HoleInTheWallCommands(holeInTheWall)
-        )
+        val holeInTheWallCommands = HoleInTheWallCommands(holeInTheWall)
+        getCommand("mg_hole_in_the_wall")?.setExecutor(holeInTheWallCommands)
+        getCommand("hitw")?.setExecutor(holeInTheWallCommands)
         getCommand("mg_maze_hunt")?.setExecutor(
             MazeHuntCommands(mazeHunt)
         )
@@ -100,6 +102,10 @@ class MinigamePlugin : JavaPlugin() {
             listOfMinigames.forEach {
                 it.nukeArena()
             }
+
+        // A preview is not part of a running minigame, so remove it explicitly on reload/shutdown.
+        WallPackPreviewer.clear()
+        PlatformStagePreviewer.clear()
 
         HITWDevLogger.shutdown()
     }

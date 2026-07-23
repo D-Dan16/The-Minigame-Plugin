@@ -1,5 +1,5 @@
 name: MinigamePlugin
-version: '5.8.3'
+version: '5.9.0'
 main: base.MinigamePlugin
 api-version: '1.21'
 libraries:
@@ -23,6 +23,9 @@ commands:
   mg_hole_in_the_wall:
     description: Starts the Hole In The Wall minigame
     usage: /<command> <state>
+  hitw:
+    description: Gives the Hole In The Wall command book
+    usage: /<command>
   mg_maze_hunt:
     description: Starts the Maze Hunt minigame
     usage: /<command> <state>

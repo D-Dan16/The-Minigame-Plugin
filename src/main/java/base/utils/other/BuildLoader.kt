@@ -7,6 +7,7 @@ import com.sk89q.worldedit.extent.clipboard.BlockArrayClipboard
 import com.sk89q.worldedit.extent.clipboard.Clipboard
 import com.sk89q.worldedit.extent.clipboard.io.ClipboardFormat
 import com.sk89q.worldedit.extent.clipboard.io.ClipboardFormats
+import com.sk89q.worldedit.function.operation.ForwardExtentCopy
 import com.sk89q.worldedit.function.operation.Operations
 import com.sk89q.worldedit.math.BlockVector3
 import com.sk89q.worldedit.math.transform.AffineTransform
@@ -28,6 +29,7 @@ import org.bukkit.entity.FallingBlock
 import org.bukkit.util.Vector
 import java.io.File
 import java.io.FileInputStream
+import java.io.FileOutputStream
 import java.io.IOException
 import kotlin.math.max
 import kotlin.math.min
@@ -253,6 +255,45 @@ object BuildLoader {
     fun loadSchematicByFileAndCoordinates(file: File, x: Int, y: Int, z: Int) {
         val location = Location(world, x.toDouble(), y.toDouble(), z.toDouble())
         loadSchematicByFile(file, location)
+    }
+
+    /**
+     * Captures the current blocks in [region] from the minigame world and writes them as a schematic.
+     * [origin] is retained so reloading the schematic at a location keeps the same block offsets.
+     */
+    fun saveWorldRegionAsSchematic(
+        region: Region,
+        origin: BlockVector3,
+        file: File,
+        formatFile: File = file,
+    ) {
+        val adaptedWorld = BukkitAdapter.adapt(world)
+        val captureRegion = CuboidRegion(adaptedWorld, region.minimumPoint, region.maximumPoint)
+        val clipboard = BlockArrayClipboard(captureRegion).apply { this.origin = origin }
+
+        ForwardExtentCopy(adaptedWorld, captureRegion, clipboard, captureRegion.minimumPoint).apply {
+            isCopyingEntities = true
+            isCopyingBiomes = false
+        }.let(Operations::completeLegacy)
+
+        val format = ClipboardFormats.findByFile(formatFile)
+            ?: requireNotNull(ClipboardFormats.findByAlias("sponge")) {
+                "WorldEdit's Sponge schematic format is unavailable"
+            }
+        FileOutputStream(file).use { output ->
+            format.getWriter(output).use { writer -> writer.write(clipboard) }
+        }
+    }
+
+    /** Writes a pre-built clipboard using the format inferred from [file]. */
+    fun saveClipboardAsSchematic(clipboard: Clipboard, file: File) {
+        val format = ClipboardFormats.findByFile(file)
+            ?: requireNotNull(ClipboardFormats.findByAlias("sponge")) {
+                "WorldEdit's Sponge schematic format is unavailable"
+            }
+        FileOutputStream(file).use { output ->
+            format.getWriter(output).use { writer -> writer.write(clipboard) }
+        }
     }
 
 

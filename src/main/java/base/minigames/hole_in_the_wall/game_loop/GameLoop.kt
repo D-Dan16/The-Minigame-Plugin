@@ -4,8 +4,8 @@ import base.minigames.hole_in_the_wall.HITWConst
 import base.minigames.hole_in_the_wall.HITWConst.Timers
 import base.minigames.hole_in_the_wall.HoleInTheWall
 import base.minigames.hole_in_the_wall.debug.HITWDevLogger
-import base.minigames.hole_in_the_wall.currentPlatformRegion
-import base.minigames.hole_in_the_wall.platformSchematics
+import base.minigames.hole_in_the_wall.arena.currentPlatformRegion
+import base.minigames.hole_in_the_wall.arena.platformSchematics
 import base.minigames.hole_in_the_wall.game_loop.GameLoopRuntimeState.gameLoopRunnable
 import base.minigames.hole_in_the_wall.game_loop.GameLoopRuntimeState.tickCount
 import base.minigames.hole_in_the_wall.game_loop.GameLoopRuntimeState.timeElapsed
@@ -20,7 +20,6 @@ import base.minigames.hole_in_the_wall.game_loop.walls.runtime.WallsRuntimeState
 import base.minigames.hole_in_the_wall.game_loop.walls.runtime.updateWallLifecycleIfNeeded
 import base.minigames.hole_in_the_wall.game_loop.walls.runtime.WallsRuntimeState.existingWalls
 import base.minigames.hole_in_the_wall.game_loop.walls.runtime.buildWallAxisOccupancyGrid
-import base.minigames.hole_in_the_wall.game_loop.walls.runtime.stopNecessaryWallsAtStopSign
 import base.minigames.hole_in_the_wall.game_loop.walls.spawning.manageWallSpawning
 import base.minigames.hole_in_the_wall.wall_types.WallTypeDefinition
 import base.resources.Colors

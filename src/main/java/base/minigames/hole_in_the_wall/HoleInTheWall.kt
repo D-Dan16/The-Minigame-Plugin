@@ -2,6 +2,8 @@ package base.minigames.hole_in_the_wall
 
 import base.minigames.hole_in_the_wall.HITWConst.WallSpawnerState
 import base.minigames.MinigameSkeleton
+import base.minigames.hole_in_the_wall.arena.arenaPreparer
+import base.minigames.hole_in_the_wall.arena.deleteArena
 import base.minigames.hole_in_the_wall.debug.HITWDevLogger
 import base.minigames.hole_in_the_wall.game_loop.GameLoopProgressionProfile
 import base.minigames.hole_in_the_wall.game_loop.GameLoopRuntimeState
@@ -109,6 +111,12 @@ class HoleInTheWall (val plugin: Plugin) : MinigameSkeleton() {
     }
 
     override fun prepareGameSetting() {
+        val commandBooks = players.associateWith { player ->
+            player.inventory.contents.mapIndexedNotNull { slot, item ->
+                item?.takeIf(HoleInTheWallCommands::isCommandBook)?.clone()?.let { slot to it }
+            }
+        }
+
         fun preparePlayer(player: Player) {
             player.gameMode = if (HITWConst.Development.IS_IN_DEVELOPMENT) GameMode.CREATIVE else GameMode.ADVENTURE
 
@@ -121,6 +129,10 @@ class HoleInTheWall (val plugin: Plugin) : MinigameSkeleton() {
         }
 
         super.prepareGameSetting()
+
+        commandBooks.forEach { (player, books) ->
+            books.forEach { (slot, book) -> player.inventory.setItem(slot, book) }
+        }
 
         for (player in players) {
             preparePlayer(player)
