@@ -18,11 +18,11 @@ fun HoleInTheWall.createNewWall(
     wallTypes: Collection<WallType> = emptyList(),
     spawnBatch: WallSpawnBatch,
 ) {
-    val wallFile = pickWeightedWallFileForCurrentDifficulty()
+    val (wallFile,difficultyOfWall) = pickWeightedWallFileForCurrentDifficulty()
 
     val shouldBeFlipped: Boolean = Random.nextBoolean() // Randomly decide if the wall should be flipped
 
-    val newWall = Wall(this,wallFile, direction, shouldBeFlipped, wallTypes.toMutableList(), spawnBatch)
+    val newWall = Wall(this,wallFile,difficultyOfWall, direction, shouldBeFlipped, wallTypes.toMutableList(), spawnBatch)
 
     SpawnerRuntimeState.upcomingWalls.add(newWall) // Add the new wall to the list of upcoming walls
     HITWDevLogger.wall(newWall, "queued for spawn; $newWall")
@@ -53,7 +53,7 @@ fun clearWalls() {
 /** Removes the wall's schematic from the world and unregisters it from active walls. */
 fun deleteWall(wall: Wall) {
     wall.markDeleted()
-    BuildLoader.deleteSchematic(wall.wallRegion.minimumPoint, wall.wallRegion.maximumPoint)
+    deleteWallSchematic(wall)
     if (wall.decayCause != WallDecayCause.DOOMINATOR_NUKE) {
         wall.actionsWhenDecayed.forEach(Runnable::run)
     }
@@ -65,4 +65,8 @@ fun deleteWall(wall: Wall) {
     } else {
         HITWDevLogger.wall(wall, "deleted from existingWalls")
     }
+}
+
+fun deleteWallSchematic(wall: Wall) {
+    BuildLoader.deleteSchematic(wall.wallRegion.minimumPoint, wall.wallRegion.maximumPoint)
 }

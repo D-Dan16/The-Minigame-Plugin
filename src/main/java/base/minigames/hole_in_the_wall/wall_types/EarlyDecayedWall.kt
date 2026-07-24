@@ -14,8 +14,12 @@ import org.bukkit.Particle
  * Due to its particles, a player can survive from this wall via just going to the far edge of the platform that is furthest from the wall.
  */
 class EarlyDecayedWall : WallType() {
-    override val id: String = "early_decayed"
-    override fun toString(): String = id
+    companion object {
+        internal const val ID = "early_decayed"
+        internal const val DESCRIPTION = "A wall with a shorter than normal lifespan, which makes it decay in the middle platform"
+    }
+
+    override fun toString(): String = ID
 
     override fun activateRunnables() {
         repeatedlyEmitParticles(Particle.ANGRY_VILLAGER, taskInterval = 15L)

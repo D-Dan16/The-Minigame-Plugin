@@ -4,6 +4,7 @@ import base.MinigamePlugin
 import base.minigames.hole_in_the_wall.HITWConst
 import base.minigames.hole_in_the_wall.HoleInTheWall
 import base.minigames.hole_in_the_wall.debug.HITWDevLogger
+import base.minigames.hole_in_the_wall.game_loop.walls.wall_creating.deleteWallSchematic
 import base.minigames.hole_in_the_wall.wall_types.RepeaterWall
 import base.minigames.hole_in_the_wall.wall_types.WallType
 import base.utils.additions.Direction
@@ -298,7 +299,7 @@ fun Wall.teleportWall(destination: WallAxisCoordinate, newDirWallComesFrom: Dire
     destination.requireMatches(newDirWallComesFrom)
 
     cancelPendingMoves()
-    BuildLoader.deleteSchematic(wallRegion.minimumPoint, wallRegion.maximumPoint)
+    deleteWallSchematic(this)
     HITWDevLogger.wall(this, "wall teleporting to $destination from $newDirWallComesFrom")
 
     updateDirection(newDirWallComesFrom)
@@ -315,7 +316,7 @@ private fun WallAxisCoordinate.requireMatches(direction: Direction) {
     }
 }
 
-private fun Wall.worldLocationFor(destination: WallAxisCoordinate, direction: Direction): Location =
+internal fun Wall.worldLocationFor(destination: WallAxisCoordinate, direction: Direction): Location =
     spawnAnchorFor(direction).apply {
         when (destination.axis) {
             HITWConst.Locations.ArenaAxis.X -> x = HITWConst.Locations.SPAWN.blockX + destination.coordinate.toDouble()

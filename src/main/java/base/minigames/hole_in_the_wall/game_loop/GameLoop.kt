@@ -94,7 +94,7 @@ internal fun HoleInTheWall.startRepeatingGameLoop() {
                 ?: return
 
             announceMessage(
-                content = "Initial Wall Type: ${initialNonPsychWallType.displayName}",
+                content = "Initial Wall Type: ${initialNonPsychWallType.id}",
                 color = Colors.TitleColors.ORANGE,
                 duration = 1500L,
             )
@@ -142,7 +142,7 @@ internal fun HoleInTheWall.startRepeatingGameLoop() {
             GameLoopRuntimeState.refreshAvailableWallTypes()
             val newWallType = GameLoopRuntimeState.availableWallTypes.last()
             announceMessage(
-                "New Wall Type: ${newWallType.displayName}",
+                "New Wall Type: ${newWallType.id}",
                 color = Colors.TitleColors.ORANGE,
                 duration = 1500L
             )

@@ -22,17 +22,12 @@ import org.bukkit.entity.Display.Billboard
 import org.bukkit.entity.TextDisplay
 import java.io.File
 import java.util.concurrent.atomic.AtomicInteger
-
-/** Identifies whether a wall reached the end of its lifespan normally or was destroyed by another effect. */
-internal enum class WallDecayCause {
-    NATURAL,
-    DOOMINATOR_NUKE,
-    RAMMING,
-}
+import kotlin.math.abs
 
 class Wall(
     val holeInTheWall: HoleInTheWall,
-    val wallFile: File,
+    var wallFile: File,
+    val difficultyOfWall: HITWConst.WallDifficulty,
     /** The direction the wall is coming from. */
     directionWallComesFrom: Direction,
     val isFlipped: Boolean = false,
@@ -45,6 +40,7 @@ class Wall(
     }
 
     //region -- State --
+
     /** Stable identifier used for dev logging. */
     val debugId: Int = nextDebugId.getAndIncrement()
     /** Clipboard holder for the wall schematic. */
@@ -52,18 +48,18 @@ class Wall(
     /** The current direction the wall comes from. */
     var directionWallComesFrom: Direction = directionWallComesFrom
         private set
-
     internal lateinit var directionWallIsFacing: Direction
 
     /** The wall's original spawn location, retained for its full lifetime. */
     private val spawnLocation: Location = getWallSpawnPosition(directionWallComesFrom)
+
     /** The wall's lifecycle relative to the arena world. */
     internal var state: WallState = WallState.Queued
         private set
     lateinit var wallRegion: CuboidRegion
-
     /** How many blocks the wall travels before it stops moving. */
     var lifespanRemaining = calculateInitialLifespan()
+
     var lifespanTraveled = 0
     /** The wall's signed position and travel axis, relative to `HITWConst.Locations.SPAWN`. */
     var axisLocation: WallAxisCoordinate = axisLocationRelativeToPlayerSpawn(spawnLocation, directionWallComesFrom)
@@ -77,9 +73,8 @@ class Wall(
     var actionsWhenDecayed: MutableList<Runnable> = mutableListOf()
     /** Why this wall's lifespan ended. Nuke-caused decay must not trigger another Doominator alert. */
     internal var decayCause: WallDecayCause = WallDecayCause.NATURAL
-
     /** Game-loop tick at which this wall may take its first movement step. */
-    private var initialMovementUnlockTick: Int = 0
+    private var initialMovementUnlockTick: Long = 0
 
     /** Prevents a new move from starting before the previous delayed move has finished. */
     internal var isMoveInProgress: Boolean = false
@@ -197,7 +192,6 @@ class Wall(
         }
     }
 
-
     /**
      * A wall has fully passed the middle ring only once both occupied axis cells are outside it.
      */
@@ -214,6 +208,7 @@ class Wall(
 
         return occupiedAxisPositions().none { it in middleRingAxisRange }
     }
+
 
     init {
         // Load the wall file and validate its contents if necessary
@@ -266,11 +261,11 @@ class Wall(
      * A jumpscare wall exists before it begins moving; this is distinct from [isMovementHalted], which
      * represents a wall that has been halted by gameplay after (or during) its movement.
      */
-    internal fun isWaitingForInitialMovement(currentTick: Int): Boolean =
+    internal fun isWaitingForInitialMovement(currentTick: Long): Boolean =
         currentTick < initialMovementUnlockTick
 
     /** Whether this spawned wall is currently progressing through its normal movement lifecycle. */
-    internal fun isActivelyMoving(currentTick: Int): Boolean =
+    internal fun isActivelyMoving(currentTick: Long): Boolean =
         state == WallState.Spawned &&
             lifespanRemaining > 0 &&
             !isMovementHalted &&
@@ -346,7 +341,7 @@ class Wall(
             // resumed Psych wall otherwise behaves like a normal wall, so it must not override
             // a combined lifespan modifier such as Early Decayed.
             psychWall?.canResume == false -> {
-                HITWConst.WallLifespans.STOPPED_PSYCH_WALL_TRAVEL_LIFESPAN
+                minimumLifespanToReachStopSign()
             }
             hasWallType<EarlyDecayedWall>() -> HITWConst.WallLifespans.FAST_DECAYED_WALL_LIFESPAN_RANGE.random()
             hasWallType<RammingWall>() -> HITWConst.WallLifespans.RAMMING_WALL_LIFESPAN
@@ -361,12 +356,22 @@ class Wall(
         return baseLifespan
     }
 
-    /** Replaces the current wall type set with the provided types, deduplicated by id. */
+    /**
+     * Lets a non-resuming Psych wall enter its stop-sign region, then leaves one movement step
+     * for the lifecycle to observe that stop before normal zero-lifespan removal can occur.
+     */
+    private fun minimumLifespanToReachStopSign(): Int =
+        abs(
+            HITWConst.Locations.axisSpawnPosition(directionWallComesFrom) -
+                HITWConst.Locations.stopSignAxisPosition(directionWallComesFrom)
+        ) + 1
+
+    /** Replaces the current wall type set with the provided types, deduplicated by class. */
     fun setWallTypes(types: Collection<WallType>) {
         wallTypes.clear()
 
         types.forEach { type ->
-            if (wallTypes.none { it.id == type.id }) {
+            if (wallTypes.none { it::class == type::class }) {
                 wallTypes.add(type)
             }
         }
@@ -374,21 +379,11 @@ class Wall(
 
     fun hasAnyWallTypes() = wallTypes.isNotEmpty()
 
-    /** Adds a wall type if another type with the same id is not already present. */
+    /** Adds a wall type if another instance of its class is not already present. */
     fun addWallType(type: WallType) {
-        if (wallTypes.none { it.id == type.id }) {
+        if (wallTypes.none { it::class == type::class }) {
             wallTypes.add(type)
         }
-    }
-
-    /** Removes every wall type whose id matches the given value. */
-    fun removeWallType(typeId: String) {
-        wallTypes.removeAll { it.id == typeId }
-    }
-
-    /** Returns `true` when a wall type with the given id is attached. */
-    fun hasWallType(typeId: String): Boolean {
-        return wallTypes.any { it.id == typeId }
     }
 
     /** Returns `true` when a wall type of the requested reified type is attached. */
@@ -401,8 +396,8 @@ class Wall(
         return wallTypes.filterIsInstance<T>().firstOrNull()
     }
 
-
     //endregion
+
 
     /** Highlights the wall's bounding corners for debugging. */
     internal fun showBlocks() {
@@ -430,4 +425,12 @@ class Wall(
     override fun toString(): String {
         return "{spawnDir=$directionWallComesFrom, batch=${spawnBatch.id}, lifespanRem=$lifespanRemaining, wallTypes=$wallTypes}"
     }
+
+}
+
+/** Identifies whether a wall reached the end of its lifespan normally or was destroyed by another effect. */
+internal enum class WallDecayCause {
+    NATURAL,
+    DOOMINATOR_NUKE,
+    RAMMING,
 }

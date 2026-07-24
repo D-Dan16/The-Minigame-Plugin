@@ -9,7 +9,7 @@ import kotlin.random.Random
  * state after they are attached.
  */
 internal enum class WallTypeDefinition(
-    val displayName: String,
+    val id: String,
     val mutuallyExclusiveGroup: WallTypeMutuallyExclusiveGroup? = null,
     /**
      * Percentage of the assignment roll occupied by this type.
@@ -23,40 +23,47 @@ internal enum class WallTypeDefinition(
 ) {
     // Always is chosen if in a wall wave there's move than a singular wall
     PSYCH(
-        displayName = "Psych",
+        id = PsychWall.ID,
+        description = PsychWall.DESCRIPTION,
         createWallType = { PsychWall(Random.nextBoolean()) },
-        description = "A wall that can stop before it reaches the platform. May decay, or stay. Always comes in groups of walls"
     ),
     EARLY_DECAYED(
-        displayName = "Early Decayed",
+        id = EarlyDecayedWall.ID,
+        description = EarlyDecayedWall.DESCRIPTION,
         assignmentChance = 30,
         mutuallyExclusiveGroup = WallTypeMutuallyExclusiveGroup.TRAVEL_LIFESPAN_MODIFIER,
         createWallType = ::EarlyDecayedWall,
-        description = "A wall with a shorter than normal lifespan, which makes it decay in the middle platform"
     ),
     RAMMING(
-        displayName = "Ramming",
+        id = RammingWall.ID,
+        description = RammingWall.DESCRIPTION,
         assignmentChance = 35,
         mutuallyExclusiveGroup = WallTypeMutuallyExclusiveGroup.TRAVEL_LIFESPAN_MODIFIER,
         createWallType = ::RammingWall,
-        description = "A long-lived wall that rams opposing walls out of the arena.",
     ),
     JUMPSCARE(
-        displayName = "Jumpscare",
+        id = JumpscareWall.ID,
+        description = JumpscareWall.DESCRIPTION,
         createWallType = ::JumpscareWall,
-        description = "A wall that spawns very close to the platform, emitting green particles to indicate its very soon presence"
     ),
     REPEATER(
-        assignmentChance = 25,
-        displayName = "Repeater",
+        id = RepeaterWall.ID,
+        description = RepeaterWall.DESCRIPTION,
+        assignmentChance = 33,
         createWallType = ::RepeaterWall,
-        description = "A wall that while at mid decides to teleport back to a place it already has been at."
     ),
     DOOMINATOR(
-        displayName = "Doominator",
+        id = DoominatorWall.ID,
+        description = DoominatorWall.DESCRIPTION,
         assignmentChance = 25,
         createWallType = ::DoominatorWall,
-        description = "A Wall fused with gunpowder - when it dies, every other wall will shortly die as well! Beware - will inflict blindness on players"
+    ),
+    // exclusively being assigned to psych walls. always. (when it is in the wall type pool)
+    MORPH(
+        id = MorphWall.ID,
+        description = MorphWall.DESCRIPTION,
+        assignmentChance = 100,
+        createWallType = ::MorphWall,
     ),
     ;
 
@@ -67,11 +74,12 @@ internal enum class WallTypeDefinition(
     val isTurned: Boolean
         get() = name in setOf(
             "PSYCH",
-//            "EARLY_DECAYED",
+            "EARLY_DECAYED",
              "REPEATER",
             "JUMPSCARE",
-//             "RAMMING",
-            "DOOMINATOR"
+            "RAMMING",
+            "DOOMINATOR",
+            "MORPH"
         )
 
     fun create(): WallType = createWallType()

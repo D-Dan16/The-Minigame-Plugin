@@ -19,9 +19,14 @@ class PsychWall(
     /** If True, the wall will later resume moving after stopping before the middle, otherwise, the wall will very shortly decay and remove itself*/
     var canResume: Boolean = false,
 ) : WallType() {
-    override val id: String = "psych"
-    override fun toString(): String = "$id(isResumed=$canResume)"
+    companion object {
+        internal const val ID = "psych"
+        internal const val DESCRIPTION = "A wall that can stop before it reaches the platform. May decay, or stay. Always comes in groups of walls"
+    }
 
+    override fun toString(): String = "$ID(isResumed=$canResume)"
+
+    var hasStoppedAtStopSign = false
     /**
      * is used so that a psych wall that stops, then returns to moving won't get stopped immediately again
      */
@@ -50,6 +55,7 @@ class PsychWall(
 
         HITWDevLogger.wall(thisWall,"psych wall has reached ${thisWall.directionWallComesFrom} stop sign ")
         thisWall.isMovementHalted = true
+        hasStoppedAtStopSign = true
 
         // A non-resumable Psych wall decays when it reaches its stop sign, even if it still
         // has movement lifespan remaining. Otherwise it would wait forever and could later be

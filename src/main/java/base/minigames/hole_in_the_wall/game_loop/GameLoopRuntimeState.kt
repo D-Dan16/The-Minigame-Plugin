@@ -53,8 +53,8 @@ internal object GameLoopRuntimeState {
     /** Elapsed game duration in seconds. */
     internal var timeElapsed: Double = 0.0
     /** Number of game-loop ticks processed since the game started. */
-    internal var tickCount: Int = 0
-    /** The scheduled task that drives the game loop, when active. */
+    internal var tickCount: Long = 0
+    /** The scheduled task that drives the game loop when active. */
     internal var gameLoopRunnable: BukkitRunnable? = null
 
     /** Current wall movement interval in ticks. Assigning it announces the new speed. */
@@ -85,7 +85,7 @@ internal object GameLoopRuntimeState {
     /** Mutable pool of wall-type definitions the wall designer may use for new walls. */
     internal val availableWallTypes: MutableList<WallTypeDefinition> =
         wallTypePoolOrder.take(HITWConst.WallSpawning.INITIAL_WALL_TYPE_POOL_SIZE).toMutableList()
-    /** Prevents the initially selected wall type from being announced again after a resume. */
+    /** Prevents the initially selected wall type from being announced again after a résumé. */
     internal var hasAnnouncedInitialWallType = false
     /** Timed cursor for platform schematic stages; initialized after the map is loaded. */
     internal lateinit var platformProgression: TimedProgression<Int>
@@ -130,7 +130,7 @@ internal object GameLoopRuntimeState {
         return platformProgression.current
     }
 
-    /** Cancels the active loop and restores default time and progression state. */
+    /** Cancels the active loop and restores the default time and progression state. */
     fun reset() {
         gameLoopRunnable?.cancel()
         gameLoopRunnable = null

@@ -1,5 +1,5 @@
 name: MinigamePlugin
-version: '5.9.1'
+version: '5.9.2'
 main: base.MinigamePlugin
 api-version: '1.21'
 libraries:

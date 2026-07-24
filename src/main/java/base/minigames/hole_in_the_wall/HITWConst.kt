@@ -33,17 +33,13 @@ object HITWConst {
     object WallLifespans {
         /** Default travel lifespan for a regular wall. */
         const val DEFAULT_WALL_TRAVEL_LIFESPAN: Int = 24
-        /** Default travel lifespan for a psych wall that dies when stopped. */
-        const val STOPPED_PSYCH_WALL_TRAVEL_LIFESPAN: Int = 6
         /** Extra travel lifespan that lets a Ramming wall continue past the middle. */
         const val RAMMING_WALL_LIFESPAN = 30
         val FAST_DECAYED_WALL_LIFESPAN_RANGE = 10..20
-        const val ALERT_FOR_REWIND_WALL = 8
-
         const val JUMPSCARE_WALL_LIFESPAN_SHORTENER = 8
     }
 
-    object RepeaterWall {
+    object WallTypeSpecificActions {
         /** Number of blocks before the facing-side stop sign where a repeater may teleport. */
         const val TELEPORT_TRIGGER_BLOCKS_BEFORE_STOP_SIGN = 7
     }
@@ -69,6 +65,17 @@ object HITWConst {
         MEDIUM,
         HARD,
         VERY_HARD,
+    }
+
+    object WallPackSelection {
+        val MEDIUM_PRIMARY_POOL_ROLL_RANGE = 0..84
+
+        val HARD_PRIMARY_POOL_ROLL_RANGE = 0..84
+        val HARD_SECONDARY_POOL_ROLL_RANGE = 85..94
+
+        val VERY_HARD_PRIMARY_POOL_ROLL_RANGE = 0..79
+        val VERY_HARD_SECONDARY_POOL_ROLL_RANGE = 80..89
+        val VERY_HARD_TERTIARY_POOL_ROLL_RANGE = 90..96
     }
 
     enum class WallSpawnerState {

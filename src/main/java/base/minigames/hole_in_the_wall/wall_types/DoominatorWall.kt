@@ -5,6 +5,7 @@ import base.minigames.hole_in_the_wall.debug.HITWDevLogger
 import base.minigames.hole_in_the_wall.game_loop.walls.runtime.WallsRuntimeState
 import base.minigames.hole_in_the_wall.game_loop.walls.wall_creating.deleteWall
 import base.minigames.hole_in_the_wall.models.wall.WallDecayCause
+import org.bukkit.Bukkit
 import org.bukkit.Particle
 import org.bukkit.Sound
 import org.bukkit.potion.PotionEffect
@@ -20,8 +21,12 @@ import org.bukkit.scheduler.BukkitRunnable
  * When it has decayed, players will get sfx cues to now that walls are about to die.
  */
 class DoominatorWall : WallType() {
-    override val id: String = "doominator"
-    override fun toString(): String = id
+    companion object {
+        internal const val ID = "doominator"
+        internal const val DESCRIPTION = "A Wall fused with gunpowder - when it dies, every other wall will shortly die as well! Beware - will inflict blindness on players"
+    }
+
+    override fun toString(): String = ID
 
     override fun activateRunnables() {
         repeatedlyEmitParticles(Particle.RAID_OMEN)
@@ -47,7 +52,7 @@ class DoominatorWall : WallType() {
     private fun nukeWalls() {
         HITWDevLogger.wall(thisWall,"wall is nuking the arena!!")
         holeInTheWall.players
-            .filterNot { it.isDead }
+            .filter { !it.isDead }
             .forEach { it.addPotionEffect(PotionEffect(PotionEffectType.BLINDNESS, 20, 0, false, false)) }
         WallsRuntimeState.existingWalls.allWalls().toList().forEach {
             it.decayCause = WallDecayCause.DOOMINATOR_NUKE

@@ -2,7 +2,6 @@ package base.minigames.hole_in_the_wall.wall_types
 
 import base.MinigamePlugin
 import base.minigames.hole_in_the_wall.HITWConst
-import base.minigames.hole_in_the_wall.HoleInTheWall
 import base.minigames.hole_in_the_wall.models.wall.WallAxisCoordinate
 import base.minigames.hole_in_the_wall.models.wall.WallState
 import base.minigames.hole_in_the_wall.models.wall.playTeleportAnimation
@@ -19,8 +18,12 @@ import kotlin.random.Random
  * Emits WITCH particles throughout the TP action.
  */
 class RepeaterWall : WallType() {
-    override val id: String = "repeater"
-    override fun toString(): String = "$id(tpFrom:${coordinates.tpFromLoc}|tpTo:${coordinates.tpToLoc})"
+    companion object {
+        internal const val ID = "repeater"
+        internal const val DESCRIPTION = "A wall that while at mid decides to teleport back to a place it already has been at."
+    }
+
+    override fun toString(): String = "$ID(tpFrom:${coordinates.tpFromLoc}|tpTo:${coordinates.tpToLoc})"
 
     private lateinit var coordinates: RepeaterTeleportCoordinates
     internal var finishedTeleportation = false
@@ -74,7 +77,7 @@ class RepeaterWall : WallType() {
         }
         val blocksBeforeStopSign = Random.nextInt(
             1,
-            HITWConst.RepeaterWall.TELEPORT_TRIGGER_BLOCKS_BEFORE_STOP_SIGN + 1
+            HITWConst.WallTypeSpecificActions.TELEPORT_TRIGGER_BLOCKS_BEFORE_STOP_SIGN + 1
         )
         val tpFromLoc = HITWConst.Locations.stopSignAxisPosition(directionWallIsFacing) -
             movementDelta * blocksBeforeStopSign

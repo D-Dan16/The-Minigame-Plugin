@@ -5,6 +5,7 @@ import base.minigames.hole_in_the_wall.HITWConst
 import base.minigames.hole_in_the_wall.HoleInTheWall
 import base.minigames.hole_in_the_wall.game_loop.walls.wall_creating.WallPack
 import base.minigames.hole_in_the_wall.game_loop.GameLoopRuntimeState.initializePlatformProgression
+import base.minigames.hole_in_the_wall.game_loop.walls.wall_creating.WallDifficultyPack
 import base.minigames.hole_in_the_wall.game_loop.walls.wall_creating.wallPackDifficulties
 import base.utils.other.BuildLoader
 import com.sk89q.worldedit.regions.Region
@@ -35,10 +36,10 @@ internal fun HoleInTheWall.arenaPreparer() {
         }
 
         return WallPack(
-            easyFiles.listFiles().toList(),
-            mediumFiles.listFiles().toList(),
-            hardFiles.listFiles().toList(),
-            veryHardFiles.listFiles().toList()
+            WallDifficultyPack(easyFiles.listFiles().toList(), HITWConst.WallDifficulty.EASY),
+            WallDifficultyPack(mediumFiles.listFiles().toList(), HITWConst.WallDifficulty.MEDIUM),
+            WallDifficultyPack(hardFiles.listFiles().toList(), HITWConst.WallDifficulty.HARD),
+            WallDifficultyPack(veryHardFiles.listFiles().toList(), HITWConst.WallDifficulty.VERY_HARD)
         )
     }
 

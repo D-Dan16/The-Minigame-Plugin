@@ -60,7 +60,7 @@ class HoleInTheWall (val plugin: Plugin) : MinigameSkeleton() {
     /** Announces every wall type selected for this hard-mode game. */
     private fun announceHardModeWallTypes() {
         val selectedWallTypes = GameLoopRuntimeState.availableWallTypes.toList()
-        val wallTypeNames = selectedWallTypes.joinToString { it.displayName }
+        val wallTypeNames = selectedWallTypes.joinToString { it.id }
 
         announceMessage(
             content = "Hard Mode Wall Types",
@@ -72,7 +72,7 @@ class HoleInTheWall (val plugin: Plugin) : MinigameSkeleton() {
             selectedWallTypes.forEach { wallType ->
                 player.sendMessage(
                     Component.text(
-                        "${wallType.displayName}\n--> ${wallType.description}",
+                        "${wallType.id}\n--> ${wallType.description}",
                         TextColor.fromHexString(Colors.TitleColors.ORANGE),
                     )
                 )

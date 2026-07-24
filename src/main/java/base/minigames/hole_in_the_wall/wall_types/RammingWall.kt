@@ -21,8 +21,12 @@ import org.bukkit.Particle
  * Consistently emits TRIAL_OMEN particles for easy detection
  */
 class RammingWall : WallType() {
-    override val id: String = "ramming"
-    override fun toString(): String = id
+    companion object {
+        internal const val ID = "ramming"
+        internal const val DESCRIPTION = "A long-lived wall that rams opposing walls out of the arena."
+    }
+
+    override fun toString(): String = ID
 
     override fun activateRunnables() {
         repeatedlyEmitParticles(Particle.TRIAL_OMEN)

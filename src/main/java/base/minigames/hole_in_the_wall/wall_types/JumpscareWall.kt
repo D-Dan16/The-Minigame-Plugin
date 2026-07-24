@@ -9,8 +9,12 @@ import org.bukkit.Particle
  * after it spawns, it takes a small time to actually start moving, specifically [base.minigames.hole_in_the_wall.game_loop.GameLoopRuntimeState.wallSpeed]*2 Ticks.
  */
 class JumpscareWall : WallType() {
-    override val id: String = "jumpscare"
-    override fun toString(): String = id
+    companion object {
+        internal const val ID = "jumpscare"
+        internal const val DESCRIPTION = "A wall that spawns very close to the platform, emitting green particles to indicate its very soon presence"
+    }
+
+    override fun toString(): String = ID
 
     /**
      * Both phases are measured from the current speed when the phase begins, so a speed change

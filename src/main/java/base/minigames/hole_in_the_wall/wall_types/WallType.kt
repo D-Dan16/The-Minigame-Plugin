@@ -27,8 +27,7 @@ abstract class WallType {
         get() = thisWall.holeInTheWall
     protected val hasWall: Boolean
         get() = ::thisWall.isInitialized
-    /** Stable identifier for this wall type. */
-    internal abstract val id: String
+    /** Player-facing explanation of this wall type. */
 
     internal val runnables: MutableList<BukkitRunnable> = mutableListOf()
     private val registeredPausableRunnables =
@@ -71,7 +70,7 @@ abstract class WallType {
                     spawnParticlesInWallRegion(particle, particleData)
                 } catch (throwable: Throwable) {
                     HITWDevLogger.error(
-                        "Unhandled exception in particle task for wall#${thisWall.debugId} ($id)",
+                        "Unhandled exception in particle task for wall#${thisWall.debugId} (${this@WallType})",
                         throwable
                     )
                     throw throwable
@@ -93,7 +92,7 @@ abstract class WallType {
                     spawnParticlesOnWall(particle, particleData)
                 } catch (throwable: Throwable) {
                     HITWDevLogger.error(
-                        "Unhandled exception in particle task for wall#${thisWall.debugId} ($id)",
+                        "Unhandled exception in particle task for wall#${thisWall.debugId} (${this@WallType})",
                         throwable
                     )
                     throw throwable
