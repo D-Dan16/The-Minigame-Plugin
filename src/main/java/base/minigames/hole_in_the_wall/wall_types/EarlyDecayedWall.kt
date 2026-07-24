@@ -9,7 +9,7 @@ import org.bukkit.Particle
  *
  * The short lifespan makes it so that new wall spawn waves come sooner than expected, since they need to wait way less for the wall to die
  *
- * Consistently emits RAID_OMEN particles for easy detection
+ * Consistently emits ANGRY_VILLAGER particles, making its crumbling, short-lived nature easy to see.
  *
  * Due to its particles, a player can survive from this wall via just going to the far edge of the platform that is furthest from the wall.
  */
@@ -18,6 +18,6 @@ class EarlyDecayedWall : WallType() {
     override fun toString(): String = id
 
     override fun activateRunnables() {
-        repeatedlyEmitParticles(Particle.RAID_OMEN)
+        repeatedlyEmitParticles(Particle.ANGRY_VILLAGER, taskInterval = 15L)
     }
 }

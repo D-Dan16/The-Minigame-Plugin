@@ -6,6 +6,7 @@ import base.minigames.hole_in_the_wall.game_loop.walls.wall_creating.discardQueu
 import base.minigames.hole_in_the_wall.game_loop.walls.runtime.WallsRuntimeState
 import base.minigames.hole_in_the_wall.game_loop.walls.spawning.SpawnerRuntimeState
 import base.minigames.hole_in_the_wall.models.wall.Wall
+import base.minigames.hole_in_the_wall.models.wall.WallDecayCause
 import base.minigames.hole_in_the_wall.models.wall.WallState
 import org.bukkit.Particle
 
@@ -44,7 +45,10 @@ class RammingWall : WallType() {
                 !otherWall.hasWallType<RammingWall>() ||
                     otherWall.lifespanRemaining < thisWall.lifespanRemaining
             }
-            .forEach(::deleteWall)
+            .forEach({
+                it.decayCause = WallDecayCause.RAMMING
+                deleteWall(it)
+            })
 
         ramQueuedJumpscareWallsBeforeTheySpawn()
     }

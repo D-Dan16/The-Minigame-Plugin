@@ -2,6 +2,7 @@ package base.minigames.hole_in_the_wall.game_loop.walls.wall_creating
 
 import base.minigames.hole_in_the_wall.HITWConst
 import base.minigames.hole_in_the_wall.HITWConst.WallSpawnerState
+import base.minigames.hole_in_the_wall.HoleInTheWall
 import base.minigames.hole_in_the_wall.game_loop.GameLoopRuntimeState
 import base.minigames.hole_in_the_wall.wall_types.WallType
 import base.minigames.hole_in_the_wall.wall_types.WallTypeDefinition
@@ -16,7 +17,7 @@ data class WallPack(val easy: List<File>, val medium: List<File>, val hard: List
 /** The selected wall pack for the current map, grouped by difficulty. */
 internal lateinit var wallPackDifficulties: WallPack
 
-internal fun designWallBehaviorAndCreateIt(directionToChooseFrom: MutableList<Direction>, wallSpawnerState: WallSpawnerState) {
+internal fun HoleInTheWall.designWallBehaviorAndCreateIt(directionToChooseFrom: MutableList<Direction>, wallSpawnerState: WallSpawnerState) {
     val wallsToSpawn = when (wallSpawnerState) {
         WallSpawnerState.INTENDING_TO_CREATE_MULTIPLE_WALLS_AT_ONCE -> GameLoopRuntimeState.multiWallSelectionRange.random()
         WallSpawnerState.INTENDING_TO_CREATE_1_WALL -> 1
@@ -43,16 +44,27 @@ internal fun designWallBehaviorAndCreateIt(directionToChooseFrom: MutableList<Di
     }
 }
 
-/** Adds one random type from each available mutually exclusive group, preserving optional types. */
+/** Adds at most one type from each available mutually exclusive group, preserving optional types. */
 private fun addOptionalAvailableWallTypes(wallTypes: MutableList<WallType>) {
     GameLoopRuntimeState.availableWallTypes
         .filterNot { it === WallTypeDefinition.PSYCH }
         .groupBy { it.mutuallyExclusiveGroup ?: it }
         .values
         .forEach { choices ->
-            if (Random.nextBoolean()) {
-                wallTypes += choices.random().create()
+            require(choices.all { it.assignmentChance in 0..100 }) {
+                "Wall type assignment chances must be between 0 and 100: ${choices.joinToString()}"
             }
+            val totalChance = choices.sumOf { it.assignmentChance }
+            require(totalChance <= 100) {
+                "Wall type assignment chances must total at most 100: ${choices.joinToString()} total $totalChance"
+            }
+
+            val roll = Random.nextInt(100)
+            var accumulatedChance = 0
+            choices.firstOrNull { choice ->
+                accumulatedChance += choice.assignmentChance
+                roll < accumulatedChance
+            }?.let { wallTypes += it.create() }
         }
 }
 

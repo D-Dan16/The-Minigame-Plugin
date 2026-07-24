@@ -22,9 +22,6 @@ class RepeaterWall : WallType() {
     override val id: String = "repeater"
     override fun toString(): String = "$id(tpFrom:${coordinates.tpFromLoc}|tpTo:${coordinates.tpToLoc})"
 
-    private val game: HoleInTheWall
-        get() = MinigamePlugin.plugin.holeInTheWall
-
     private lateinit var coordinates: RepeaterTeleportCoordinates
     internal var finishedTeleportation = false
 
@@ -55,7 +52,7 @@ class RepeaterWall : WallType() {
         thisWall.playTeleportAnimation(
             destination = WallAxisCoordinate(coordinates.tpToLoc, thisWall.axisLocation.axis),
             newDirWallComesFrom = thisWall.directionWallComesFrom,
-            game = game,
+            game = holeInTheWall,
             animationOwner = this,
         )
     }

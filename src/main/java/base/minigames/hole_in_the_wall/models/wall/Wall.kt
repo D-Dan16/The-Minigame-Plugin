@@ -1,8 +1,10 @@
 package base.minigames.hole_in_the_wall.models.wall
 
 import base.minigames.hole_in_the_wall.HITWConst
+import base.minigames.hole_in_the_wall.HoleInTheWall
 import base.minigames.hole_in_the_wall.game_loop.GameLoopRuntimeState
 import base.minigames.hole_in_the_wall.game_loop.walls.runtime.WallReference
+import base.minigames.hole_in_the_wall.wall_types.DoominatorWall
 import base.minigames.hole_in_the_wall.wall_types.EarlyDecayedWall
 import base.minigames.hole_in_the_wall.wall_types.JumpscareWall
 import base.minigames.hole_in_the_wall.wall_types.RammingWall
@@ -21,7 +23,15 @@ import org.bukkit.entity.TextDisplay
 import java.io.File
 import java.util.concurrent.atomic.AtomicInteger
 
+/** Identifies whether a wall reached the end of its lifespan normally or was destroyed by another effect. */
+internal enum class WallDecayCause {
+    NATURAL,
+    DOOMINATOR_NUKE,
+    RAMMING,
+}
+
 class Wall(
+    val holeInTheWall: HoleInTheWall,
     val wallFile: File,
     /** The direction the wall is coming from. */
     directionWallComesFrom: Direction,
@@ -63,6 +73,10 @@ class Wall(
     var isMovementHalted: Boolean = false
     /** Prevents repeated handling of stopped walls. */
     var isBeingHandled: Boolean = false
+    /** The action to take when this wall reaches runs out of lifespan and has been removed from the arena.*/
+    var actionsWhenDecayed: MutableList<Runnable> = mutableListOf()
+    /** Why this wall's lifespan ended. Nuke-caused decay must not trigger another Doominator alert. */
+    internal var decayCause: WallDecayCause = WallDecayCause.NATURAL
 
     /** Game-loop tick at which this wall may take its first movement step. */
     private var initialMovementUnlockTick: Int = 0
@@ -218,6 +232,11 @@ class Wall(
         wallTypes.forEach { it.thisWall = this }
 
         wallTypes.forEach { it.activateRunnables() }
+
+        if (hasWallType<DoominatorWall>())
+            actionsWhenDecayed += Runnable {
+                getWallType<DoominatorWall>()!!.alertUpcomingWallNuking()
+            }
         // -------------------------------------------------------------------------------------------- //
     }
 

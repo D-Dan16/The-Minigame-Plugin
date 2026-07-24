@@ -2,6 +2,7 @@ package base.minigames.hole_in_the_wall.wall_types
 
 import base.MinigamePlugin
 import base.minigames.hole_in_the_wall.HITWConst
+import base.minigames.hole_in_the_wall.HoleInTheWall
 import base.minigames.hole_in_the_wall.debug.HITWDevLogger
 import base.minigames.hole_in_the_wall.models.wall.Wall
 import base.minigames.hole_in_the_wall.models.wall.WallState
@@ -21,11 +22,13 @@ import kotlin.random.Random
  * window of that lifespan once its behavior is implemented.
  */
 abstract class WallType {
-    lateinit var thisWall: Wall
+    internal lateinit var thisWall: Wall
+    protected val holeInTheWall: HoleInTheWall
+        get() = thisWall.holeInTheWall
     protected val hasWall: Boolean
         get() = ::thisWall.isInitialized
     /** Stable identifier for this wall type. */
-    abstract val id: String
+    internal abstract val id: String
 
     internal val runnables: MutableList<BukkitRunnable> = mutableListOf()
     private val registeredPausableRunnables =
@@ -38,7 +41,7 @@ abstract class WallType {
         registeredPausableRunnables.keys.toList().forEach(::cancelPausableRunnable)
     }
 
-    /** Registers a pausable task with both this wall type and the owning minigame. */
+    /** Registers a possible task with both this wall type and the owning minigame. */
     internal fun registerPausableRunnable(
         runnable: PausableBukkitRunnable,
         minigameRunnables: MutableCollection<PausableBukkitRunnable>
@@ -54,7 +57,7 @@ abstract class WallType {
         registeredPausableRunnables.remove(runnable)?.remove(runnable)
     }
 
-    internal fun repeatedlyEmitParticlesBeforeSpawn(particle: Particle, particleData: Any? = null, taskInterval: Long = 20L) {
+    protected fun repeatedlyEmitParticlesBeforeSpawn(particle: Particle, particleData: Any? = null, taskInterval: Long = 20L) {
         runnables += object : BukkitRunnable() {
             override fun run() {
                 try {
@@ -77,7 +80,7 @@ abstract class WallType {
         }.also { it.runTaskTimer(MinigamePlugin.plugin, 0L, taskInterval) }
     }
 
-    internal fun repeatedlyEmitParticles(particle: Particle, particleData: Any? = null, taskInterval: Long = 20L) {
+    protected fun repeatedlyEmitParticles(particle: Particle, particleData: Any? = null, taskInterval: Long = 20L) {
         runnables += object : BukkitRunnable() {
             override fun run() {
                 try {
@@ -101,7 +104,7 @@ abstract class WallType {
 
 
     /** Spawns [particleAmountOnBlock] particles in every non-air block of this wall. */
-    internal fun spawnParticlesOnWall(particle: Particle, data: Any? = null, particleAmountOnBlock: Int = 1) {
+    protected fun spawnParticlesOnWall(particle: Particle, data: Any? = null, particleAmountOnBlock: Int = 1) {
         for (x in thisWall.wallRegion.minimumPoint.x()..thisWall.wallRegion.maximumPoint.x()) {
             for (y in thisWall.wallRegion.minimumPoint.y()..thisWall.wallRegion.maximumPoint.y()) {
                 for (z in thisWall.wallRegion.minimumPoint.z()..thisWall.wallRegion.maximumPoint.z()) {

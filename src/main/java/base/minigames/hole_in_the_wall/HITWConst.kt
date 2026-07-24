@@ -38,6 +38,7 @@ object HITWConst {
         /** Extra travel lifespan that lets a Ramming wall continue past the middle. */
         const val RAMMING_WALL_LIFESPAN = 30
         val FAST_DECAYED_WALL_LIFESPAN_RANGE = 10..20
+        const val ALERT_FOR_REWIND_WALL = 8
 
         const val JUMPSCARE_WALL_LIFESPAN_SHORTENER = 8
     }
