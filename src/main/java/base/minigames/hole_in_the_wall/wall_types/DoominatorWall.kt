@@ -22,7 +22,7 @@ import org.bukkit.scheduler.BukkitRunnable
  */
 class DoominatorWall : WallType() {
     companion object {
-        internal const val ID = "doominator"
+        internal const val ID = "Doominator"
         internal const val DESCRIPTION = "A Wall fused with gunpowder - when it dies, every other wall will shortly die as well! Beware - will inflict blindness on players"
     }
 

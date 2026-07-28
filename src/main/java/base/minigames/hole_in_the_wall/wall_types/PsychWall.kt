@@ -20,7 +20,7 @@ class PsychWall(
     var canResume: Boolean = false,
 ) : WallType() {
     companion object {
-        internal const val ID = "psych"
+        internal const val ID = "Psych"
         internal const val DESCRIPTION = "A wall that can stop before it reaches the platform. May decay, or stay. Always comes in groups of walls"
     }
 

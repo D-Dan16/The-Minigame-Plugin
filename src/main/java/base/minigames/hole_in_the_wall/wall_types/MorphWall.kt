@@ -19,7 +19,7 @@ import org.bukkit.Particle
  */
 class MorphWall : WallType() {
     companion object {
-        internal const val ID = "morph"
+        internal const val ID = "Morph"
         internal const val DESCRIPTION = "Walls equipping this insane wall type will go mad and constantly morph into different walls when they get close to mid. Only with Psych walls"
     }
 
@@ -44,8 +44,7 @@ class MorphWall : WallType() {
 
         val prevWallFile = thisWall.wallFile
         chooseNewSchematic(thisWall)
-        thisWall.rebuildSchematicAt(thisWall.worldLocationFor(thisWall.axisLocation, thisWall.directionWallComesFrom))
-        BuildLoader.loadSchematic(thisWall.holder)
+        thisWall.rebuildSchematicAtThisLocationAndPaste()
 
         spawnParticlesOnWall(particle = Particle.ENCHANTED_HIT, particleAmountOnBlock = 10)
 

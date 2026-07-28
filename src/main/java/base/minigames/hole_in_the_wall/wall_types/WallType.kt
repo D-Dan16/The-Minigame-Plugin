@@ -109,7 +109,7 @@ abstract class WallType {
                 for (z in thisWall.wallRegion.minimumPoint.z()..thisWall.wallRegion.maximumPoint.z()) {
                     val location = calcParticlePosition(x, y, z)
 
-                    if (location.block.type != Material.AIR) {
+                    if (HITWConst.Locations.WORLD.getBlockAt(x, y, z).type != Material.AIR) {
                         HITWConst.Locations.WORLD.spawnParticle(particle, location, particleAmountOnBlock, data)
                     }
                 }

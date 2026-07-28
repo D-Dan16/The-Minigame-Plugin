@@ -5,6 +5,7 @@ import base.minigames.hole_in_the_wall.game_loop.GameLoopRuntimeState.tickCount
 import base.minigames.hole_in_the_wall.game_loop.GameLoopRuntimeState.wallSpeed
 import base.minigames.hole_in_the_wall.game_loop.walls.wall_creating.deleteWall
 import base.minigames.hole_in_the_wall.models.wall.Wall
+import base.minigames.hole_in_the_wall.wall_types.FlipperWall
 import base.minigames.hole_in_the_wall.wall_types.MorphWall
 import base.minigames.hole_in_the_wall.wall_types.RammingWall
 import base.minigames.hole_in_the_wall.wall_types.PsychWall
@@ -60,16 +61,11 @@ internal fun updateWallLifecycleIfNeeded() {
 
 /** Runs wall-type-specific stop behavior for any currently existing walls. */
 private fun executeWallTypeSpecificActions(existingWalls: List<Wall>) {
-    existingWalls.filter { it.hasWallType<RammingWall>() }.forEach {
-        it.getWallType<RammingWall>()!!.ramCloseOpposingWalls()
-    }
-
-    existingWalls.filter { it.hasWallType<PsychWall>() }.forEach {
-        it.getWallType<PsychWall>()!!.stopPsychWallAtStopSign()
-    }
-
-    existingWalls.filter { it.hasWallType<MorphWall>() }.forEach {
-        it.getWallType<MorphWall>()!!.morphWhileAtStopSign()
+    existingWalls.forEach { wall ->
+        wall.getWallType<RammingWall>()?.ramCloseOpposingWalls()
+        wall.getWallType<PsychWall>()?.stopPsychWallAtStopSign()
+        wall.getWallType<MorphWall>()?.morphWhileAtStopSign()
+        wall.getWallType<FlipperWall>()?.attemptFlip()
     }
 }
 

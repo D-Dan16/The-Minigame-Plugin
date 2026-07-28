@@ -22,7 +22,7 @@ import org.bukkit.Particle
  */
 class RammingWall : WallType() {
     companion object {
-        internal const val ID = "ramming"
+        internal const val ID = "Ramming"
         internal const val DESCRIPTION = "A long-lived wall that rams opposing walls out of the arena."
     }
 

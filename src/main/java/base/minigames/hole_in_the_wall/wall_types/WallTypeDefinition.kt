@@ -17,7 +17,7 @@ internal enum class WallTypeDefinition(
      * Weights in a mutually exclusive group must total at most 100. Any remaining percentage
      * means no type from that group is assigned to the wall.
      */
-    val assignmentChance: Int = 50,
+    val assignmentChance: Int,
     private val createWallType: () -> WallType,
     val description: String,
 ) {
@@ -25,6 +25,7 @@ internal enum class WallTypeDefinition(
     PSYCH(
         id = PsychWall.ID,
         description = PsychWall.DESCRIPTION,
+        assignmentChance = 100,
         createWallType = { PsychWall(Random.nextBoolean()) },
     ),
     EARLY_DECAYED(
@@ -44,6 +45,7 @@ internal enum class WallTypeDefinition(
     JUMPSCARE(
         id = JumpscareWall.ID,
         description = JumpscareWall.DESCRIPTION,
+        assignmentChance = 50,
         createWallType = ::JumpscareWall,
     ),
     REPEATER(
@@ -65,6 +67,12 @@ internal enum class WallTypeDefinition(
         assignmentChance = 100,
         createWallType = ::MorphWall,
     ),
+    FLIPPER(
+        id = FlipperWall.ID,
+        description = FlipperWall.DESCRIPTION,
+        assignmentChance = 50,
+        createWallType = ::FlipperWall,
+    ),
     ;
 
     /**
@@ -73,13 +81,25 @@ internal enum class WallTypeDefinition(
     */
     val isTurned: Boolean
         get() = name in setOf(
-            "PSYCH",
             "EARLY_DECAYED",
-             "REPEATER",
+            "REPEATER",
             "JUMPSCARE",
             "RAMMING",
             "DOOMINATOR",
-            "MORPH"
+            "MORPH",
+            "FLIPPER"
+        )
+
+    /**
+     * Whether this enabled wall type is guaranteed to be included in every game's pool.
+     *
+     * This is primarily for testing and debugging. Priority types are placed after Psych, and before
+     * the remaining enabled wall types are randomly selected.
+     */
+    val isPriority: Boolean
+        get() = name in setOf(
+            "FLIPPER",
+            "REPEATER"
         )
 
     fun create(): WallType = createWallType()

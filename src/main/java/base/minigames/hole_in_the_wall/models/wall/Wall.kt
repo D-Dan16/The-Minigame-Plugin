@@ -30,7 +30,7 @@ class Wall(
     val difficultyOfWall: HITWConst.WallDifficulty,
     /** The direction the wall is coming from. */
     directionWallComesFrom: Direction,
-    val isFlipped: Boolean = false,
+    var isFlipped: Boolean = false,
     val wallTypes: MutableList<WallType> = mutableListOf(),
     /** The spawn wave that created this wall. */
     val spawnBatch: WallSpawnBatch,
@@ -138,6 +138,11 @@ class Wall(
         wallRegion = BuildLoader.getRotatedRegion(holder)
     }
 
+    internal fun rebuildSchematicAtThisLocationAndPaste() {
+        rebuildSchematicAt(worldLocationFor(axisLocation, directionWallComesFrom))
+        BuildLoader.loadSchematic(holder)
+    }
+
     /** Updates direction-dependent state without changing the wall's location or spawn anchor. */
     internal fun updateDirection(direction: Direction) {
         directionWallComesFrom = direction
@@ -228,10 +233,11 @@ class Wall(
 
         wallTypes.forEach { it.activateRunnables() }
 
-        if (hasWallType<DoominatorWall>())
+        getWallType<DoominatorWall>()?.let { doominatorWall ->
             actionsWhenDecayed += Runnable {
-                getWallType<DoominatorWall>()!!.alertUpcomingWallNuking()
+                doominatorWall.alertUpcomingWallNuking()
             }
+        }
         // -------------------------------------------------------------------------------------------- //
     }
 
@@ -351,7 +357,9 @@ class Wall(
 
         // Modify the lifespan based on additional wall types' requirements
         if (hasWallType<JumpscareWall>()) baseLifespan -= HITWConst.WallLifespans.JUMPSCARE_WALL_LIFESPAN_SHORTENER
-        if (hasWallType<RepeaterWall>()) baseLifespan += getWallType<RepeaterWall>()!!.calculateExtraLifespan(directionWallComesFrom)
+        getWallType<RepeaterWall>()?.let {
+            baseLifespan += it.calculateExtraLifespan(directionWallComesFrom)
+        }
 
         return baseLifespan
     }

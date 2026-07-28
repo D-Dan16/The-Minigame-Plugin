@@ -19,7 +19,7 @@ import kotlin.random.Random
  */
 class RepeaterWall : WallType() {
     companion object {
-        internal const val ID = "repeater"
+        internal const val ID = "Repeater"
         internal const val DESCRIPTION = "A wall that while at mid decides to teleport back to a place it already has been at."
     }
 
@@ -42,6 +42,8 @@ class RepeaterWall : WallType() {
                     }
                     WallState.Spawned -> {
                         if (thisWall.axisLocation.coordinate == coordinates.tpFromLoc) {
+                            thisWall.getWallType<FlipperWall>()?.allowedToFlip = true
+
                             playTeleportAnimation()
                             cancel()
                         }

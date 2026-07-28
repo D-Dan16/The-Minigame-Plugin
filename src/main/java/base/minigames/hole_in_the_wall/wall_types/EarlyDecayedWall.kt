@@ -15,7 +15,7 @@ import org.bukkit.Particle
  */
 class EarlyDecayedWall : WallType() {
     companion object {
-        internal const val ID = "early_decayed"
+        internal const val ID = "Early Decayed"
         internal const val DESCRIPTION = "A wall with a shorter than normal lifespan, which makes it decay in the middle platform"
     }
 

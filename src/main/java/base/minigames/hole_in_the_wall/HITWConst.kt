@@ -15,7 +15,7 @@ import base.utils.additions.Direction
 object HITWConst {
     object Development {
         /** Whether the plugin is running in development mode. */
-        const val IS_IN_DEVELOPMENT: Boolean = false
+        const val IS_IN_DEVELOPMENT: Boolean = true
     }
 
     object ArenaFiles {
@@ -50,6 +50,7 @@ object HITWConst {
         /** A game begins with Psych plus one randomly selected non-Psych wall type. */
         const val INITIAL_WALL_TYPE_POOL_SIZE: Int = 2
         /** The wall designer can use at most this many wall types in one game. */
+//        const val MAX_WALL_TYPE_POOL_SIZE: Int = 7
         const val MAX_WALL_TYPE_POOL_SIZE: Int = 4
 
         const val MINIMUM_SPACE_BETWEEN_2_WALLS_FROM_THE_SAME_DIRECTION_FROM_SPAWN = 6
@@ -103,6 +104,7 @@ object HITWConst {
         val INCREASE_WALL_DIFFICULTY_LANDMARKS: IntArray = intArrayOf(25, 45, 70)
         /** Time marks for the two types added after the initial two-type pool. */
         val WALL_TYPE_POOL_INCREASE_LANDMARKS: IntArray = intArrayOf(40, 80)
+//        val WALL_TYPE_POOL_INCREASE_LANDMARKS: IntArray = intArrayOf(30,60,90,120,150)
 
         val PLATFORM_SHRINKAGE_LANDMARKS: IntArray = intArrayOf(35, 75)
 
@@ -111,6 +113,7 @@ object HITWConst {
         /**
          * delay until decay for Psych walls that don't reach mid and ran out of lifespan
          */
+
         const val DEAD_PSYCH_WALL_TIME_TILL_DECAY: Long = (1.5*20).toLong()
     }
 

@@ -165,20 +165,25 @@ internal object GameLoopRuntimeState {
         initialStage = initialStage,
     )
 
-    /** Guarantees Psych while randomly choosing the non-Psych wall types used by this game. */
+    /** Guarantees Psych and priority types while randomly choosing the remaining wall types. */
     private fun newWallTypePoolOrder(): MutableList<WallTypeDefinition> {
         val psychWallType = WallTypeDefinition.PSYCH
-        val randomNonPsychWallTypes = WallTypeDefinition.entries
+        val enabledNonPsychWallTypes = WallTypeDefinition.entries
             .filterNot {it === WallTypeDefinition.PSYCH}
             .filter { it.isTurned }
+        val priorityNonPsychWallTypes = enabledNonPsychWallTypes.filter { it.isPriority }
+        val nonPriorityWallTypes = enabledNonPsychWallTypes.filterNot { it.isPriority }
+        val nonPsychPoolCapacity = HITWConst.WallSpawning.MAX_WALL_TYPE_POOL_SIZE - 1
+
+        require(priorityNonPsychWallTypes.size <= nonPsychPoolCapacity) {
+            "The wall-type pool cannot fit every priority wall type"
+        }
+
+        val randomNonPriorityWallTypes = nonPriorityWallTypes
             .shuffled()
-            .take(HITWConst.WallSpawning.MAX_WALL_TYPE_POOL_SIZE - 1)
+            .take(nonPsychPoolCapacity - priorityNonPsychWallTypes.size)
 
-//        require(randomNonPsychWallTypes.size == HITWConst.WallSpawning.MAX_WALL_TYPE_POOL_SIZE - 1) {
-//            "The wall-type pool needs enough non-Psych wall types to reach its maximum size"
-//        }
-
-        return (listOf(psychWallType) + randomNonPsychWallTypes).toMutableList()
+        return (listOf(psychWallType) + priorityNonPsychWallTypes + randomNonPriorityWallTypes).toMutableList()
     }
 
     /** Synchronizes the mutable pool with the current timed progression stage. */

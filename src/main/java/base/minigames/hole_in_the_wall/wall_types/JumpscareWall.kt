@@ -10,7 +10,7 @@ import org.bukkit.Particle
  */
 class JumpscareWall : WallType() {
     companion object {
-        internal const val ID = "jumpscare"
+        internal const val ID = "Jumpscare"
         internal const val DESCRIPTION = "A wall that spawns very close to the platform, emitting green particles to indicate its very soon presence"
     }
 
