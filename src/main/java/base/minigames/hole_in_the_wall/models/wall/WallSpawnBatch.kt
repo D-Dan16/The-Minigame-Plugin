@@ -15,5 +15,5 @@ class WallSpawnBatch {
 
     val id: Int = nextId.getAndIncrement()
 
-    override fun toString(): String = "batch#$id"
+    override fun toString(): String = "$id"
 }

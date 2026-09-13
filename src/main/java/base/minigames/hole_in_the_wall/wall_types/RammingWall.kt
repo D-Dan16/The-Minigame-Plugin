@@ -39,7 +39,7 @@ class RammingWall : WallType() {
     internal fun ramCloseOpposingWalls() {
         if (thisWall.state != WallState.Spawned) return
 
-        val opposingWalls = WallsRuntimeState.existingWalls
+        val opposingWalls = WallsRuntimeState.aliveWalls
             .byDirection
             .getValue(thisWall.directionWallComesFrom.getOpposite())
 

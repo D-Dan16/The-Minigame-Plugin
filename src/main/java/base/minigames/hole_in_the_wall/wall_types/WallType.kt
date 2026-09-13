@@ -56,28 +56,6 @@ abstract class WallType {
         registeredPausableRunnables.remove(runnable)?.remove(runnable)
     }
 
-    protected fun repeatedlyEmitParticlesBeforeSpawn(particle: Particle, particleData: Any? = null, taskInterval: Long = 20L) {
-        runnables += object : BukkitRunnable() {
-            override fun run() {
-                try {
-                    if (thisWall.state != WallState.Queued) {
-                        cancel()
-                        return
-                    }
-
-                    // The schematic is deliberately not pasted during the warning, so there are
-                    // no non-air wall blocks to inspect yet. Highlight the future wall volume.
-                    spawnParticlesInWallRegion(particle, particleData)
-                } catch (throwable: Throwable) {
-                    HITWDevLogger.error(
-                        "Unhandled exception in particle task for wall#${thisWall.debugId} (${this@WallType})",
-                        throwable
-                    )
-                    throw throwable
-                }
-            }
-        }.also { it.runTaskTimer(MinigamePlugin.plugin, 0L, taskInterval) }
-    }
 
     protected fun repeatedlyEmitParticles(particle: Particle, particleData: Any? = null, taskInterval: Long = 20L) {
         runnables += object : BukkitRunnable() {
@@ -135,23 +113,7 @@ abstract class WallType {
         }
     }
 
-    /** Spawns particles throughout the wall's future region, including its openings. */
-    private fun spawnParticlesInWallRegion(particle: Particle, data: Any? = null) {
-        for (x in thisWall.wallRegion.minimumPoint.x()..thisWall.wallRegion.maximumPoint.x()) {
-            for (y in thisWall.wallRegion.minimumPoint.y()..thisWall.wallRegion.maximumPoint.y()) {
-                for (z in thisWall.wallRegion.minimumPoint.z()..thisWall.wallRegion.maximumPoint.z()) {
-                    HITWConst.Locations.WORLD.spawnParticle(
-                        particle,
-                        calcParticlePosition(x, y, z),
-                        1,
-                        data
-                    )
-                }
-            }
-        }
-    }
-
-    private fun calcParticlePosition(x: Int, y: Int, z: Int): Location {
+    internal fun calcParticlePosition(x: Int, y: Int, z: Int): Location {
         val particleLoc = HITWConst.Locations.WORLD.getBlockAt(x, y, z).location.clone().add(0.5, 0.5, 0.5)
 
         particleLoc.add(

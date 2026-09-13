@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 package base.utils.other
 
 import com.sk89q.worldedit.WorldEdit

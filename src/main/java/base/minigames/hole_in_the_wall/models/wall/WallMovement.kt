@@ -38,6 +38,43 @@ internal fun Wall.initializeWallMotion() {
 }
 
 /**
+ * Turns a wall around without moving its slime blocks. Each piston crosses the slime wall to
+ * its opposite side, then faces the wall's current travel direction.
+ */
+internal fun Wall.movePistonsToOtherSideOfSlimeWall() {
+    val regionShift = when (directionWallIsFacing) {
+        Direction.SOUTH -> BlockVector3.at(0, 0, -1)
+        Direction.NORTH -> BlockVector3.at(0, 0, 1)
+        Direction.WEST -> BlockVector3.at(1, 0, 0)
+        Direction.EAST -> BlockVector3.at(-1, 0, 0)
+    }
+
+    val newPistonLocations = pistonLocations.map { pistonLocation ->
+        pistonLocation.clone().add(
+            regionShift.x().toDouble() * 2,
+            0.0,
+            regionShift.z().toDouble() * 2,
+        )
+    }
+
+    pistonLocations.forEach { it.block.type = Material.AIR }
+    newPistonLocations.forEach { pistonLocation ->
+        pistonLocation.block.type = Material.PISTON
+        val pistonData = pistonLocation.block.blockData as Piston
+        pistonData.facing = when (directionWallIsFacing) {
+            Direction.SOUTH -> BlockFace.SOUTH
+            Direction.NORTH -> BlockFace.NORTH
+            Direction.WEST -> BlockFace.WEST
+            Direction.EAST -> BlockFace.EAST
+        }
+        pistonLocation.block.blockData = pistonData
+    }
+
+    pistonLocations = newPistonLocations.toMutableList()
+    wallRegion.shift(regionShift)
+}
+
+/**
  * Moves the wall one block by triggering its pistons.
  *
  * A move is ignored if the wall is deleted, already moving, or has exhausted its lifespan.
@@ -105,21 +142,27 @@ private fun Wall.placeAndPowerButton(buttonLocation: Location) {
     val buttonBlock: Block = buttonLocation.block
     buttonBlock.type = Material.STONE_BUTTON
 
-    val data = buttonBlock.blockData as Switch
-    data.facing = when (directionWallIsFacing) {
-        Direction.SOUTH -> BlockFace.NORTH
-        Direction.NORTH -> BlockFace.SOUTH
-        Direction.WEST -> BlockFace.EAST
-        Direction.EAST -> BlockFace.WEST
+    val data = buttonBlock.blockData
+    if (data is Switch) {
+        data.facing = when (directionWallIsFacing) {
+            Direction.SOUTH -> BlockFace.NORTH
+            Direction.NORTH -> BlockFace.SOUTH
+            Direction.WEST -> BlockFace.EAST
+            Direction.EAST -> BlockFace.WEST
+        }
+        buttonBlock.blockData = data
+    } else {
+        HITWDevLogger.warn("Wall#$debugId failed to set button data at ${buttonLocation.toVector()}: block is not a Switch but ${data.javaClass.simpleName}")
     }
-    buttonBlock.blockData = data
 
     val state: BlockState = buttonBlock.state
-    val powerableState: Powerable = state.blockData as Powerable
-    if (!powerableState.isPowered) {
-        powerableState.isPowered = true
-        state.blockData = powerableState
-        state.update(true, true)
+    val powerableState = state.blockData
+    if (powerableState is Powerable) {
+        if (!powerableState.isPowered) {
+            powerableState.isPowered = true
+            state.blockData = powerableState
+            state.update(true, true)
+        }
     }
 }
 

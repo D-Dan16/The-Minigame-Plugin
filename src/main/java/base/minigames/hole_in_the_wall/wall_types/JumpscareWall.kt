@@ -1,14 +1,19 @@
 package base.minigames.hole_in_the_wall.wall_types
 
+import base.MinigamePlugin
+import base.minigames.hole_in_the_wall.debug.HITWDevLogger
 import base.minigames.hole_in_the_wall.game_loop.GameLoopRuntimeState
+import base.minigames.hole_in_the_wall.models.wall.WallState
 import org.bukkit.Particle
+import org.bukkit.scheduler.BukkitRunnable
+import kotlin.collections.plusAssign
 
 /**
  * This wall type spawns at one of the stop signs.
  * Instead of spawning immediately, it highlights that it is about to spawn by making the area it'll spawn at with SOUL_FIRE_FLAME particles, warning the players of its existence.
  * after it spawns, it takes a small time to actually start moving, specifically [base.minigames.hole_in_the_wall.game_loop.GameLoopRuntimeState.wallSpeed]*2 Ticks.
  */
-class JumpscareWall : WallType() {
+class JumpscareWall : CustomWallSpawn() {
     companion object {
         internal const val ID = "Jumpscare"
         internal const val DESCRIPTION = "A wall that spawns very close to the platform, emitting green particles to indicate its very soon presence"

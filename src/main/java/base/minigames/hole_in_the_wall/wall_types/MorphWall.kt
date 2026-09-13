@@ -27,8 +27,7 @@ class MorphWall : WallType() {
     override fun toString(): String = ID
 
     fun morphWhileAtStopSign() {
-        val psychWall = thisWall.getWallType<PsychWall>()!!
-        if (!psychWall.hasStoppedAtStopSign || psychWall.hasDoneAPsych)
+        if (!thisWall.hasStoppedAtStopSign || thisWall.hasDoneAPsych)
             return
 
         // We make sure that the wall is live and well - if it has been deleted by external causes, we wouldn't want to spawn a wall
@@ -48,7 +47,8 @@ class MorphWall : WallType() {
 
         spawnParticlesOnWall(particle = Particle.ENCHANTED_HIT, particleAmountOnBlock = 10)
 
-        HITWDevLogger.wall(thisWall, "wall morphs from $prevWallFile -> ${thisWall.wallFile}")
+//        HITWDevLogger.wall(thisWall, "wall morphs from $prevWallFile -> ${thisWall.wallFile}")
+        HITWDevLogger.wall(thisWall, "wall morphs")
         thisWall.updateDebugIdDisplayLocation()
         thisWall.initializeWallMotion()
     }

@@ -5,7 +5,6 @@ import base.minigames.hole_in_the_wall.debug.HITWDevLogger
 import base.minigames.hole_in_the_wall.game_loop.walls.runtime.WallsRuntimeState
 import base.minigames.hole_in_the_wall.game_loop.walls.wall_creating.deleteWall
 import base.minigames.hole_in_the_wall.models.wall.WallDecayCause
-import org.bukkit.Bukkit
 import org.bukkit.Particle
 import org.bukkit.Sound
 import org.bukkit.potion.PotionEffect
@@ -54,7 +53,7 @@ class DoominatorWall : WallType() {
         holeInTheWall.players
             .filter { !it.isDead }
             .forEach { it.addPotionEffect(PotionEffect(PotionEffectType.BLINDNESS, 20, 0, false, false)) }
-        WallsRuntimeState.existingWalls.allWalls().toList().forEach {
+        WallsRuntimeState.aliveWalls.allWalls().toList().forEach {
             it.decayCause = WallDecayCause.DOOMINATOR_NUKE
             deleteWall(it)
         }

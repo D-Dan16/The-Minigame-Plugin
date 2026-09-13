@@ -4,8 +4,10 @@ package base.minigames.hole_in_the_wall.game_loop.walls.runtime
 import base.minigames.hole_in_the_wall.HITWConst
 import base.minigames.hole_in_the_wall.HITWConst.Locations.PlatformGeometry
 import base.minigames.hole_in_the_wall.HoleInTheWall
+import base.minigames.hole_in_the_wall.debug.HITWDevLogger
 import base.minigames.hole_in_the_wall.game_loop.walls.wall_creating.deleteWall
 import base.minigames.hole_in_the_wall.models.wall.Wall
+import base.minigames.hole_in_the_wall.wall_types.RepeaterWall
 import base.utils.additions.Direction
 import base.utils.additions.activateTaskAfterConditionIsMet
 import com.sk89q.worldedit.regions.CuboidRegion
@@ -18,7 +20,7 @@ import kotlin.math.abs
  * decisions that only care about whether an axis is occupied.
  */
 internal fun buildWallAxisOccupancyGrid(
-    walls: Collection<Wall> = WallsRuntimeState.existingWalls.allWalls()
+    walls: Collection<Wall> = WallsRuntimeState.aliveWalls.allWalls()
 ): WallAxisOccupancyGrid {
     val (xAxis, zAxis) = HITWConst.Locations.createWallAxisOccupancies()
     val occupancyGrid = WallAxisOccupancyGrid(xAxis, zAxis)
@@ -44,20 +46,21 @@ internal fun buildWallAxisOccupancyGrid(
 internal fun HoleInTheWall.forceTwoCloseWallsToStop() {
     val wallsDeletedThisPass = mutableSetOf<Wall>()
 
-    val wallsByAxis = WallsRuntimeState.existingWalls.allWalls().groupBy { it.axisLocation.axis }
+    val wallsByAxis = WallsRuntimeState.aliveWalls.allWalls().groupBy { it.axisLocation.axis }
 
     for (wallsOnAxis in wallsByAxis.values) {
         if (wallsOnAxis.size < 2) continue
 
         stopSameDirectionWallsThatAreTooClose(wallsOnAxis)
-        stopOpposingWallsThatAreTooClose(wallsOnAxis, wallsDeletedThisPass)
+        //stopOpposingWallsThatAreTooClose(wallsOnAxis, wallsDeletedThisPass)
     }
 }
 
 /** Stops the trailing wall in each same-direction pair when two walls are too close together. */
-private fun HoleInTheWall.stopSameDirectionWallsThatAreTooClose(wallsOnAxis: List<Wall>) {
+internal fun HoleInTheWall.stopSameDirectionWallsThatAreTooClose(wallsOnAxis: List<Wall>) {
     for (directionWalls in wallsOnAxis.groupBy { it.directionWallComesFrom }.values) {
-        if (directionWalls.size < 2) continue
+        if (directionWalls.size < 2)
+            continue
 
         val orderedFromBackToFront = directionWalls.sortedByDescending { it.backnessScore() }
 
@@ -65,18 +68,24 @@ private fun HoleInTheWall.stopSameDirectionWallsThatAreTooClose(wallsOnAxis: Lis
             val backWall = orderedFromBackToFront[index]
             val frontWall = orderedFromBackToFront[index + 1]
 
+            // If the front wall is not yet at or past the middle, we enforce a tight gap (2 blocks)
+            // to allow them to travel together. The 7-block gap is only strictly enforced at the
+            // stop sign to ensure they enter the middle area with the requested spacing.
             if (!wallsAreTooClose(backWall, frontWall)) continue
             if (backWall.isMovementHalted) continue
 
             // Only the trailing wall gets paused; the front wall keeps moving.
             backWall.isMovementHalted = true
+            backWall.isForcedStopped = true
+            HITWDevLogger.wall(backWall,"Wall has been forcibly stopped")
 
             activateTaskAfterConditionIsMet(
-                condition = { !isWallTooCloseToAnyOtherWall(backWall) },
-                conditionToCancel = { backWall !in WallsRuntimeState.existingWalls.allWalls() },
+                condition = { !isWallTooCloseToAnyWallInFront(backWall) },
+                conditionToCancel = { backWall !in WallsRuntimeState.aliveWalls.allWalls() },
                 action = Runnable {
                     backWall.isMovementHalted = false
                     backWall.isBeingHandled = false
+                    backWall.isForcedStopped = false
                 },
                 listOfRunnablesToAddTo = runnables
             )
@@ -131,39 +140,28 @@ private fun wallToRemoveFromOpposingPair(firstWall: Wall, secondWall: Wall): Wal
 }
 
 /** Returns a score that orders walls from back to front along their travel axis. */
-private fun Wall.backnessScore(): Int {
-    return when (directionWallComesFrom) {
-        Direction.SOUTH, Direction.EAST -> axisLocation.coordinate
-        Direction.NORTH, Direction.WEST -> -axisLocation.coordinate
+internal fun Wall.backnessScore(): Int {
+    return headAxisPosition * when (directionWallComesFrom) {
+        Direction.SOUTH, Direction.EAST -> 1
+        Direction.NORTH, Direction.WEST -> -1
     }
 }
 
-/** Returns `true` when another wall on the same axis is too close to the given wall. */
-private fun isWallTooCloseToAnyOtherWall(wall: Wall): Boolean {
-    return WallsRuntimeState.existingWalls.allWalls().any { other ->
+/** Returns `true` when another wall on the same axis is in front and too close to the given wall. */
+private fun isWallTooCloseToAnyWallInFront(wall: Wall): Boolean {
+    return WallsRuntimeState.aliveWalls.allWalls().any { other ->
         other !== wall &&
             other.axisLocation.axis == wall.axisLocation.axis &&
+            other.directionWallComesFrom == wall.directionWallComesFrom &&
+            other.isAheadOf(wall) &&
             wallsAreTooClose(wall, other)
     }
 }
 
 /** Returns `true` when the two walls overlap or are separated by only a small gap. */
-private fun wallsAreTooClose(firstWall: Wall, secondWall: Wall): Boolean {
-    val wallBoundsA = firstWall.getWallBounds()
-    val wallBoundsB = secondWall.getWallBounds()
-
-    return wallBoundsA.first <= wallBoundsB.last + 2 &&
-        wallBoundsB.first <= wallBoundsA.last + 2
+private fun wallsAreTooClose(backWall: Wall, frontWall: Wall): Boolean {
+    return abs(frontWall.tailAxisPosition - backWall.headAxisPosition) <= 2
 }
-
-/** Returns the inclusive axis bounds covered by this wall's region. */
-private fun Wall.getWallBounds(): IntRange {
-    return when (axisLocation.axis) {
-        HITWConst.Locations.ArenaAxis.X -> wallRegion.minimumPoint.x()..wallRegion.maximumPoint.x()
-        HITWConst.Locations.ArenaAxis.Z -> wallRegion.minimumPoint.z()..wallRegion.maximumPoint.z()
-    }
-}
-
 
 /**
  * Stop non-Psych Walls at the stop signs if they would collide with a wall at mid
@@ -172,26 +170,44 @@ internal fun HoleInTheWall.stopNecessaryWallsAtStopSign() {
     val wallGrid = buildWallAxisOccupancyGrid()
     val directionOfWallAtMid = wallGrid.getDirectionOfWallAtMid() ?: return
 
-    WallsRuntimeState.existingWalls.byDirection.forEach { (direction, walls) ->
-        if (direction != directionOfWallAtMid) {
-            val stopSign: CuboidRegion = getStopSignRegion(direction)
+    WallsRuntimeState.aliveWalls.byDirection.forEach { (direction, walls) ->
+        val stopSign: CuboidRegion = getStopSignRegion(direction)
 
-            for (wall in walls) {
-                if (wall.isMovementHalted) continue
-                if (!stopSign.overlaps(wall.wallRegion)) continue
+        for (wall in walls) {
+            if (wall.isMovementHalted) continue
+            if (!stopSign.overlaps(wall.wallRegion)) continue
 
-                // Stop the wall until the danger is over. A wall should only get one watcher at a time.
-                wall.isMovementHalted = true
-                activateTaskAfterConditionIsMet(
-                    condition = { isAWallAtMiddle().not() },
-                    conditionToCancel = { wall !in WallsRuntimeState.existingWalls.allWalls() },
-                    action = {
-                        wall.isMovementHalted = false
-                        wall.isBeingHandled = false
-                    },
-                    listOfRunnablesToAddTo = runnables
-                )
+            // A same-direction follower is safe to enter if it maintains the minimum gap
+            // from the wall already at or past the middle.
+            if (direction == directionOfWallAtMid) {
+                val wallInFront = walls.find { other ->
+                    other !== wall && other.isAheadOf(wall)
+                }
+
+                val gap = wallInFront?.let { abs(wall.axisLocation.coordinate - it.axisLocation.coordinate) } ?: Int.MAX_VALUE
+                if (gap >= HITWConst.WallSpawning.MINIMUM_SPACE_BETWEEN_2_WALLS) {
+                    HITWDevLogger.wall(wall, "allowing same-direction wall to pass stop sign as it follows wall at mid with gap $gap")
+                    continue
+                }
             }
+
+            // Psych walls have their own resume logic in handleStayingPsychWalls()
+            if (wall.hasDoneAPsych) continue
+
+            // Stop the wall until the danger is over. A wall should only get one watcher at a time.
+            wall.isMovementHalted = true
+            wall.isForcedStopped = true
+
+            activateTaskAfterConditionIsMet(
+                condition = { wall.hasNoImmediateStopSignDanger() },
+                conditionToCancel = { wall !in WallsRuntimeState.aliveWalls.allWalls() },
+                action = {
+                    wall.isMovementHalted = false
+                    wall.isBeingHandled = false
+                    wall.isForcedStopped = false
+                },
+                listOfRunnablesToAddTo = runnables
+            )
         }
     }
 }
@@ -216,10 +232,10 @@ internal fun CuboidRegion.overlaps(other: CuboidRegion): Boolean {
 
 /** Returns `true` when any wall currently occupies the middle ring. */
 internal fun isAWallAtMiddle() : Boolean {
-    return buildWallAxisOccupancyGrid().hasWallAtMiddle()
+    return WallsRuntimeState.locationsOfWalls.hasWallAtMiddle()
 }
 
 internal fun isAWallCloseOrAtMid() : Boolean {
-    val wallAxisOccupancyGrid = buildWallAxisOccupancyGrid()
-    return wallAxisOccupancyGrid.hasWallAtMiddle() || wallAxisOccupancyGrid.isAWallCloseToMid()
+    val wallAxisOccupancyGrid = WallsRuntimeState.locationsOfWalls
+    return wallAxisOccupancyGrid.hasWallAtMiddle() || wallAxisOccupancyGrid.hasWallsAtMiddleOrOuterRing()
 }

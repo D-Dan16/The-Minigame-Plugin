@@ -1,11 +1,12 @@
 package base.minigames.hole_in_the_wall.game_loop.walls.wall_creating
 
 import base.minigames.hole_in_the_wall.HITWConst
-import base.minigames.hole_in_the_wall.HITWConst.WallSpawnerState
 import base.minigames.hole_in_the_wall.HoleInTheWall
 import base.minigames.hole_in_the_wall.game_loop.GameLoopRuntimeState
+import base.minigames.hole_in_the_wall.game_loop.walls.runtime.WallsRuntimeState
+import base.minigames.hole_in_the_wall.game_loop.walls.spawning.SpawnerRuntimeState
 import base.minigames.hole_in_the_wall.models.wall.Wall
-import base.minigames.hole_in_the_wall.wall_types.PsychWall
+import base.minigames.hole_in_the_wall.wall_types.ReturningWall
 import base.minigames.hole_in_the_wall.wall_types.WallType
 import base.minigames.hole_in_the_wall.wall_types.WallTypeDefinition
 import base.minigames.hole_in_the_wall.models.wall.WallSpawnBatch
@@ -25,50 +26,41 @@ data class WallPack(
 /** The selected wall pack for the current map, grouped by difficulty. */
 internal lateinit var wallPackDifficulties: WallPack
 
-internal fun HoleInTheWall.designWallBehaviorAndCreateIt(directionToChooseFrom: MutableList<Direction>, wallSpawnerState: WallSpawnerState) {
-    val wallsToSpawn = when (wallSpawnerState) {
-        WallSpawnerState.INTENDING_TO_CREATE_MULTIPLE_WALLS_AT_ONCE -> GameLoopRuntimeState.multiWallSelectionRange.random()
-        WallSpawnerState.INTENDING_TO_CREATE_1_WALL -> 1
-        else -> throw IllegalStateException("Unexpected state: $wallSpawnerState")
-    }
-
-    // This batch remains attached to its walls after the spawner has cleared `upcomingWalls`.
+internal fun HoleInTheWall.designWallBehaviorAndCreateIt(
+    directionToChooseFrom: MutableList<Direction>,
+    wallsToSpawn: Int
+) {
     val spawnBatch = WallSpawnBatch()
-    var createdRealWall = false
     repeat(wallsToSpawn) {
+        val direction = directionToChooseFrom.removeFirst()
         val wallTypes = mutableListOf<WallType>()
 
-        if (!createdRealWall) {
-            createdRealWall = true
-        } else {
-            wallTypes += GameLoopRuntimeState.availableWallTypes
-                .first { it === WallTypeDefinition.PSYCH }
-                .create()
-        }
-
         addOptionalAvailableWallTypes(wallTypes)
-        addMorphToPsychWallWhenAvailable(wallTypes)
+        addMorphToAllWallsWhenAvailable(wallTypes)
 
-        createNewWall(directionToChooseFrom.removeFirst(), wallTypes, spawnBatch)
+        //TODO: fast swap
+        createNewWall(direction, wallTypes, spawnBatch,Random.nextBoolean())
+//        createNewWall(direction, wallTypes, spawnBatch,true)
     }
 }
+
+
 
 /** Adds at most one type from each available mutually exclusive group, preserving optional types. */
 private fun addOptionalAvailableWallTypes(wallTypes: MutableList<WallType>) {
     GameLoopRuntimeState.availableWallTypes
-        // Psych is assigned by the multi-wall-wave rule, and Morph is exclusively a
-        // companion effect for Psych walls below.
-        .filterNot { it === WallTypeDefinition.PSYCH || it === WallTypeDefinition.MORPH }
+        // Morph is exclusively a companion effect for all walls below.
+        .filterNot {
+            it === WallTypeDefinition.MORPH
+        }
         .groupBy { it.mutuallyExclusiveGroup ?: it }
         .values
         .forEach { choices -> rollWallTypeAssignment(choices)
         ?.let { wallTypes += it.create() } }
 }
 
-/** Makes every Psych wall a Morph wall once Morph has entered the active pool. */
-private fun addMorphToPsychWallWhenAvailable(wallTypes: MutableList<WallType>) {
-    if (wallTypes.none { it is PsychWall })
-        return
+/** Makes every wall a Morph wall once Morph has entered the active pool. */
+private fun addMorphToAllWallsWhenAvailable(wallTypes: MutableList<WallType>) {
     if (WallTypeDefinition.MORPH !in GameLoopRuntimeState.availableWallTypes)
         return
 
@@ -97,21 +89,22 @@ private fun rollWallTypeAssignment(choices: Collection<WallTypeDefinition>): Wal
 
 /** Chooses a schematic file using the current difficulty weighting rules. */
 internal fun pickWeightedWallFileForCurrentDifficulty(dontInclude: File? = null): Pair<File, HITWConst.WallDifficulty> {
+    val roll = Random.nextInt(100)
     val pool = when (GameLoopRuntimeState.wallDifficulty) {
         HITWConst.WallDifficulty.EASY -> wallPackDifficulties.easy
 
-        HITWConst.WallDifficulty.MEDIUM -> when (Random.nextInt(100)) {
+        HITWConst.WallDifficulty.MEDIUM -> when (roll) {
             in HITWConst.WallPackSelection.MEDIUM_PRIMARY_POOL_ROLL_RANGE -> wallPackDifficulties.medium
             else -> wallPackDifficulties.easy
         }
 
-        HITWConst.WallDifficulty.HARD -> when (Random.nextInt(100)) {
+        HITWConst.WallDifficulty.HARD -> when (roll) {
             in HITWConst.WallPackSelection.HARD_PRIMARY_POOL_ROLL_RANGE -> wallPackDifficulties.hard
             in HITWConst.WallPackSelection.HARD_SECONDARY_POOL_ROLL_RANGE -> wallPackDifficulties.medium
             else -> wallPackDifficulties.easy
         }
 
-        HITWConst.WallDifficulty.VERY_HARD -> when (Random.nextInt(100)) {
+        HITWConst.WallDifficulty.VERY_HARD -> when (roll) {
             in HITWConst.WallPackSelection.VERY_HARD_PRIMARY_POOL_ROLL_RANGE -> wallPackDifficulties.very_hard
             in HITWConst.WallPackSelection.VERY_HARD_SECONDARY_POOL_ROLL_RANGE -> wallPackDifficulties.hard
             in HITWConst.WallPackSelection.VERY_HARD_TERTIARY_POOL_ROLL_RANGE -> wallPackDifficulties.medium

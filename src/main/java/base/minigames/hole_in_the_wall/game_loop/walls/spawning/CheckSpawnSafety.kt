@@ -1,66 +1,104 @@
 package base.minigames.hole_in_the_wall.game_loop.walls.spawning
 
 import base.minigames.hole_in_the_wall.HITWConst
+import base.minigames.hole_in_the_wall.game_loop.GameLoopRuntimeState
+import base.minigames.hole_in_the_wall.game_loop.GameLoopRuntimeState.maximumAllowedBatches
+import base.minigames.hole_in_the_wall.game_loop.walls.runtime.WallAxisOccupancyGrid
 import base.minigames.hole_in_the_wall.game_loop.walls.runtime.WallsRuntimeState
 import base.minigames.hole_in_the_wall.models.wall.Wall
-import base.minigames.hole_in_the_wall.wall_types.PsychWall
-import base.minigames.hole_in_the_wall.wall_types.RepeaterWall
 import base.utils.additions.Direction
 
 /**
- * Returns `true` when every queued wall has enough room to enter the arena.
+ * Returns `true` when the queued batch may start its spawn sequence.
  *
- * This is intentionally conservative: it checks the newest active wall for each occupied
- * direction, because that wall is the closest one to the spawn line and is therefore the
- * limiting factor for spawning another wall.
+ * This does not mean the wall blocks can be pasted right now. Jumpscare warnings begin once this
+ * passes, and the physical paste is guarded separately by [canPhysicallySpawnQueuedWalls].
  */
-internal fun isSafeToSpawnWall(): Boolean {
+internal fun isBatchReadyToBeginSpawnSequence(): Boolean {
     val upcomingWalls = SpawnerRuntimeState.upcomingWalls
     if (upcomingWalls.isEmpty()) return false
+    if (!hasSpawnCadenceElapsed()) return false
+
+    // Treat a queued wave as part of the limit, rather than letting a multi-wall spawn overshoot
+    // the current progression stage.
+    // In HITW, upcomingWalls always belong to a single new batch.
+    if (WallsRuntimeState.aliveWalls.amountOfBatches() + 1 > maximumAllowedBatches) return false
 
     // The current spawner only creates distinct directions in a batch, but we still fail closed
     // if a duplicate direction slips in.
-    if (upcomingWalls.map { it.directionWallComesFrom }.distinct().size != upcomingWalls.size) {
-        return false
-    }
+    if (!hasDistinctSpawnDirections(upcomingWalls)) return false
 
-    // A stopped psych wall only blocks a same-direction follower while the walls keeping it at
-    // the stop sign need longer to clear than the follower's remaining safe headroom.
-    if (upcomingWalls.any(::hasWaitingPsychWallInTheSameDirection)) {
-        return false
-    }
+    return queuedBatchHasEnoughSameDirectionSpacing(upcomingWalls)
+}
 
-    // A repeater re-enters from its own stop sign. Its return path can conflict with walls
-    // from any direction, so defer the whole batch until the teleport is complete. The normal
-    // position-based checks below then evaluate the repeater at its new location.
-    if (hasPendingRepeaterTeleport()) {
-        return false
-    }
+internal fun markBatchSpawnSequenceStarted() {
+    SpawnerRuntimeState.tickCountSinceLastBatchSpawn = 0
+}
 
-    val directionsExistingWallsHave = WallsRuntimeState.existingWalls.directionsInUse()
-    if (directionsExistingWallsHave.isEmpty()) return true
-
-    return upcomingWalls.all { upcomingWall ->
-        directionsExistingWallsHave.all { existingDirection ->
-            val existingWall = WallsRuntimeState.existingWalls.lastWallFrom(existingDirection) ?: return@all false
-            isExistingWallFarEnoughFromSpawn(existingWall, upcomingWall.directionWallComesFrom)
+/**
+ * Returns `true` when the queued wall schematics can be pasted with enough lane clearance.
+ *
+ * A queued wall reserves its occupied travel-axis cells plus two cells on each side. That forbids
+ * spawning when another wall overlaps it, is adjacent to it, or has only one air cell between them.
+ */
+internal fun canPhysicallySpawnQueuedWalls(): Boolean {
+    val upcomingWalls = SpawnerRuntimeState.upcomingWalls
+    return upcomingWalls.isNotEmpty() && upcomingWalls.all { upcomingWall ->
+        spawnClearancePositions(upcomingWall).none { axisPosition ->
+            WallsRuntimeState.locationsOfWalls.hasWallAt(
+                upcomingWall.axisLocation.axis,
+                axisPosition
+            )
         }
     }
 }
 
+private fun hasSpawnCadenceElapsed(): Boolean {
+    return SpawnerRuntimeState.tickCountSinceLastBatchSpawn >= GameLoopRuntimeState.wallSpeed * 4
+}
+
+private fun hasDistinctSpawnDirections(upcomingWalls: List<Wall>): Boolean {
+    return upcomingWalls.map { it.directionWallComesFrom }.distinct().size == upcomingWalls.size
+}
+
+private fun spawnClearancePositions(upcomingWall: Wall): IntRange {
+    val occupiedPositions = upcomingWall.occupiedAxisPositions
+    val firstBlockedPosition = occupiedPositions.min() - 2
+    val lastBlockedPosition = occupiedPositions.max() + 2
+
+    return firstBlockedPosition..lastBlockedPosition
+}
+
+private fun WallAxisOccupancyGrid.hasWallAt(
+    axis: HITWConst.Locations.ArenaAxis,
+    coordinate: Int
+): Boolean {
+    val occupancy = when (axis) {
+        HITWConst.Locations.ArenaAxis.X -> xAxis
+        HITWConst.Locations.ArenaAxis.Z -> zAxis
+    }
+
+    val index = HITWConst.Locations.relativeCoordinateToAxisIndex(axis, coordinate)
+    return occupancy.getOrNull(index)?.hasWall() == true
+}
+
+private fun queuedBatchHasEnoughSameDirectionSpacing(upcomingWalls: List<Wall>): Boolean {
+    return upcomingWalls.all { upcomingWall ->
+        val newestSameDirectionWall: Wall = WallsRuntimeState.aliveWalls
+            .lastWallFrom(upcomingWall.directionWallComesFrom)
+            ?: return@all true
+
+        isSameDirectionWallFarEnoughFromSpawn(newestSameDirectionWall)
+    }
+}
+
 private fun hasWaitingPsychWallInTheSameDirection(upcomingWall: Wall): Boolean {
-    val waitingPsychWalls = WallsRuntimeState.existingWalls
+    val waitingPsychWalls = WallsRuntimeState.aliveWalls
         .byDirection
         .getValue(upcomingWall.directionWallComesFrom)
         .filter(::isWaitingResumedPsychWall)
 
     return waitingPsychWalls.any(::wouldBeCaughtBeforeItCanResume)
-}
-
-private fun hasPendingRepeaterTeleport(): Boolean {
-    return WallsRuntimeState.existingWalls
-        .allWalls()
-        .any { wall -> wall.getWallType<RepeaterWall>()?.hasPendingTeleport() == true }
 }
 
 /**
@@ -70,7 +108,7 @@ private fun hasPendingRepeaterTeleport(): Boolean {
  */
 private fun wouldBeCaughtBeforeItCanResume(waitingPsychWall: Wall): Boolean {
     val safeFollowerMoves = waitingPsychWall.distanceTravelledFromSpawn() -
-        HITWConst.WallSpawning.MINIMUM_SPACE_BETWEEN_2_WALLS_FROM_THE_SAME_DIRECTION_FROM_SPAWN
+        HITWConst.WallSpawning.MINIMUM_SPACE_BETWEEN_2_WALLS
 
     return movesUntilPsychWallCanResume() > safeFollowerMoves
 }
@@ -82,7 +120,7 @@ private fun wouldBeCaughtBeforeItCanResume(waitingPsychWall: Wall): Boolean {
  * time, so it remains a conservative blocker.
  */
 private fun movesUntilPsychWallCanResume(): Int {
-    return WallsRuntimeState.existingWalls.allWalls()
+    return WallsRuntimeState.aliveWalls.allWalls()
         .filterNot(::isWaitingResumedPsychWall)
         .filter(::isInPsychResumeExclusionZone)
         .maxOfOrNull(::movesUntilWallClearsPsychResumeZone)
@@ -90,20 +128,19 @@ private fun movesUntilPsychWallCanResume(): Int {
 }
 
 private fun isWaitingResumedPsychWall(wall: Wall): Boolean {
-    return wall.isMovementHalted &&
-        wall.getWallType<PsychWall>()?.canResume == true
+    return wall.isMovementHalted && wall.canResume
 }
 
 private fun isInPsychResumeExclusionZone(wall: Wall): Boolean {
     val exclusionZone = psychResumeExclusionZone(wall.directionWallComesFrom)
-    return wall.occupiedAxisPositions().any { it in exclusionZone }
+    return wall.occupiedAxisPositions.any { it in exclusionZone }
 }
 
 private fun movesUntilWallClearsPsychResumeZone(wall: Wall): Int {
     if (wall.isMovementHalted) return Int.MAX_VALUE
 
     val exclusionZone = psychResumeExclusionZone(wall.directionWallComesFrom)
-    val occupiedPositions = wall.occupiedAxisPositions()
+    val occupiedPositions = wall.occupiedAxisPositions
     val movesToLeaveZone = when (wall.directionWallComesFrom) {
         Direction.SOUTH, Direction.EAST -> occupiedPositions.max() - exclusionZone.first + 1
         Direction.NORTH, Direction.WEST -> exclusionZone.last - occupiedPositions.min() + 1
@@ -131,39 +168,13 @@ private fun psychResumeExclusionZone(direction: Direction): IntRange {
     }
 }
 
-private fun isExistingWallFarEnoughFromSpawn(
-    existingWall: Wall,
-    upcomingDirection: Direction
-): Boolean {
-    val requiredAxisPosition = when (relationBetween(existingWall.directionWallComesFrom, upcomingDirection)) {
-        DirectionRelation.SAME -> {
-            HITWConst.Locations.axisPositionForSameDirectionSpawn(existingWall.directionWallComesFrom)
-        }
-        DirectionRelation.ADJACENT -> {
-            HITWConst.Locations.axisPositionForAdjacentDirectionSpawn(existingWall.directionWallComesFrom)
-        }
-        DirectionRelation.OPPOSITE -> {
-            HITWConst.Locations.axisPositionForFacingDirectionSpawn(existingWall.directionWallComesFrom)
-        }
-    }
-
+private fun isSameDirectionWallFarEnoughFromSpawn(existingWall: Wall): Boolean {
+    val requiredAxisPosition: Int = HITWConst.Locations.axisPositionForSameDirectionSpawn(
+        existingWall.directionWallComesFrom
+    )
     return HITWConst.Locations.hasReachedAxisPosition(
         existingWall.directionWallComesFrom,
         existingWall.axisLocation.coordinate,
         requiredAxisPosition
     )
-}
-
-private enum class DirectionRelation {
-    SAME,
-    ADJACENT,
-    OPPOSITE
-}
-
-private fun relationBetween(existingDirection: Direction, upcomingDirection: Direction): DirectionRelation {
-    return when (upcomingDirection) {
-        existingDirection -> DirectionRelation.SAME
-        existingDirection.getClockwise(), existingDirection.getCounterClockwise() -> DirectionRelation.ADJACENT
-        else -> DirectionRelation.OPPOSITE
-    }
 }

@@ -10,6 +10,8 @@ internal object SpawnerRuntimeState {
     /** Walls that are scheduled to be spawned next. */
     internal val upcomingWalls: MutableList<Wall> = mutableListOf()
 
+    internal var tickCountSinceLastBatchSpawn = 0
+
     /** Resets the spawner back to its idle baseline and clears any queued walls. */
     fun reset() {
         stateOfWallSpawner = HITWConst.WallSpawnerState.DO_NO_ACTION
@@ -17,5 +19,6 @@ internal object SpawnerRuntimeState {
             it.markDeleted()
         }
         upcomingWalls.clear()
+        tickCountSinceLastBatchSpawn = 0
     }
 }

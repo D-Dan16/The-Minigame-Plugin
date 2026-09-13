@@ -9,27 +9,27 @@ import org.bukkit.Bukkit
 internal fun HoleInTheWall.attemptChangingStateTo(wantedState: HITWConst.WallSpawnerState) {
     val canTransition = when (SpawnerRuntimeState.stateOfWallSpawner) {
         HITWConst.WallSpawnerState.IDLE -> wantedState in setOf(
-            HITWConst.WallSpawnerState.INTENDING_TO_CREATE_1_WALL,
-            HITWConst.WallSpawnerState.INTENDING_TO_CREATE_MULTIPLE_WALLS_AT_ONCE,
+            HITWConst.WallSpawnerState.CREATE_1_WALL_BATCH,
+            HITWConst.WallSpawnerState.CREATE_MULTI_WALL_BATCH,
         )
 
-        HITWConst.WallSpawnerState.INTENDING_TO_CREATE_1_WALL -> wantedState in setOf(
-            HITWConst.WallSpawnerState.WAITING_A_LIL_TILL_WALL_HAS_SPACE_TO_SPAWN,
-            HITWConst.WallSpawnerState.SWAPPING_TO_IDLE_WHEN_THERE_ARE_NO_EXISTING_WALLS
+        HITWConst.WallSpawnerState.CREATE_1_WALL_BATCH -> wantedState in setOf(
+            HITWConst.WallSpawnerState.WAITING_FOR_BATCH_SPAWN,
+            HITWConst.WallSpawnerState.SWAPPING_TO_IDLE_WHEN_THERE_ARE_NO_ALIVE_WALLS
         )
 
-        HITWConst.WallSpawnerState.INTENDING_TO_CREATE_MULTIPLE_WALLS_AT_ONCE -> wantedState in setOf(
-            HITWConst.WallSpawnerState.WAITING_A_LIL_TILL_WALL_HAS_SPACE_TO_SPAWN,
-            HITWConst.WallSpawnerState.SWAPPING_TO_IDLE_WHEN_THERE_ARE_NO_EXISTING_WALLS
+        HITWConst.WallSpawnerState.CREATE_MULTI_WALL_BATCH -> wantedState in setOf(
+            HITWConst.WallSpawnerState.WAITING_FOR_BATCH_SPAWN,
+            HITWConst.WallSpawnerState.SWAPPING_TO_IDLE_WHEN_THERE_ARE_NO_ALIVE_WALLS
         )
 
-        HITWConst.WallSpawnerState.WAITING_A_LIL_TILL_WALL_HAS_SPACE_TO_SPAWN -> wantedState in setOf(
-            HITWConst.WallSpawnerState.SWAPPING_TO_IDLE_WHEN_THERE_ARE_NO_EXISTING_WALLS, //used only when we change the mode of the wall spawner, when we cancel runnables that are sending you to a desired state..
+        HITWConst.WallSpawnerState.WAITING_FOR_BATCH_SPAWN -> wantedState in setOf(
+            HITWConst.WallSpawnerState.SWAPPING_TO_IDLE_WHEN_THERE_ARE_NO_ALIVE_WALLS, //used only when we change the mode of the wall spawner, when we cancel runnables that are sending you to a desired state..
             HITWConst.WallSpawnerState.SPAWNING_1_WALL,
-            HITWConst.WallSpawnerState.SPAWNING_MULTIPLE_WALLS_AT_ONCE
+            HITWConst.WallSpawnerState.SPAWNING_MULTI_WALL_BATCH
         )
 
-        HITWConst.WallSpawnerState.SPAWNING_MULTIPLE_WALLS_AT_ONCE -> wantedState in setOf(
+        HITWConst.WallSpawnerState.SPAWNING_MULTI_WALL_BATCH -> wantedState in setOf(
             HITWConst.WallSpawnerState.IDLE
         )
 
@@ -37,8 +37,8 @@ internal fun HoleInTheWall.attemptChangingStateTo(wantedState: HITWConst.WallSpa
             HITWConst.WallSpawnerState.IDLE
         )
 
-        HITWConst.WallSpawnerState.SWAPPING_TO_IDLE_WHEN_THERE_ARE_NO_EXISTING_WALLS -> wantedState in setOf(
-            HITWConst.WallSpawnerState.SWAPPING_TO_IDLE_WHEN_THERE_ARE_NO_EXISTING_WALLS,  //THIS IS CRITICAL TO HAVE, SINCE, WHEN CHANGING MODES, we might try to change states to this state multiple times, from the condition that is called when the runable is canceled which are canceled when the mode is changed
+        HITWConst.WallSpawnerState.SWAPPING_TO_IDLE_WHEN_THERE_ARE_NO_ALIVE_WALLS -> wantedState in setOf(
+            HITWConst.WallSpawnerState.SWAPPING_TO_IDLE_WHEN_THERE_ARE_NO_ALIVE_WALLS,  //THIS IS CRITICAL TO HAVE, SINCE, WHEN CHANGING MODES, we might try to change states to this state multiple times, from the condition that is called when the runable is canceled which are canceled when the mode is changed
             HITWConst.WallSpawnerState.IDLE
         )
 

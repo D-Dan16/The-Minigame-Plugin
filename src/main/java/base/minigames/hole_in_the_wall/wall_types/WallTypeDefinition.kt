@@ -1,7 +1,5 @@
 package base.minigames.hole_in_the_wall.wall_types
 
-import kotlin.random.Random
-
 /**
  * A reusable description of a wall type that may be selected while designing a wall.
  *
@@ -21,13 +19,6 @@ internal enum class WallTypeDefinition(
     private val createWallType: () -> WallType,
     val description: String,
 ) {
-    // Always is chosen if in a wall wave there's move than a singular wall
-    PSYCH(
-        id = PsychWall.ID,
-        description = PsychWall.DESCRIPTION,
-        assignmentChance = 100,
-        createWallType = { PsychWall(Random.nextBoolean()) },
-    ),
     EARLY_DECAYED(
         id = EarlyDecayedWall.ID,
         description = EarlyDecayedWall.DESCRIPTION,
@@ -38,7 +29,7 @@ internal enum class WallTypeDefinition(
     RAMMING(
         id = RammingWall.ID,
         description = RammingWall.DESCRIPTION,
-        assignmentChance = 35,
+        assignmentChance = 30,
         mutuallyExclusiveGroup = WallTypeMutuallyExclusiveGroup.TRAVEL_LIFESPAN_MODIFIER,
         createWallType = ::RammingWall,
     ),
@@ -73,7 +64,12 @@ internal enum class WallTypeDefinition(
         assignmentChance = 50,
         createWallType = ::FlipperWall,
     ),
-    ;
+    RETURNING(
+        id = ReturningWall.ID,
+        description = ReturningWall.DESCRIPTION,
+        assignmentChance = 40,
+        createWallType = ::ReturningWall,
+    );
 
     /**
      * Whether this wall type can be selected for a new game.
@@ -81,13 +77,15 @@ internal enum class WallTypeDefinition(
     */
     val isTurned: Boolean
         get() = name in setOf(
+            "DUMMY", //Not a real name
             "EARLY_DECAYED",
             "REPEATER",
             "JUMPSCARE",
             "RAMMING",
             "DOOMINATOR",
             "MORPH",
-            "FLIPPER"
+            "FLIPPER",
+            "RETURNING"
         )
 
     /**
@@ -98,8 +96,15 @@ internal enum class WallTypeDefinition(
      */
     val isPriority: Boolean
         get() = name in setOf(
-            "FLIPPER",
-            "REPEATER"
+            "DUMMY", //Not a real name
+//            "EARLY_DECAYED",
+//            "REPEATER",
+//            "JUMPSCARE",
+//            "RAMMING",
+//            "DOOMINATOR",
+//            "MORPH",
+//            "FLIPPER",
+//            "RETURNING"
         )
 
     fun create(): WallType = createWallType()

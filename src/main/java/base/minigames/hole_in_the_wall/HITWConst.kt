@@ -1,6 +1,6 @@
 package base.minigames.hole_in_the_wall
 
-import base.minigames.hole_in_the_wall.HITWConst.WallSpawning.MINIMUM_SPACE_BETWEEN_2_WALLS_FROM_THE_SAME_DIRECTION_FROM_SPAWN
+import base.minigames.hole_in_the_wall.HITWConst.WallSpawning.SPACE_NEEDED_FOR_WALL_TO_SPAWN
 import base.minigames.hole_in_the_wall.HITWConst.WallSpawning.TRAVEL_DISTANCE_THAT_LETS_YOU_SPAWN_A_WALL_FROM_AN_ADJACENT_DIRECTION
 import base.minigames.hole_in_the_wall.HITWConst.WallSpawning.TRAVEL_DISTANCE_THAT_LETS_YOU_SPAWN_A_WALL_FROM_THE_DIRECTION_THIS_WALL_IS_FACING
 import base.utils.extensions_for_classes.toBlockVector
@@ -31,6 +31,8 @@ object HITWConst {
     }
 
     object WallLifespans {
+        const val RETURN_WALL_ADDITIONAL_LIFESPAN_FOR_RETURNING: Int = 11
+
         /** Default travel lifespan for a regular wall. */
         const val DEFAULT_WALL_TRAVEL_LIFESPAN: Int = 24
         /** Extra travel lifespan that lets a Ramming wall continue past the middle. */
@@ -45,18 +47,24 @@ object HITWConst {
     }
 
     object WallSpawning {
-        /** Maximum number of walls that can exist at once. */
-        const val HARD_CAP_MAX_POSSIBLE_AMOUNT_OF_WALLS: Int = 6
-        /** A game begins with Psych plus one randomly selected non-Psych wall type. */
-        const val INITIAL_WALL_TYPE_POOL_SIZE: Int = 2
+        /** Staged concurrent-wall limits; the final game-stage limit is 10. */
+        val MAXIMUM_ALLOWED_BATCHES_COUNTS: ArrayDeque<Int> = ArrayDeque(listOf(2, 3, 4, 5))
+        /** A game begins with 1 wall type (Psych walls are a baked in wall behavior). */
+        const val INITIAL_WALL_TYPE_POOL_SIZE: Int = 1
         /** The wall designer can use at most this many wall types in one game. */
-//        const val MAX_WALL_TYPE_POOL_SIZE: Int = 7
         const val MAX_WALL_TYPE_POOL_SIZE: Int = 4
 
-        const val MINIMUM_SPACE_BETWEEN_2_WALLS_FROM_THE_SAME_DIRECTION_FROM_SPAWN = 6
+        /**
+         * if both walls are traversing at the middle
+         */
+        const val MINIMUM_SPACE_BETWEEN_2_WALLS = 7
 
-        const val TRAVEL_DISTANCE_THAT_LETS_YOU_SPAWN_A_WALL_FROM_AN_ADJACENT_DIRECTION: Int = WallLifespans.DEFAULT_WALL_TRAVEL_LIFESPAN - 7 //25
-        const val TRAVEL_DISTANCE_THAT_LETS_YOU_SPAWN_A_WALL_FROM_THE_DIRECTION_THIS_WALL_IS_FACING: Int = WallLifespans.DEFAULT_WALL_TRAVEL_LIFESPAN - 4 //15
+        const val SPACE_NEEDED_FOR_WALL_TO_SPAWN = 3
+
+        /** Lets a perpendicular wave queue while its predecessor is clearing the platform. */
+        const val TRAVEL_DISTANCE_THAT_LETS_YOU_SPAWN_A_WALL_FROM_AN_ADJACENT_DIRECTION: Int = WallLifespans.DEFAULT_WALL_TRAVEL_LIFESPAN - 7
+        /** Lets an opposing wave queue before its predecessor's final few moves. */
+        const val TRAVEL_DISTANCE_THAT_LETS_YOU_SPAWN_A_WALL_FROM_THE_DIRECTION_THIS_WALL_IS_FACING: Int = WallLifespans.DEFAULT_WALL_TRAVEL_LIFESPAN - 4
 
         val MULTIPLE_WALL_WAVE_NUMBERS: ArrayDeque<IntRange> = ArrayDeque(listOf(2..2, 2..3, 2..4, 3..4))
     }
@@ -81,39 +89,40 @@ object HITWConst {
 
     enum class WallSpawnerState {
         DO_NO_ACTION,
-        IDLE, // The spawner is not doing anything
-        INTENDING_TO_CREATE_1_WALL,
-        WAITING_A_LIL_TILL_WALL_HAS_SPACE_TO_SPAWN, // The spawner is waiting for the next wall to spawn
-        SWAPPING_TO_IDLE_WHEN_THERE_ARE_NO_EXISTING_WALLS,
-        INTENDING_TO_CREATE_MULTIPLE_WALLS_AT_ONCE,
-        SPAWNING_1_WALL, // The spawner is currently spawning a wall
-        SPAWNING_MULTIPLE_WALLS_AT_ONCE
+        IDLE,
+        CREATE_1_WALL_BATCH,
+        WAITING_FOR_BATCH_SPAWN,
+        SWAPPING_TO_IDLE_WHEN_THERE_ARE_NO_ALIVE_WALLS,
+        CREATE_MULTI_WALL_BATCH,
+        SPAWNING_1_WALL,
+        SPAWNING_MULTI_WALL_BATCH
     }
 
     object Timers {
         /** Delay before the game starts, in ticks. */
-        const val DELAY_BEFORE_STARTING_GAME: Long = 2*20
+        const val DELAY_BEFORE_STARTING_GAME: Long = (2.5*20).toLong()
         /** Game duration in seconds. */
         const val GAME_DURATION: Int = 300
 
         /** Wall speeds in ticks. */
-        val WALL_SPEED: IntArray = intArrayOf(10, 9, 8, 7, 6, 5, 4)
+        //TODO: temp
+//        val WALL_SPEED: IntArray = intArrayOf(10, 9, 8, 7, 6, 5, 4)
+        val WALL_SPEED: IntArray = intArrayOf(10, 9, 8, 7, 6, 5, 5)
         /** Wall speed increase landmarks in seconds. */
-        val WALL_SPEED_UP_LANDMARKS: IntArray = intArrayOf(15, 30, 45, 60, 75, 100)
+        val WALL_SPEED_UP_LANDMARKS: IntArray = intArrayOf(20, 40, 60, 90, 120, 210)
         /** Wall difficulty increase landmarks in seconds. */
-        val INCREASE_WALL_DIFFICULTY_LANDMARKS: IntArray = intArrayOf(25, 45, 70)
-        /** Time marks for the two types added after the initial two-type pool. */
-        val WALL_TYPE_POOL_INCREASE_LANDMARKS: IntArray = intArrayOf(40, 80)
-//        val WALL_TYPE_POOL_INCREASE_LANDMARKS: IntArray = intArrayOf(30,60,90,120,150)
+        val INCREASE_WALL_DIFFICULTY_LANDMARKS: IntArray = intArrayOf(30, 70, 120)
+        /** Time marks for the new wall types added in the pool progression. */
+        val WALL_TYPE_POOL_INCREASE_LANDMARKS: IntArray = intArrayOf(0, 50, 100, 180)
 
-        val PLATFORM_SHRINKAGE_LANDMARKS: IntArray = intArrayOf(35, 75)
+        val PLATFORM_SHRINKAGE_LANDMARKS: IntArray = intArrayOf(45, 100)
 
-        val TIME_MARKS_OF_INCREASES_OF_THE_NUMBER_OF_WALLS_IN_A_WAVE: ArrayDeque<Int> = ArrayDeque(listOf(30,60,90))
+        val TIME_MARKS_OF_INCREASES_OF_THE_NUMBER_OF_WALLS_IN_A_WAVE: ArrayDeque<Int> = ArrayDeque(listOf(35,70,110))
+        val TIME_MARKS_OF_INCREASES_OF_MAXIMUM_ALLOWED_BATCHES: IntArray = intArrayOf(40, 70, 140)
 
         /**
          * delay until decay for Psych walls that don't reach mid and ran out of lifespan
          */
-
         const val DEAD_PSYCH_WALL_TIME_TILL_DECAY: Long = (1.5*20).toLong()
     }
 
@@ -121,7 +130,7 @@ object HITWConst {
         val WORLD: World = getWorld("world") ?: throw IllegalStateException("World 'world' not found. Please ensure the world is loaded.")
 
         /** The pivot point all arena locations are centered around. */
-        val PIVOT: Location = Location(WORLD, 0.0, 130.0, 0.0)
+        val PIVOT: Location = Location(WORLD, 0.0, 100.0, 0.0)
 
         /** Offset used to center the arena relative to walls and floor. */
         val CENTER_OF_MAP: Location = PIVOT.clone().add(1.0, 0.0, -1.0)
@@ -130,6 +139,16 @@ object HITWConst {
         val SPAWN: Location = PIVOT.clone().add(0.0, 3.0, 0.0)
 
         val PLATFORM: Location = PIVOT.clone()
+
+        const val DISTANCE_FROM_CENTER_TO_NORTH_PLATFORM_EDGE = 5
+        const val DISTANCE_FROM_CENTER_TO_SOUTH_PLATFORM_EDGE = -6
+        const val DISTANCE_FROM_CENTER_TO_EAST_PLATFORM_EDGE = -5
+        const val DISTANCE_FROM_CENTER_TO_WEST_PLATFORM_EDGE = 6
+
+        val NORTH_PLATFORM_EDGE: Int = (PIVOT.z + DISTANCE_FROM_CENTER_TO_NORTH_PLATFORM_EDGE).toInt()
+        val SOUTH_PLATFORM_EDGE: Int = (PIVOT.z + DISTANCE_FROM_CENTER_TO_SOUTH_PLATFORM_EDGE).toInt()
+        val EAST_PLATFORM_EDGE: Int = (PIVOT.x + DISTANCE_FROM_CENTER_TO_EAST_PLATFORM_EDGE).toInt()
+        val WEST_PLATFORM_EDGE: Int = (PIVOT.x + DISTANCE_FROM_CENTER_TO_WEST_PLATFORM_EDGE).toInt()
 
         object PlatformGeometry {
             /** The platform is 12x12, centered, so its block offsets run from -5 to 6. */
@@ -150,42 +169,17 @@ object HITWConst {
             private const val STOP_SIGN_MIN_Y: Int = 1
             private const val STOP_SIGN_MAX_Y: Int = 6
 
-            private fun lineRegion(
-                minX: Int,
-                maxX: Int,
-                minZ: Int,
-                maxZ: Int
-            ): CuboidRegion {
+            private fun lineRegion(minX: Int, maxX: Int, minZ: Int, maxZ: Int): CuboidRegion {
                 return CuboidRegion(
                     PLATFORM.clone().add(minX.toDouble(), STOP_SIGN_MIN_Y.toDouble(), minZ.toDouble()).toBlockVector(),
                     PLATFORM.clone().add(maxX.toDouble(), STOP_SIGN_MAX_Y.toDouble(), maxZ.toDouble()).toBlockVector()
                 )
             }
 
-            val NORTH_STOP_SIGN_REGION: CuboidRegion = lineRegion(
-                PLATFORM_MIN_HORIZONTAL_OFFSET,
-                PLATFORM_MAX_HORIZONTAL_OFFSET,
-                NORTH_STOP_SIGN_Z,
-                NORTH_STOP_SIGN_Z
-            )
-            val EAST_STOP_SIGN_REGION: CuboidRegion = lineRegion(
-                EAST_STOP_SIGN_X,
-                EAST_STOP_SIGN_X,
-                PLATFORM_MIN_HORIZONTAL_OFFSET,
-                PLATFORM_MAX_HORIZONTAL_OFFSET
-            )
-            val SOUTH_STOP_SIGN_REGION: CuboidRegion = lineRegion(
-                PLATFORM_MIN_HORIZONTAL_OFFSET,
-                PLATFORM_MAX_HORIZONTAL_OFFSET,
-                SOUTH_STOP_SIGN_Z,
-                SOUTH_STOP_SIGN_Z
-            )
-            val WEST_STOP_SIGN_REGION: CuboidRegion = lineRegion(
-                WEST_STOP_SIGN_X,
-                WEST_STOP_SIGN_X,
-                PLATFORM_MIN_HORIZONTAL_OFFSET,
-                PLATFORM_MAX_HORIZONTAL_OFFSET
-            )
+            val NORTH_STOP_SIGN_REGION: CuboidRegion = lineRegion(PLATFORM_MIN_HORIZONTAL_OFFSET, PLATFORM_MAX_HORIZONTAL_OFFSET, NORTH_STOP_SIGN_Z, NORTH_STOP_SIGN_Z)
+            val EAST_STOP_SIGN_REGION: CuboidRegion = lineRegion(EAST_STOP_SIGN_X, EAST_STOP_SIGN_X, PLATFORM_MIN_HORIZONTAL_OFFSET, PLATFORM_MAX_HORIZONTAL_OFFSET)
+            val SOUTH_STOP_SIGN_REGION: CuboidRegion = lineRegion(PLATFORM_MIN_HORIZONTAL_OFFSET, PLATFORM_MAX_HORIZONTAL_OFFSET, SOUTH_STOP_SIGN_Z, SOUTH_STOP_SIGN_Z)
+            val WEST_STOP_SIGN_REGION: CuboidRegion = lineRegion(WEST_STOP_SIGN_X, WEST_STOP_SIGN_X, PLATFORM_MIN_HORIZONTAL_OFFSET, PLATFORM_MAX_HORIZONTAL_OFFSET)
 
             val NORTH_LINE_BETWEEN_STOP_SIGN_AND_PLATFORM: CuboidRegion = NORTH_STOP_SIGN_REGION.clone().apply { shift(BlockVector3(0,0,1))}
             val EAST_LINE_BETWEEN_STOP_SIGN_AND_PLATFORM: CuboidRegion = EAST_STOP_SIGN_REGION.clone().apply { shift(BlockVector3(-1,0,0))}
@@ -263,6 +257,14 @@ object HITWConst {
             Direction.WEST -> PlatformGeometry.WEST_STOP_SIGN_REGION.minimumPoint.x() - SPAWN.blockX
         }
 
+
+        /**
+         * Calculates the axis position of a wall after it has traveled from its spawn position.
+         *
+         * @param direction The direction in which the wall is moving. Must be one of the values from the `Direction` enum.
+         * @param travelDistanceFromSpawn The distance the wall has traveled from its spawn position along the respective axis.
+         * @return The axis position of the wall after traveling the given distance from its spawn position.
+         */
         fun axisPositionAfterTravelFromSpawn(direction: Direction, travelDistanceFromSpawn: Int): Int {
             return when (direction) {
                 Direction.SOUTH, Direction.EAST -> axisSpawnPosition(direction) - travelDistanceFromSpawn
@@ -271,7 +273,7 @@ object HITWConst {
         }
 
         fun axisPositionForSameDirectionSpawn(direction: Direction): Int {
-            return axisPositionAfterTravelFromSpawn(direction, MINIMUM_SPACE_BETWEEN_2_WALLS_FROM_THE_SAME_DIRECTION_FROM_SPAWN)
+            return axisPositionAfterTravelFromSpawn(direction, SPACE_NEEDED_FOR_WALL_TO_SPAWN)
         }
 
         fun axisPositionForAdjacentDirectionSpawn(direction: Direction): Int {

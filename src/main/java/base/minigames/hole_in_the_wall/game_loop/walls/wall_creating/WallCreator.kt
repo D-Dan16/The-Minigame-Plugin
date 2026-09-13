@@ -17,15 +17,26 @@ fun HoleInTheWall.createNewWall(
     direction: Direction,
     wallTypes: Collection<WallType> = emptyList(),
     spawnBatch: WallSpawnBatch,
-) {
+    canResume: Boolean,
+): Wall {
     val (wallFile,difficultyOfWall) = pickWeightedWallFileForCurrentDifficulty()
 
     val shouldBeFlipped: Boolean = Random.nextBoolean() // Randomly decide if the wall should be flipped
 
-    val newWall = Wall(this,wallFile,difficultyOfWall, direction, shouldBeFlipped, wallTypes.toMutableList(), spawnBatch)
+    val newWall = Wall(
+        this,
+        wallFile,
+        difficultyOfWall,
+        direction,
+        shouldBeFlipped,
+        wallTypes.toMutableList(),
+        spawnBatch,
+        canResume
+    )
 
     SpawnerRuntimeState.upcomingWalls.add(newWall) // Add the new wall to the list of upcoming walls
     HITWDevLogger.wall(newWall, "queued for spawn; $newWall")
+    return newWall
 }
 
 /** Loads a wall into the arena and registers it as an active wall. */
@@ -33,7 +44,7 @@ fun spawnWall(wall: Wall) {
     // Make the wall exist in the world by loading the schematic
     wall.spawn()
     // Add the new wall to the bucket in the direction it came from.
-    WallsRuntimeState.existingWalls.add(wall)
+    WallsRuntimeState.aliveWalls.add(wall)
     HITWDevLogger.wall(wall, "brought to life; region=${wall.wallRegion.minimumPoint}..${wall.wallRegion.maximumPoint}")
 }
 
@@ -47,7 +58,7 @@ fun discardQueuedWall(wall: Wall, reason: String) {
 
 /** Deletes every active wall from the arena. */
 fun clearWalls() {
-    WallsRuntimeState.existingWalls.allWalls().forEach { deleteWall(it) }
+    WallsRuntimeState.aliveWalls.allWalls().forEach { deleteWall(it) }
 }
 
 /** Removes the wall's schematic from the world and unregisters it from active walls. */
@@ -58,7 +69,7 @@ fun deleteWall(wall: Wall) {
         wall.actionsWhenDecayed.forEach(Runnable::run)
     }
     // delete the wall reference from the alive wall buckets
-    val hasWallBeenDeleted = WallsRuntimeState.existingWalls.remove(wall)
+    val hasWallBeenDeleted = WallsRuntimeState.aliveWalls.remove(wall)
 
     if (!hasWallBeenDeleted) {
         HITWDevLogger.warn("wall#${wall.debugId} deletion failed; wall not found in the alive walls list")
@@ -69,4 +80,5 @@ fun deleteWall(wall: Wall) {
 
 fun deleteWallSchematic(wall: Wall) {
     BuildLoader.deleteSchematic(wall.wallRegion.minimumPoint, wall.wallRegion.maximumPoint)
+    HITWDevLogger.wall(wall,"deleted region: ${wall.wallRegion}")
 }

@@ -2,6 +2,7 @@ package base.minigames.hole_in_the_wall.wall_types
 
 import base.MinigamePlugin
 import base.minigames.hole_in_the_wall.HITWConst
+import base.minigames.hole_in_the_wall.game_loop.walls.runtime.WallsRuntimeState.forbidResumingPsyches
 import base.minigames.hole_in_the_wall.models.wall.WallAxisCoordinate
 import base.minigames.hole_in_the_wall.models.wall.WallState
 import base.minigames.hole_in_the_wall.models.wall.playTeleportAnimation
@@ -17,7 +18,7 @@ import kotlin.random.Random
  *
  * Emits WITCH particles throughout the TP action.
  */
-class RepeaterWall : WallType() {
+class RepeaterWall : Teleporter() {
     companion object {
         internal const val ID = "Repeater"
         internal const val DESCRIPTION = "A wall that while at mid decides to teleport back to a place it already has been at."
@@ -26,10 +27,33 @@ class RepeaterWall : WallType() {
     override fun toString(): String = "$ID(tpFrom:${coordinates.tpFromLoc}|tpTo:${coordinates.tpToLoc})"
 
     private lateinit var coordinates: RepeaterTeleportCoordinates
-    internal var finishedTeleportation = false
 
     override fun activateRunnables() {
         teleportOnceThresholdHit()
+    }
+
+    private fun allowPsychWallsToResumeAfterTeleportation() {
+        runnables += object : BukkitRunnable() {
+            override fun run() {
+                when (thisWall.state) {
+                    WallState.Queued -> {}
+                    WallState.Deleted -> {
+                        cancel()
+                    }
+                    WallState.Spawned -> {
+                        if (finishedTeleportation.not())
+                            return
+
+                        if (thisWall.isAtMiddle()) {
+                            forbidResumingPsyches = false
+                            cancel()
+                            return
+                        }
+
+                    }
+                }
+            }
+        }.also { it.runTaskTimer(MinigamePlugin.plugin, 0L, 1L) }
     }
 
     private fun teleportOnceThresholdHit() {
@@ -44,7 +68,10 @@ class RepeaterWall : WallType() {
                         if (thisWall.axisLocation.coordinate == coordinates.tpFromLoc) {
                             thisWall.getWallType<FlipperWall>()?.allowedToFlip = true
 
+                            // we turn this on so that when the wall has finished teleporting, we won't send resume a wall at mid, since we want this wall to be the one going towards mid
+                            forbidResumingPsyches = true
                             playTeleportAnimation()
+                            allowPsychWallsToResumeAfterTeleportation()
                             cancel()
                         }
                     }
@@ -73,14 +100,14 @@ class RepeaterWall : WallType() {
 
     private fun createTeleportCoordinates(directionWallComesFrom: Direction): RepeaterTeleportCoordinates {
         val directionWallIsFacing = directionWallComesFrom.getOpposite()
-        val movementDelta = when (directionWallComesFrom) {
-            Direction.SOUTH, Direction.EAST -> -1
-            Direction.NORTH, Direction.WEST -> 1
-        }
         val blocksBeforeStopSign = Random.nextInt(
             1,
             HITWConst.WallTypeSpecificActions.TELEPORT_TRIGGER_BLOCKS_BEFORE_STOP_SIGN + 1
         )
+        val movementDelta = when (directionWallComesFrom) {
+            Direction.SOUTH, Direction.EAST -> -1
+            Direction.NORTH, Direction.WEST -> 1
+        }
         val tpFromLoc = HITWConst.Locations.stopSignAxisPosition(directionWallIsFacing) -
             movementDelta * blocksBeforeStopSign
         val tpToLoc = HITWConst.Locations.stopSignAxisPosition(directionWallComesFrom)

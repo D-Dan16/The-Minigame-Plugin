@@ -48,7 +48,7 @@ abstract class MinigameSkeleton {
      * - Optionally sets [prefix] and [suffix]
      * - Returns the [Team] so callers can update its suffix later without Bukkit boilerplate
      */
-    protected fun registerScoreboardLine(
+    internal fun registerScoreboardLine(
         key: String,
         entryText: String,
         prefix: String? = null,

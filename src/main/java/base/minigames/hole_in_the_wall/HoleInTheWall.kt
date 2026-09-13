@@ -2,6 +2,7 @@ package base.minigames.hole_in_the_wall
 
 import base.minigames.hole_in_the_wall.HITWConst.WallSpawnerState
 import base.minigames.MinigameSkeleton
+import base.minigames.hole_in_the_wall.ui.UIState
 import base.minigames.hole_in_the_wall.arena.arenaPreparer
 import base.minigames.hole_in_the_wall.arena.deleteArena
 import base.minigames.hole_in_the_wall.debug.HITWDevLogger
@@ -37,6 +38,11 @@ class HoleInTheWall (val plugin: Plugin) : MinigameSkeleton() {
         GameLoopRuntimeState.reset()
         WallsRuntimeState.reset()
         SpawnerRuntimeState.reset()
+        UIState.reset(this)
+    }
+
+    override fun addScoreboardElements() {
+        UIState.initScoreboard(this)
     }
 
     @Throws(InterruptedException::class)
@@ -66,16 +72,14 @@ class HoleInTheWall (val plugin: Plugin) : MinigameSkeleton() {
             content = "Hard Mode Wall Types",
             subContent = wallTypeNames,
             color = Colors.TitleColors.ORANGE,
-            duration = 3000L,
+            duration = 3000L
         )
+        selectedWallTypes.forEach { wallType ->
+            updateScoreboardLineSuffix(UIState.wallTypesScoreboardText.next(), UIState.formatWallType(wallType.id))
+        }
         players.forEach { player ->
             selectedWallTypes.forEach { wallType ->
-                player.sendMessage(
-                    Component.text(
-                        "${wallType.id}\n--> ${wallType.description}",
-                        TextColor.fromHexString(Colors.TitleColors.ORANGE),
-                    )
-                )
+                player.sendMessage(UIState.formatWallTypeChatMessage(wallType.id, wallType.description))
             }
         }
     }

@@ -33,8 +33,8 @@ class FlipperWall : WallType() {
         if (!getStopSignRegion(thisWall.directionWallComesFrom).overlaps(thisWall.wallRegion))
             return
 
-        // if it is a psych wall, then do not activate the flipping just yet.
-        if (thisWall.getWallType<PsychWall>()?.hasDoneAPsych == false)
+        // activate the flipping only when the wall actually moves to the middle
+        if (thisWall.hasDoneAPsych == false)
             return
 
         flipSchematic()

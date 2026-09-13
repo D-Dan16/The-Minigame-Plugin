@@ -14,14 +14,18 @@ import base.minigames.hole_in_the_wall.game_loop.GameLoopRuntimeState.wallSpeed
 import base.minigames.hole_in_the_wall.game_loop.GameLoopRuntimeState.wallDifficultyProgression
 import base.minigames.hole_in_the_wall.game_loop.GameLoopRuntimeState.wallSpeedProgression
 import base.minigames.hole_in_the_wall.game_loop.GameLoopRuntimeState.multipleWallWaveProgression
+import base.minigames.hole_in_the_wall.game_loop.GameLoopRuntimeState.maximumAllowedBatches
+import base.minigames.hole_in_the_wall.game_loop.GameLoopRuntimeState.maximumAllowedBatchesProgression
 import base.minigames.hole_in_the_wall.game_loop.GameLoopRuntimeState.platformProgression
 import base.minigames.hole_in_the_wall.game_loop.GameLoopRuntimeState.wallTypePoolProgression
 import base.minigames.hole_in_the_wall.game_loop.walls.runtime.WallsRuntimeState
 import base.minigames.hole_in_the_wall.game_loop.walls.runtime.updateWallLifecycleIfNeeded
-import base.minigames.hole_in_the_wall.game_loop.walls.runtime.WallsRuntimeState.existingWalls
+import base.minigames.hole_in_the_wall.game_loop.walls.runtime.WallsRuntimeState.aliveWalls
 import base.minigames.hole_in_the_wall.game_loop.walls.runtime.buildWallAxisOccupancyGrid
+import base.minigames.hole_in_the_wall.game_loop.walls.runtime.forceTwoCloseWallsToStop
+import base.minigames.hole_in_the_wall.game_loop.walls.spawning.SpawnerRuntimeState
 import base.minigames.hole_in_the_wall.game_loop.walls.spawning.manageWallSpawning
-import base.minigames.hole_in_the_wall.wall_types.WallTypeDefinition
+import base.minigames.hole_in_the_wall.ui.UIState
 import base.resources.Colors
 import base.utils.other.BuildLoader
 import base.utils.additions.delayTheFollowing
@@ -49,6 +53,7 @@ internal fun HoleInTheWall.startRepeatingGameLoop() {
                 tickCount++
                 timeLeft -= 1.0 / 20.0
                 timeElapsed += 1.0 / 20.0
+                SpawnerRuntimeState.tickCountSinceLastBatchSpawn++
 
                 if (timeLeft <= 0) {
                     endGame()
@@ -57,12 +62,11 @@ internal fun HoleInTheWall.startRepeatingGameLoop() {
 
                 updateGameState()
                 // Resolve wall-to-wall conflicts after movement but before spawning the next wall.
-                //forceTwoCloseWallsToStop()
+                forceTwoCloseWallsToStop()
                 //stopNecessaryWallsAtStopSign()
 
                 //--Add new walls to the game
-                // We cap the number of possible walls that are in the arena incase that the generator goes for some reason nuts
-                if (existingWalls.size < HITWConst.WallSpawning.HARD_CAP_MAX_POSSIBLE_AMOUNT_OF_WALLS)
+                if (aliveWalls.amountOfBatches() < maximumAllowedBatches)
                     manageWallSpawning()
 
                 WallsRuntimeState.locationsOfWalls = buildWallAxisOccupancyGrid()
@@ -73,7 +77,6 @@ internal fun HoleInTheWall.startRepeatingGameLoop() {
         }
 
         private fun updateGameState() {
-            announceInitialWallTypeIfNeeded()
             updateWallSpeedIfNeeded()
             updateWallDifficultyIfNeeded()
             updateAvailableWallTypesIfNeeded()
@@ -82,26 +85,7 @@ internal fun HoleInTheWall.startRepeatingGameLoop() {
             updateWallLifecycleIfNeeded()
 
             updateAmountOfWallsInAMultiWallWaveThatCanAppear()
-        }
-
-        /** Announces the non-Psych wall type selected for the initial pool. */
-        private fun announceInitialWallTypeIfNeeded() {
-            if (GameLoopRuntimeState.hasAnnouncedInitialWallType) return
-            if (GameLoopRuntimeState.availableWallTypes.size != HITWConst.WallSpawning.INITIAL_WALL_TYPE_POOL_SIZE) return
-
-            val initialNonPsychWallType = GameLoopRuntimeState.availableWallTypes
-                .firstOrNull { it !== WallTypeDefinition.PSYCH }
-                ?: return
-
-            announceMessage(
-                content = "Initial Wall Type: ${initialNonPsychWallType.id}",
-                color = Colors.TitleColors.ORANGE,
-                duration = 1500L,
-            )
-            players.forEach { player ->
-                player.sendMessage(orangeMessage(initialNonPsychWallType.description))
-            }
-            GameLoopRuntimeState.hasAnnouncedInitialWallType = true
+            updateMaximumAllowedBatchesAllowed()
         }
 
         /** Shrinks the platform when the next shrinkage landmark is reached. */
@@ -142,27 +126,29 @@ internal fun HoleInTheWall.startRepeatingGameLoop() {
             GameLoopRuntimeState.refreshAvailableWallTypes()
             val newWallType = GameLoopRuntimeState.availableWallTypes.last()
             announceMessage(
-                "New Wall Type: ${newWallType.id}",
+                content = "New Wall Type",
+                subContent = newWallType.id,
                 color = Colors.TitleColors.ORANGE,
-                duration = 1500L
+                duration = 2000L
             )
+            updateScoreboardLineSuffix(UIState.wallTypesScoreboardText.next(), UIState.formatWallType(newWallType.id))
             players.forEach { player ->
-                player.sendMessage(orangeMessage(newWallType.description))
+                player.sendMessage(UIState.formatWallTypeChatMessage(newWallType.id, newWallType.description))
             }
         }
 
         private fun updateAmountOfWallsInAMultiWallWaveThatCanAppear() {
             multipleWallWaveProgression.advanceIfDue(timeElapsed)
         }
+
+        /** Raises the concurrent-wall limit in lockstep with the game's wave-size progression. */
+        private fun updateMaximumAllowedBatchesAllowed() {
+            maximumAllowedBatchesProgression.advanceIfDue(timeElapsed)
+        }
     }
 
     gameLoopRunnable?.runTaskTimer(plugin, Timers.DELAY_BEFORE_STARTING_GAME, 1L)
 }
-
-private fun orangeMessage(description: String): Component = Component.text(
-    "--> $description",
-    TextColor.fromHexString(Colors.TitleColors.ORANGE),
-)
 
 /** Removes the current platform schematic and loads the requested stage. */
 internal fun shrinkPlatform(platformStage: Int) {

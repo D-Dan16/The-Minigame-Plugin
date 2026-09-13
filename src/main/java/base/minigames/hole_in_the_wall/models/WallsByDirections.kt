@@ -34,6 +34,23 @@ internal class WallsByDirections {
         return byDirection.getValue(wall.directionWallComesFrom).remove(wall)
     }
 
+    /**
+     * Moves [wall] to the bucket for [newDirection] while updating its direction-dependent
+     * orientation. A wall that reverses must be re-indexed before any direction-based spawning
+     * or collision logic observes it.
+     */
+    fun changeDirection(wall: Wall, newDirection: Direction) {
+        val oldDirection = wall.directionWallComesFrom
+        if (oldDirection == newDirection) return
+
+        check(byDirection.getValue(oldDirection).remove(wall)) {
+            "Wall#${wall.debugId} was not registered under $oldDirection"
+        }
+
+        wall.updateDirection(newDirection)
+        byDirection.getValue(newDirection).add(wall)
+    }
+
     /** Returns the set of directions that currently have at least one wall. */
     fun directionsInUse(): Set<Direction> {
         return byDirection.filterValues { it.isNotEmpty() }.keys
@@ -42,6 +59,11 @@ internal class WallsByDirections {
     /** Returns all stored walls in a single flattened list. */
     fun allWalls(): List<Wall> {
         return byDirection.values.flatten()
+    }
+
+    /** Returns the number of unique batches present among the alive walls. */
+    fun amountOfBatches(): Int {
+        return byDirection.values.flatten().map { it.spawnBatch }.distinct().size
     }
 
     /** Returns the most recently added wall for the given direction, if any. */
