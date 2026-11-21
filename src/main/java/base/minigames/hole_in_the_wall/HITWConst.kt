@@ -15,7 +15,8 @@ import base.utils.additions.Direction
 object HITWConst {
     object Development {
         /** Whether the plugin is running in development mode. */
-        const val IS_IN_DEVELOPMENT: Boolean = true
+        const val IS_IN_DEVELOPMENT: Boolean = false
+        const val SHOULD_LOG: Boolean = true
     }
 
     object ArenaFiles {
@@ -105,7 +106,7 @@ object HITWConst {
         const val GAME_DURATION: Int = 300
 
         /** Wall speeds in ticks. */
-        //TODO: temp
+        //TODO: fast swap
 //        val WALL_SPEED: IntArray = intArrayOf(10, 9, 8, 7, 6, 5, 4)
         val WALL_SPEED: IntArray = intArrayOf(10, 9, 8, 7, 6, 5, 5)
         /** Wall speed increase landmarks in seconds. */

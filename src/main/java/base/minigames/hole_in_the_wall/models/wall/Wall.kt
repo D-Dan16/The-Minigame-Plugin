@@ -7,13 +7,13 @@ import base.minigames.hole_in_the_wall.game_loop.GameLoopRuntimeState
 import base.minigames.hole_in_the_wall.game_loop.walls.runtime.*
 import base.minigames.hole_in_the_wall.game_loop.walls.runtime.hasWallAheadWithinPsychResumeGap
 import base.utils.additions.delayTheFollowing
-import base.minigames.hole_in_the_wall.wall_types.RammingWall
-import base.minigames.hole_in_the_wall.wall_types.RepeaterWall
-import base.minigames.hole_in_the_wall.wall_types.ReturningWall
+import base.minigames.hole_in_the_wall.wall_types.actual_types.RammingWall
+import base.minigames.hole_in_the_wall.wall_types.actual_types.RepeaterWall
+import base.minigames.hole_in_the_wall.wall_types.actual_types.ReturningWall
 import base.minigames.hole_in_the_wall.wall_types.WallType
-import base.minigames.hole_in_the_wall.wall_types.JumpscareWall
-import base.minigames.hole_in_the_wall.wall_types.EarlyDecayedWall
-import base.minigames.hole_in_the_wall.wall_types.DoominatorWall
+import base.minigames.hole_in_the_wall.wall_types.actual_types.JumpscareWall
+import base.minigames.hole_in_the_wall.wall_types.actual_types.EarlyDecayedWall
+import base.minigames.hole_in_the_wall.wall_types.actual_types.DoominatorWall
 import base.utils.additions.Direction
 import base.utils.other.BuildLoader
 import com.sk89q.worldedit.regions.CuboidRegion
@@ -42,6 +42,10 @@ class Wall(
 ) {
     companion object {
         private val nextDebugId = AtomicInteger(1)
+
+        fun resetIDCount() {
+            nextDebugId.set(0)
+        }
     }
 
     //region -- State --
@@ -154,7 +158,7 @@ class Wall(
         // give the wall behaviors a ref to the wall so they can operate on it
         wallTypes.forEach { it.thisWall = this }
 
-        wallTypes.forEach { it.activateRunnables() }
+        wallTypes.forEach { it.initStateAndRunnables() }
 
         getWallType<DoominatorWall>()?.let { doominatorWall ->
             actionsWhenDecayed += Runnable {

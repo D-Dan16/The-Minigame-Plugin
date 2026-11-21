@@ -14,9 +14,9 @@ import base.minigames.hole_in_the_wall.game_loop.walls.runtime.WallsRuntimeState
 import base.minigames.hole_in_the_wall.game_loop.walls.spawning.SpawnerRuntimeState
 import base.minigames.hole_in_the_wall.game_loop.walls.spawning.SpawnerRuntimeState.stateOfWallSpawner
 import base.minigames.hole_in_the_wall.game_loop.startRepeatingGameLoop
+import base.minigames.hole_in_the_wall.models.wall.Wall
+import base.minigames.hole_in_the_wall.models.wall.WallSpawnBatch
 import base.resources.Colors
-import net.kyori.adventure.text.Component
-import net.kyori.adventure.text.format.TextColor
 import org.bukkit.GameMode
 import org.bukkit.entity.Player
 import org.bukkit.plugin.Plugin
@@ -39,6 +39,9 @@ class HoleInTheWall (val plugin: Plugin) : MinigameSkeleton() {
         WallsRuntimeState.reset()
         SpawnerRuntimeState.reset()
         UIState.reset(this)
+
+        Wall.resetIDCount()
+        WallSpawnBatch.resetIDCount()
     }
 
     override fun addScoreboardElements() {

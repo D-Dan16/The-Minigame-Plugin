@@ -1,4 +1,4 @@
-package base.minigames.hole_in_the_wall.wall_types
+package base.minigames.hole_in_the_wall.wall_types.actual_types
 
 import base.minigames.hole_in_the_wall.debug.HITWDevLogger
 import base.minigames.hole_in_the_wall.game_loop.walls.wall_creating.chooseNewSchematic
@@ -6,8 +6,7 @@ import base.minigames.hole_in_the_wall.game_loop.walls.wall_creating.deleteWallS
 import base.minigames.hole_in_the_wall.models.wall.WallState
 import base.minigames.hole_in_the_wall.models.wall.cancelPendingMoves
 import base.minigames.hole_in_the_wall.models.wall.initializeWallMotion
-import base.minigames.hole_in_the_wall.models.wall.worldLocationFor
-import base.utils.other.BuildLoader
+import base.minigames.hole_in_the_wall.wall_types.WallType
 import org.bukkit.Particle
 
 /**

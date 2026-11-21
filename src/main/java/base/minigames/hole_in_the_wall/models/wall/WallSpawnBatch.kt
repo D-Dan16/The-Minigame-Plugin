@@ -11,6 +11,10 @@ import java.util.concurrent.atomic.AtomicInteger
 class WallSpawnBatch {
     companion object {
         private val nextId = AtomicInteger(1)
+
+        fun resetIDCount() {
+            nextId.set(0)
+        }
     }
 
     val id: Int = nextId.getAndIncrement()

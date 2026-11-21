@@ -1,4 +1,4 @@
-package base.minigames.hole_in_the_wall.wall_types
+package base.minigames.hole_in_the_wall.wall_types.actual_types
 
 import base.minigames.hole_in_the_wall.HITWConst
 import base.minigames.hole_in_the_wall.game_loop.walls.wall_creating.deleteWall
@@ -8,6 +8,7 @@ import base.minigames.hole_in_the_wall.game_loop.walls.spawning.SpawnerRuntimeSt
 import base.minigames.hole_in_the_wall.models.wall.Wall
 import base.minigames.hole_in_the_wall.models.wall.WallDecayCause
 import base.minigames.hole_in_the_wall.models.wall.WallState
+import base.minigames.hole_in_the_wall.wall_types.WallType
 import org.bukkit.Particle
 
 
@@ -28,7 +29,7 @@ class RammingWall : WallType() {
 
     override fun toString(): String = ID
 
-    override fun activateRunnables() {
+    override fun initStateAndRunnables() {
         repeatedlyEmitParticles(Particle.TRIAL_OMEN)
     }
 

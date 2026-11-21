@@ -3,10 +3,7 @@ package base.minigames.hole_in_the_wall.game_loop.walls.wall_creating
 import base.minigames.hole_in_the_wall.HITWConst
 import base.minigames.hole_in_the_wall.HoleInTheWall
 import base.minigames.hole_in_the_wall.game_loop.GameLoopRuntimeState
-import base.minigames.hole_in_the_wall.game_loop.walls.runtime.WallsRuntimeState
-import base.minigames.hole_in_the_wall.game_loop.walls.spawning.SpawnerRuntimeState
 import base.minigames.hole_in_the_wall.models.wall.Wall
-import base.minigames.hole_in_the_wall.wall_types.ReturningWall
 import base.minigames.hole_in_the_wall.wall_types.WallType
 import base.minigames.hole_in_the_wall.wall_types.WallTypeDefinition
 import base.minigames.hole_in_the_wall.models.wall.WallSpawnBatch
@@ -39,8 +36,8 @@ internal fun HoleInTheWall.designWallBehaviorAndCreateIt(
         addMorphToAllWallsWhenAvailable(wallTypes)
 
         //TODO: fast swap
-        createNewWall(direction, wallTypes, spawnBatch,Random.nextBoolean())
-//        createNewWall(direction, wallTypes, spawnBatch,true)
+//        createNewWall(direction, wallTypes, spawnBatch,Random.nextBoolean())
+        createNewWall(direction, wallTypes, spawnBatch,true)
     }
 }
 

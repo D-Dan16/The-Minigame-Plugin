@@ -33,7 +33,7 @@ abstract class WallType {
     private val registeredPausableRunnables =
         mutableMapOf<PausableBukkitRunnable, MutableCollection<PausableBukkitRunnable>>()
 
-    open fun activateRunnables() {}
+    open fun initStateAndRunnables() {}
     fun clearRunnables() {
         runnables.forEach { it.cancel() }
         runnables.clear()

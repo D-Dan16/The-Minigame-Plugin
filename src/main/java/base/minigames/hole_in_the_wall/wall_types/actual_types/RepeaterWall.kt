@@ -1,11 +1,12 @@
-package base.minigames.hole_in_the_wall.wall_types
+package base.minigames.hole_in_the_wall.wall_types.actual_types
 
 import base.MinigamePlugin
 import base.minigames.hole_in_the_wall.HITWConst
 import base.minigames.hole_in_the_wall.game_loop.walls.runtime.WallsRuntimeState.forbidResumingPsyches
 import base.minigames.hole_in_the_wall.models.wall.WallAxisCoordinate
 import base.minigames.hole_in_the_wall.models.wall.WallState
-import base.minigames.hole_in_the_wall.models.wall.playTeleportAnimation
+import base.minigames.hole_in_the_wall.models.wall.startTeleportation
+import base.minigames.hole_in_the_wall.wall_types.Teleporter
 import base.utils.additions.Direction
 import org.bukkit.scheduler.BukkitRunnable
 import kotlin.collections.plusAssign
@@ -28,7 +29,7 @@ class RepeaterWall : Teleporter() {
 
     private lateinit var coordinates: RepeaterTeleportCoordinates
 
-    override fun activateRunnables() {
+    override fun initStateAndRunnables() {
         teleportOnceThresholdHit()
     }
 
@@ -81,7 +82,7 @@ class RepeaterWall : Teleporter() {
     }
 
     private fun playTeleportAnimation() {
-        thisWall.playTeleportAnimation(
+        thisWall.startTeleportation(
             destination = WallAxisCoordinate(coordinates.tpToLoc, thisWall.axisLocation.axis),
             newDirWallComesFrom = thisWall.directionWallComesFrom,
             game = holeInTheWall,

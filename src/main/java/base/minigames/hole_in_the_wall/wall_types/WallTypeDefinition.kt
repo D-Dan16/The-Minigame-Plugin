@@ -1,5 +1,15 @@
 package base.minigames.hole_in_the_wall.wall_types
 
+import base.minigames.hole_in_the_wall.wall_types.actual_types.DoominatorWall
+import base.minigames.hole_in_the_wall.wall_types.actual_types.EarlyDecayedWall
+import base.minigames.hole_in_the_wall.wall_types.actual_types.FlipperWall
+import base.minigames.hole_in_the_wall.wall_types.actual_types.JumpscareWall
+import base.minigames.hole_in_the_wall.wall_types.actual_types.MorphWall
+import base.minigames.hole_in_the_wall.wall_types.actual_types.RammingWall
+import base.minigames.hole_in_the_wall.wall_types.actual_types.RepeaterWall
+import base.minigames.hole_in_the_wall.wall_types.actual_types.ReturningWall
+import base.minigames.hole_in_the_wall.wall_types.actual_types.RotatorWall
+
 /**
  * A reusable description of a wall type that may be selected while designing a wall.
  *
@@ -69,6 +79,12 @@ internal enum class WallTypeDefinition(
         description = ReturningWall.DESCRIPTION,
         assignmentChance = 40,
         createWallType = ::ReturningWall,
+    ),
+    ROTATOR(
+        id = RotatorWall.ID,
+        description = RotatorWall.DESCRIPTION,
+        assignmentChance = 40,
+        createWallType = ::RotatorWall,
     );
 
     /**
@@ -77,15 +93,16 @@ internal enum class WallTypeDefinition(
     */
     val isTurned: Boolean
         get() = name in setOf(
-            "DUMMY", //Not a real name
-            "EARLY_DECAYED",
-            "REPEATER",
-            "JUMPSCARE",
-            "RAMMING",
-            "DOOMINATOR",
-            "MORPH",
-            "FLIPPER",
-            "RETURNING"
+//            "DUMMY", //Not a real name
+//            "EARLY_DECAYED",
+//            "REPEATER",
+//            "JUMPSCARE",
+//            "RAMMING",
+//            "DOOMINATOR",
+//            "MORPH",
+//            "FLIPPER",
+//            "RETURNING",
+            "ROTATOR"
         )
 
     /**
@@ -104,7 +121,8 @@ internal enum class WallTypeDefinition(
 //            "DOOMINATOR",
 //            "MORPH",
 //            "FLIPPER",
-//            "RETURNING"
+//            "RETURNING",
+//            "ROTATOR"
         )
 
     fun create(): WallType = createWallType()

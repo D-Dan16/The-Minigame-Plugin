@@ -4,6 +4,7 @@ import base.minigames.hole_in_the_wall.models.wall.WallAxisCoordinate
 
 abstract class Teleporter : WallType() {
     var finishedTeleportation: Boolean = false
+    var currentlyTeleporting = false
     val teleportDestinationReservedSpace: MutableList<Int> = mutableListOf()
-    lateinit var teleportLocation: WallAxisCoordinate
+    lateinit var teleportFromLocation: WallAxisCoordinate
 }

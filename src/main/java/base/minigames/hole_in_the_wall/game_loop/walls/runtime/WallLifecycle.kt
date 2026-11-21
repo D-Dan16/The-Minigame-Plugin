@@ -7,11 +7,12 @@ import base.minigames.hole_in_the_wall.game_loop.GameLoopRuntimeState.wallSpeed
 import base.minigames.hole_in_the_wall.game_loop.walls.runtime.WallsRuntimeState.forbidResumingPsyches
 import base.minigames.hole_in_the_wall.game_loop.walls.wall_creating.deleteWall
 import base.minigames.hole_in_the_wall.models.wall.Wall
-import base.minigames.hole_in_the_wall.wall_types.FlipperWall
-import base.minigames.hole_in_the_wall.wall_types.MorphWall
-import base.minigames.hole_in_the_wall.wall_types.RammingWall
-import base.minigames.hole_in_the_wall.wall_types.RepeaterWall
-import base.minigames.hole_in_the_wall.wall_types.ReturningWall
+import base.minigames.hole_in_the_wall.wall_types.actual_types.FlipperWall
+import base.minigames.hole_in_the_wall.wall_types.actual_types.MorphWall
+import base.minigames.hole_in_the_wall.wall_types.actual_types.RammingWall
+import base.minigames.hole_in_the_wall.wall_types.actual_types.RepeaterWall
+import base.minigames.hole_in_the_wall.wall_types.actual_types.ReturningWall
+import base.minigames.hole_in_the_wall.wall_types.actual_types.RotatorWall
 import base.utils.additions.Direction
 import kotlin.math.abs
 import kotlin.random.Random
@@ -24,7 +25,11 @@ import kotlin.random.Random
  * are retained in [WallsRuntimeState] because their safety may change over several passes.
  */
 internal fun updateWallLifecycleIfNeeded() {
-    if (tickCount % wallSpeed != 0L) return
+    if (tickCount % wallSpeed != 0L)
+        return
+
+    if (WallsRuntimeState.forbidAnyLifecycleProgression)
+        return
 
     // Deferred piston moves may have completed from the last lifecycle pass. Refresh before
     // wall types inspect the middle platform, especially before a Returning wall reverses.
@@ -57,7 +62,7 @@ private fun stopWallsAtStopSigns(allAliveWalls: List<Wall>) {
 
         // We want to remember that a Repeater wall will go teleport to its stop sign eventually, and because of that we will reserve that spot for it in the Occupancy Grid
         it.getWallType<RepeaterWall>()?.teleportDestinationReservedSpace += it.occupiedAxisPositions
-        it.getWallType<RepeaterWall>()?.teleportLocation = it.axisLocation
+        it.getWallType<RepeaterWall>()?.teleportFromLocation = it.axisLocation
     }
 }
 
@@ -88,14 +93,8 @@ private fun handleStoppedWalls(wallsToDelete: MutableList<Wall>) {
 
         wall.isBeingHandled = true
 
-        if (wall.shouldBeRemoved) {
-            wallsToDelete += wall
-            continue
-        }
-
-        if (wall.lifespanRemaining <= 0) {
-            applyRemovalForWallWithoutLifespan(wall)
-        }
+        if (wall.lifespanRemaining <= 0)
+            wall.shouldBeRemoved = true
 
         if (wall.shouldBeRemoved)
             wallsToDelete.add(wall)
@@ -106,6 +105,7 @@ private fun handleStoppedWalls(wallsToDelete: MutableList<Wall>) {
 private fun executeWallTypeSpecificActions(existingWalls: List<Wall>) {
     existingWalls.forEach { wall ->
         wall.getWallType<RammingWall>()?.ramCloseOpposingWalls()
+        wall.getWallType<RotatorWall>()?.forbidWallFromBehindToEnterCenter()
         wall.getWallType<MorphWall>()?.morphWhileAtStopSign()
         wall.getWallType<FlipperWall>()?.attemptFlip()
         // Movement starts after type behavior so a Returning wall can reverse without taking an additional step in its old direction during this pass.
@@ -243,10 +243,6 @@ private fun Wall.hasNotClearedPsychCrossing(): Boolean {
     }
 }
 
-private fun applyRemovalForWallWithoutLifespan(wall: Wall) {
-    wall.shouldBeRemoved = true
-}
-
 /** Returns whether this stopped wall should join the retained Psych-resume queue. */
 private fun canResumePsychWall(wall: Wall): Boolean {
     return wall.canResume &&
@@ -312,3 +308,9 @@ private fun getUnforcedStoppedWalls(): List<Wall> {
         it.isMovementHalted && it.isForcedStopped.not()
     }
 }
+
+/** A retained random choice for the next stopped Psych wall to resume from a batch. */
+internal data class PsychWallResumeSelection(
+    val wall: Wall,
+    val resumesAlongsideReturningWall: Boolean,
+)

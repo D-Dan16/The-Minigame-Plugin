@@ -4,8 +4,10 @@ import base.MinigamePlugin
 import base.minigames.hole_in_the_wall.HITWConst
 import base.minigames.hole_in_the_wall.HoleInTheWall
 import base.minigames.hole_in_the_wall.debug.HITWDevLogger
+import base.minigames.hole_in_the_wall.game_loop.walls.runtime.WallsRuntimeState
 import base.minigames.hole_in_the_wall.game_loop.walls.wall_creating.deleteWallSchematic
-import base.minigames.hole_in_the_wall.wall_types.RepeaterWall
+import base.minigames.hole_in_the_wall.wall_types.Teleporter
+import base.minigames.hole_in_the_wall.wall_types.actual_types.RepeaterWall
 import base.minigames.hole_in_the_wall.wall_types.WallType
 import base.utils.additions.Direction
 import base.utils.additions.PausableBukkitRunnable
@@ -253,7 +255,7 @@ private fun Wall.movePistonsForward() {
  * Halts this wall, emits particles before and after its teleport, and pauses only the animation
  * timeline when [game] is paused. The visual particle task intentionally continues while paused.
  */
-internal fun Wall.playTeleportAnimation(
+internal fun Wall.startTeleportation(
     destination: WallAxisCoordinate,
     newDirWallComesFrom: Direction,
     game: HoleInTheWall,
@@ -261,7 +263,8 @@ internal fun Wall.playTeleportAnimation(
     particle: Particle = Particle.WITCH,
     particleAmountOnBlock: Int = 1,
     particlePhaseTicks: Int = 14,
-    onTeleport: () -> Unit = {}
+    onTeleport: () -> Unit = {},
+    onFinishedTeleport: () -> Unit = {}
 ) {
     require(particlePhaseTicks > 0) { "Particle phase must last at least one tick." }
 
@@ -286,7 +289,7 @@ internal fun Wall.playTeleportAnimation(
             isMovementHalted = wasMovementHalted
             isBeingHandled = false
 
-            this.getWallType<RepeaterWall>()!!.finishedTeleportation = true
+            this.getWallType<Teleporter>()?.finishedTeleportation = true
         }
     }
 
@@ -301,7 +304,10 @@ internal fun Wall.playTeleportAnimation(
                 teleportWall(destination, newDirWallComesFrom)
                 onTeleport()
             }
-            particlePhaseTicks * 2 -> finishAnimation()
+            particlePhaseTicks * 2 -> {
+                finishAnimation()
+                onFinishedTeleport()
+            }
         }
     }
     animationOwner.registerPausableRunnable(teleportTimeline, game.pausableRunnables)
@@ -343,14 +349,17 @@ fun Wall.teleportWall(destination: WallAxisCoordinate, newDirWallComesFrom: Dire
 
     cancelPendingMoves()
     deleteWallSchematic(this)
-    HITWDevLogger.wall(this, "wall teleporting to $destination from $newDirWallComesFrom")
 
-    updateDirection(newDirWallComesFrom)
+    WallsRuntimeState.aliveWalls.changeDirection(this,newDirWallComesFrom)
     rebuildSchematicAt(worldLocationFor(destination, newDirWallComesFrom))
     axisLocation = destination
+
     BuildLoader.loadSchematic(holder)
+
     initializeWallMotion()
     updateDebugIdDisplayLocation()
+
+    HITWDevLogger.wall(this, "wall teleporting to $destination from $newDirWallComesFrom")
 }
 
 private fun WallAxisCoordinate.requireMatches(direction: Direction) {

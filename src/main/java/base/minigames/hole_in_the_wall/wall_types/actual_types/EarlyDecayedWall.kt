@@ -1,6 +1,7 @@
-package base.minigames.hole_in_the_wall.wall_types
+package base.minigames.hole_in_the_wall.wall_types.actual_types
 
 import base.minigames.hole_in_the_wall.HITWConst
+import base.minigames.hole_in_the_wall.wall_types.WallType
 import org.bukkit.Particle
 
 /**
@@ -21,7 +22,7 @@ class EarlyDecayedWall : WallType() {
 
     override fun toString(): String = ID
 
-    override fun activateRunnables() {
+    override fun initStateAndRunnables() {
         repeatedlyEmitParticles(Particle.ANGRY_VILLAGER, taskInterval = 15L)
     }
 }

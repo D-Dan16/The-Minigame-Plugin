@@ -7,7 +7,6 @@ import base.minigames.hole_in_the_wall.HoleInTheWall
 import base.minigames.hole_in_the_wall.debug.HITWDevLogger
 import base.minigames.hole_in_the_wall.game_loop.walls.wall_creating.deleteWall
 import base.minigames.hole_in_the_wall.models.wall.Wall
-import base.minigames.hole_in_the_wall.wall_types.RepeaterWall
 import base.utils.additions.Direction
 import base.utils.additions.activateTaskAfterConditionIsMet
 import com.sk89q.worldedit.regions.CuboidRegion

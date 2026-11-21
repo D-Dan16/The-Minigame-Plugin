@@ -6,7 +6,7 @@ import base.minigames.hole_in_the_wall.game_loop.GameLoopRuntimeState
 import base.minigames.hole_in_the_wall.game_loop.walls.wall_creating.spawnWall
 import base.minigames.hole_in_the_wall.game_loop.walls.runtime.WallsRuntimeState
 import base.minigames.hole_in_the_wall.game_loop.walls.wall_creating.designWallBehaviorAndCreateIt
-import base.minigames.hole_in_the_wall.wall_types.JumpscareWall
+import base.minigames.hole_in_the_wall.wall_types.actual_types.JumpscareWall
 import base.utils.additions.Direction
 import base.utils.additions.activateTaskAfterConditionIsMet
 import base.utils.extensions_for_classes.getNextWeighted
@@ -31,8 +31,8 @@ internal fun HoleInTheWall.manageWallSpawning() {
 
             //TODO: fast swap
             val wantedState = setOf(
-                WallSpawnerState.CREATE_MULTI_WALL_BATCH to 1,
-//                WallSpawnerState.CREATE_MULTI_WALL_BATCH to 0,
+//                WallSpawnerState.CREATE_MULTI_WALL_BATCH to 1,
+                WallSpawnerState.CREATE_MULTI_WALL_BATCH to 0,
                 WallSpawnerState.CREATE_1_WALL_BATCH to 2,
             ).getWeightedRandom()
 
@@ -45,9 +45,9 @@ internal fun HoleInTheWall.manageWallSpawning() {
                 Random.getNextWeighted(
                     Direction.entries.associateWith { direction ->
                         //TODO: fast swap
-                        if (direction == lastDirection) 15 else 1
+//                        if (direction == lastDirection) 15 else 1
 //                        if (direction == lastDirection) 6 else 1
-//                        if (direction == lastDirection) 6 else 0
+                        if (direction == lastDirection) 6 else 0
                     }
                 )
             } ?: Direction.entries.random()

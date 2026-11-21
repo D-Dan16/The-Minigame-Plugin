@@ -1,10 +1,11 @@
-package base.minigames.hole_in_the_wall.wall_types
+package base.minigames.hole_in_the_wall.wall_types.actual_types
 
 import base.minigames.hole_in_the_wall.game_loop.walls.wall_creating.deleteWallSchematic
 import base.minigames.hole_in_the_wall.game_loop.walls.runtime.getStopSignRegion
 import base.minigames.hole_in_the_wall.game_loop.walls.runtime.overlaps
 import base.minigames.hole_in_the_wall.models.wall.cancelPendingMoves
 import base.minigames.hole_in_the_wall.models.wall.initializeWallMotion
+import base.minigames.hole_in_the_wall.wall_types.WallType
 import org.bukkit.Material
 import org.bukkit.Particle
 

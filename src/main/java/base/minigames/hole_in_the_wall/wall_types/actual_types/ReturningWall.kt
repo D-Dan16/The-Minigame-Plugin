@@ -1,4 +1,4 @@
-package base.minigames.hole_in_the_wall.wall_types
+package base.minigames.hole_in_the_wall.wall_types.actual_types
 
 import base.minigames.hole_in_the_wall.HITWConst
 import base.minigames.hole_in_the_wall.debug.HITWDevLogger
@@ -7,6 +7,7 @@ import base.minigames.hole_in_the_wall.game_loop.walls.runtime.buildWallAxisOccu
 import base.minigames.hole_in_the_wall.models.wall.WallState
 import base.minigames.hole_in_the_wall.models.wall.cancelPendingMoves
 import base.minigames.hole_in_the_wall.models.wall.movePistonsToOtherSideOfSlimeWall
+import base.minigames.hole_in_the_wall.wall_types.WallType
 import base.utils.additions.Direction
 
 /**
@@ -40,7 +41,7 @@ class ReturningWall : WallType() {
     internal var hasReturned = false
     private var resumesOnNextLifecycle = false
 
-    override fun activateRunnables() {
+    override fun initStateAndRunnables() {
         originalDirection = thisWall.directionWallComesFrom
     }
 

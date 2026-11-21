@@ -29,8 +29,6 @@ import base.minigames.hole_in_the_wall.ui.UIState
 import base.resources.Colors
 import base.utils.other.BuildLoader
 import base.utils.additions.delayTheFollowing
-import net.kyori.adventure.text.Component
-import net.kyori.adventure.text.format.TextColor
 import net.kyori.adventure.text.logger.slf4j.ComponentLogger.logger
 import org.bukkit.Sound
 import org.bukkit.scheduler.BukkitRunnable
