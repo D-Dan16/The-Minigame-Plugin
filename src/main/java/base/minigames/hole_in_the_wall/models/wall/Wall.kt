@@ -1,0 +1,544 @@
+package base.minigames.hole_in_the_wall.models.wall
+
+import base.minigames.hole_in_the_wall.HITWConst
+import base.minigames.hole_in_the_wall.HoleInTheWall
+import base.minigames.hole_in_the_wall.debug.HITWDevLogger
+import base.minigames.hole_in_the_wall.game_loop.GameLoopRuntimeState
+import base.minigames.hole_in_the_wall.game_loop.walls.runtime.*
+import base.minigames.hole_in_the_wall.game_loop.walls.runtime.hasWallAheadWithinPsychResumeGap
+import base.utils.additions.delayTheFollowing
+import base.minigames.hole_in_the_wall.wall_types.actual_types.RammingWall
+import base.minigames.hole_in_the_wall.wall_types.actual_types.RepeaterWall
+import base.minigames.hole_in_the_wall.wall_types.actual_types.ReturningWall
+import base.minigames.hole_in_the_wall.wall_types.WallType
+import base.minigames.hole_in_the_wall.wall_types.actual_types.JumpscareWall
+import base.minigames.hole_in_the_wall.wall_types.actual_types.EarlyDecayedWall
+import base.minigames.hole_in_the_wall.wall_types.actual_types.DoominatorWall
+import base.utils.additions.Direction
+import base.utils.other.BuildLoader
+import com.sk89q.worldedit.regions.CuboidRegion
+import com.sk89q.worldedit.session.ClipboardHolder
+import net.kyori.adventure.text.Component
+import org.bukkit.Location
+import org.bukkit.Material
+import org.bukkit.entity.Display.Billboard
+import org.bukkit.entity.TextDisplay
+import java.io.File
+import java.util.concurrent.atomic.AtomicInteger
+import kotlin.math.abs
+
+class Wall(
+    val holeInTheWall: HoleInTheWall,
+    var wallFile: File,
+    val difficultyOfWall: HITWConst.WallDifficulty,
+    /** The direction the wall is coming from. */
+    directionWallComesFrom: Direction,
+    var isFlipped: Boolean = false,
+    val wallTypes: MutableList<WallType> = mutableListOf(),
+    /** The spawn wave that created this wall. */
+    val spawnBatch: WallSpawnBatch,
+    /** If True, the wall will later resume moving after stopping before the middle, otherwise, the wall will very shortly decay and remove itself*/
+    val canResume: Boolean = true,
+) {
+    companion object {
+        private val nextDebugId = AtomicInteger(1)
+
+        fun resetIDCount() {
+            nextDebugId.set(0)
+        }
+    }
+
+    //region -- State --
+
+
+    /** Stable identifier used for dev logging. */
+    val debugId: Int = nextDebugId.getAndIncrement()
+    /** Clipboard holder for the wall schematic. */
+    lateinit var holder: ClipboardHolder
+    /** The current direction the wall comes from. */
+    var directionWallComesFrom: Direction = directionWallComesFrom
+        private set
+    internal lateinit var directionWallIsFacing: Direction
+
+    /** The wall's original spawn location, retained for its full lifetime. */
+    private val spawnLocation: Location = getWallSpawnPosition(directionWallComesFrom)
+
+    /** The wall's lifecycle relative to the arena world. */
+    internal var state: WallState = WallState.Queued
+        private set
+    lateinit var wallRegion: CuboidRegion
+    /** The wall's signed position and travel axis, relative to `HITWConst.Locations.SPAWN`. */
+    var axisLocation: WallAxisCoordinate = axisLocationRelativeToPlayerSpawn(spawnLocation, directionWallComesFrom)
+    /** How many blocks the wall travels before it stops moving. */
+    var lifespanRemaining = calculateInitialLifespan()
+
+    var lifespanTraveled = 0
+    /** Whether the wall should be removed from the game when it stops moving. */
+    var shouldBeRemoved: Boolean = false
+    /** Whether the wall has stopped at the stop sign at least once. */
+    var hasStoppedAtStopSign: Boolean = false
+    /** Whether the wall has already performed its Psych-stop-and-resume behavior. */
+    var hasDoneAPsych: Boolean = false
+    /** Whether gameplay has halted this wall's movement. A halted wall may later resume. */
+    var isMovementHalted: Boolean = false
+    /** is stopped via [base.minigames.hole_in_the_wall.game_loop.walls.runtime.stopSameDirectionWallsThatAreTooClose] */
+    var isForcedStopped: Boolean = false
+    /** Prevents repeated handling of stopped walls. */
+    var isBeingHandled: Boolean = false
+    /** The action to take when this wall reaches runs out of lifespan and has been removed from the arena.*/
+    var actionsWhenDecayed: MutableList<Runnable> = mutableListOf()
+    /** Why this wall's lifespan ended. Nuke-caused decay must not trigger another Doominator alert. */
+    internal var decayCause: WallDecayCause = WallDecayCause.NATURAL
+    /** Game-loop tick at which this wall may take its first movement step. */
+    private var initialMovementUnlockTick: Long = 0
+
+    /** Prevents a new move from starting before the previous delayed move has finished. */
+    internal var isMoveInProgress: Boolean = false
+
+    /** Tracks delayed move tasks so they can be canceled and cleaned up if the wall is deleted. */
+    internal val pendingMoves: MutableList<PendingMove> = mutableListOf()
+
+    /** Development-only label showing this wall's stable debug id. */
+    private var debugIdDisplay: TextDisplay? = null
+
+    /** Piston locations, initialized after the schematic has been pasted into the world. */
+    internal lateinit var pistonLocations: MutableList<Location>
+
+    /**
+     * Returns the two travel-axis cells occupied by this wall.
+     *
+     * The first entry is the slime/front cell. The second entry is the piston/rear cell.
+     */
+    val occupiedAxisPositions: MutableList<Int>
+        get() {
+            val frontAxisPosition = axisLocation.coordinate
+            val rearAxisPosition = when (directionWallIsFacing) {
+                Direction.NORTH, Direction.WEST -> frontAxisPosition + 1
+                Direction.SOUTH, Direction.EAST -> frontAxisPosition - 1
+            }
+
+            val occupiedSpots = mutableListOf(frontAxisPosition,rearAxisPosition)
+
+
+            // We want to remember that a Repeater wall will go teleport to its stop sign eventually, and because of that we will reserve that spot for it in the Occupancy Grid as long as it hasn't tp'ed yet
+            val repeaterWall = this.getWallType<RepeaterWall>()
+            if (repeaterWall?.hasPendingTeleport() == true) {
+                occupiedSpots += repeaterWall.teleportDestinationReservedSpace
+            }
+
+            return occupiedSpots
+        }
+
+    val headAxisPosition: Int
+        get() {
+            return axisLocation.coordinate
+        }
+
+    val tailAxisPosition: Int
+        get() {
+            return occupiedAxisPositions.last()
+        }
+
+
+    //endregion
+
+    init {
+        // Load the wall file and validate its contents if necessary
+        if (wallFile.isDirectory) {
+            throw IllegalArgumentException("Wall file cannot be a directory: ${wallFile.path}")
+        }
+        if (!wallFile.exists()) {
+            throw IllegalArgumentException("Wall file does not exist: ${wallFile.path}")
+        }
+
+        // Configure direction-dependent state, then build the schematic at its normal spawn.
+        updateDirection(directionWallComesFrom)
+        rebuildSchematicAt(spawnLocation)
+
+        // give the wall behaviors a ref to the wall so they can operate on it
+        wallTypes.forEach { it.thisWall = this }
+
+        wallTypes.forEach { it.initStateAndRunnables() }
+
+        getWallType<DoominatorWall>()?.let { doominatorWall ->
+            actionsWhenDecayed += Runnable {
+                doominatorWall.alertUpcomingWallNuking()
+            }
+        }
+        // -------------------------------------------------------------------------------------------- //
+    }
+
+    /** Returns the spawn location for a wall coming from the given direction. */
+    private fun getWallSpawnPosition(directionWallComesFrom: Direction): Location {
+        val initialLocation = when (directionWallComesFrom) {
+            Direction.SOUTH -> HITWConst.Locations.SOUTH_WALL_SPAWN.clone()
+            Direction.NORTH -> HITWConst.Locations.NORTH_WALL_SPAWN.clone()
+            Direction.WEST -> HITWConst.Locations.WEST_WALL_SPAWN.clone()
+            Direction.EAST -> HITWConst.Locations.EAST_WALL_SPAWN.clone()
+        }
+
+        // Modify the spawn location based on the wall type's requirements.
+        if (hasWallType<JumpscareWall>()) {
+            when (directionWallComesFrom) {
+                Direction.NORTH -> initialLocation.z += HITWConst.WallLifespans.JUMPSCARE_WALL_LIFESPAN_SHORTENER
+                Direction.SOUTH -> initialLocation.z -= HITWConst.WallLifespans.JUMPSCARE_WALL_LIFESPAN_SHORTENER
+                Direction.EAST -> initialLocation.x -= HITWConst.WallLifespans.JUMPSCARE_WALL_LIFESPAN_SHORTENER
+                Direction.WEST -> initialLocation.x += HITWConst.WallLifespans.JUMPSCARE_WALL_LIFESPAN_SHORTENER
+            }
+        }
+
+        return initialLocation.clone()
+    }
+
+    /**
+     * Stop Walls at the stop signs
+     */
+    internal fun stopWallAtStopSign(): Boolean {
+        if (hasDoneAPsych)
+            return false
+
+        val stopSign: CuboidRegion = getStopSignRegion(directionWallComesFrom)
+
+        if (!stopSign.overlaps(wallRegion))
+            return false
+
+        // This method runs every wall-speed tick. Once a wall has stopped at its sign, avoid
+        // logging and scheduling its decay again; the lifecycle will delete it when that one
+        // decay timer finishes.
+        if (isMovementHalted)
+            return false
+
+        HITWDevLogger.wall(this, "wall has reached $directionWallComesFrom stop sign ")
+        isMovementHalted = true
+        hasStoppedAtStopSign = true
+
+        // A non-resumable wall decays when it reaches its stop sign, even if it still
+        // has movement lifespan remaining. Otherwise, it would wait forever and could later be
+        // incorrectly resumed into a following wall.
+        if (!canResume) {
+            isBeingHandled = true
+            HITWConst.Timers.DEAD_PSYCH_WALL_TIME_TILL_DECAY delayTheFollowing {
+                shouldBeRemoved = true
+                isBeingHandled = false
+            }
+        }
+
+        return true
+    }
+
+    /** Returns whether this wall can cross its stop sign without waiting for other traffic. */
+    internal fun hasNoImmediateStopSignDanger(): Boolean {
+        if (hasWallAheadWithinPsychResumeGap())
+            return false
+
+        val grid = WallsRuntimeState.locationsOfWalls
+        val wallsInCenter = grid.getWallsAtMiddleOrOuterRing().filter { it.directionWallComesFrom != this.directionWallComesFrom }
+        return wallsInCenter.isEmpty()
+    }
+
+    /** Returns the normal spawn anchor for a wall coming from [direction]. */
+    internal fun spawnAnchorFor(direction: Direction): Location = getWallSpawnPosition(direction)
+
+    /** Returns a wall location's signed coordinate and travel axis, relative to the player spawn. */
+    private fun axisLocationRelativeToPlayerSpawn(location: Location, direction: Direction): WallAxisCoordinate {
+        val axis = arenaAxisFor(direction)
+        val coordinate = when (axis) {
+            HITWConst.Locations.ArenaAxis.X -> location.blockX - HITWConst.Locations.SPAWN.blockX
+            HITWConst.Locations.ArenaAxis.Z -> location.blockZ - HITWConst.Locations.SPAWN.blockZ
+        }
+
+        return WallAxisCoordinate(coordinate, axis)
+    }
+
+    /** Rebuilds the wall clipboard and bounds at [location] using its current facing direction. */
+    internal fun rebuildSchematicAt(location: Location) {
+        holder = BuildLoader.getClipboardHolderFromFile(wallFile, location)
+        BuildLoader.applyDirectionToClipboardHolder(holder, directionWallIsFacing)
+
+        if (isFlipped) {
+            BuildLoader.mirrorClipboardHolder(holder, directionWallIsFacing)
+        }
+
+        wallRegion = BuildLoader.getRotatedRegion(holder)
+    }
+
+    internal fun rebuildSchematicAtThisLocationAndPaste() {
+        rebuildSchematicAt(worldLocationFor(axisLocation, directionWallComesFrom))
+        BuildLoader.loadSchematic(holder)
+    }
+
+    /** Updates direction-dependent state without changing the wall's location or spawn anchor. */
+    internal fun updateDirection(direction: Direction) {
+        directionWallComesFrom = direction
+        directionWallIsFacing = when (direction) {
+            Direction.SOUTH -> Direction.NORTH
+            Direction.NORTH -> Direction.SOUTH
+            Direction.WEST -> Direction.EAST
+            Direction.EAST -> Direction.WEST
+        }
+    }
+
+    /** Returns the travel axis for a wall moving in [direction]. */
+    private fun arenaAxisFor(direction: Direction): HITWConst.Locations.ArenaAxis {
+        return when (direction) {
+            Direction.NORTH, Direction.SOUTH -> HITWConst.Locations.ArenaAxis.Z
+            Direction.WEST, Direction.EAST -> HITWConst.Locations.ArenaAxis.X
+        }
+    }
+
+    /** Marks this wall's occupied positions on the provided axis occupancy array. */
+    fun markOnAxisOccupancy(axisOccupancy: Array<WallReference>) {
+        occupiedAxisPositions.forEach { occupiedAxisPosition ->
+            val index = HITWConst.Locations.relativeCoordinateToAxisIndex(axisLocation.axis, occupiedAxisPosition)
+
+            if (index in axisOccupancy.indices) {
+                axisOccupancy[index] = WallReference(this)
+            }
+        }
+    }
+
+    fun distanceTravelledFromSpawn(): Int {
+        val spawnPosition = HITWConst.Locations.axisSpawnPosition(directionWallComesFrom)
+
+        return when (directionWallComesFrom) {
+            Direction.SOUTH, Direction.EAST -> spawnPosition - axisLocation.coordinate
+            Direction.NORTH, Direction.WEST -> axisLocation.coordinate - spawnPosition
+        }
+    }
+
+
+    /**
+     * A wall has fully passed the middle ring only once both occupied axis cells are outside it.
+     */
+    fun hasPassedMiddleRing(): Boolean {
+        val middleRingAxisRange = when (axisLocation.axis) {
+            HITWConst.Locations.ArenaAxis.X ->
+                HITWConst.Locations.PlatformGeometry.ABOVE_PLATFORM_REGION.minimumPoint.x()..
+                    HITWConst.Locations.PlatformGeometry.ABOVE_PLATFORM_REGION.maximumPoint.x()
+
+            HITWConst.Locations.ArenaAxis.Z ->
+                HITWConst.Locations.PlatformGeometry.ABOVE_PLATFORM_REGION.minimumPoint.z()..
+                    HITWConst.Locations.PlatformGeometry.ABOVE_PLATFORM_REGION.maximumPoint.z()
+        }
+
+        return occupiedAxisPositions.none { it in middleRingAxisRange }
+    }
+
+    //region -- Lifecycle --
+
+    /** Loads the wall schematic into the world at its spawn location. */
+    fun spawn() {
+        check(state == WallState.Queued) { "Wall#$debugId cannot spawn from state $state" }
+
+        // Now we have the schematic ready to be pasted into the world.
+        // after modifying the schematic, now we can finally paste the schematic into the world at the spawn location.
+        BuildLoader.loadSchematic(holder)
+
+        // Get the locations of all pistons in the wall region. important that this is done after the wall region is set (which it is only after loading the schem), since the method relies on the wall region to get the piston locations.
+        initializeWallMotion()
+
+        state = WallState.Spawned
+        initialMovementUnlockTick = GameLoopRuntimeState.tickCount +
+            (getWallType<JumpscareWall>()?.movementStartDelayTicks() ?: 0)
+        createDebugIdDisplay()
+    }
+
+    /** Moves the wall one block via its piston-based movement implementation. */
+    fun move() = moveWallByPistons()
+
+    /**
+     * A jumpscare wall exists before it begins moving; this is distinct from [isMovementHalted], which
+     * represents a wall that has been halted by gameplay after (or during) its movement.
+     */
+    internal fun isWaitingForInitialMovement(currentTick: Long): Boolean =
+        currentTick < initialMovementUnlockTick
+
+    /** Whether this spawned wall is currently progressing through its normal movement lifecycle. */
+    internal fun isActivelyMoving(currentTick: Long): Boolean =
+        state == WallState.Spawned &&
+            lifespanRemaining > 0 &&
+            !isMovementHalted &&
+            !isWaitingForInitialMovement(currentTick)
+
+    /** Advances the wall's lifespan counters and signed axis location by one step. */
+    internal fun advanceOneStep() {
+        lifespanRemaining--
+        lifespanTraveled++
+        val coordinateDelta = when (directionWallComesFrom) {
+            Direction.SOUTH, Direction.EAST -> -1
+            Direction.NORTH, Direction.WEST -> 1
+        }
+        axisLocation = axisLocation.copy(coordinate = axisLocation.coordinate + coordinateDelta)
+    }
+
+    /** Marks the wall as deleted and cancels any delayed tasks that have not yet been completed. */
+    fun markDeleted() {
+        if (state == WallState.Deleted) return
+
+        state = WallState.Deleted
+        removeDebugIdDisplay()
+        cancelPendingMoves()
+        wallTypes.forEach { it.clearRunnables() }
+    }
+
+    /** Creates the development-only id label above this wall. */
+    private fun createDebugIdDisplay() {
+        if (!HITWConst.Development.IS_IN_DEVELOPMENT) return
+
+        debugIdDisplay = HITWConst.Locations.WORLD.spawn(debugDisplayLocation(), TextDisplay::class.java) { display ->
+            display.text(debugDisplayText())
+            display.billboard = Billboard.CENTER
+            display.isSeeThrough = true
+            display.isPersistent = false
+        }
+    }
+
+    /** Moves the development-only id label above the wall's current schematic bounds. */
+    internal fun updateDebugIdDisplayLocation() {
+        debugIdDisplay?.apply {
+            text(debugDisplayText())
+            teleport(debugDisplayLocation())
+        }
+    }
+
+    private fun debugDisplayText(): Component = Component.text(
+        """
+            wall#${debugId}
+            batch#${spawnBatch}
+            canResume=$canResume
+            ${wallTypes.joinToString().ifEmpty { "normal" }}
+        """.trimIndent()
+    )
+
+    private fun removeDebugIdDisplay() {
+        debugIdDisplay?.remove()
+        debugIdDisplay = null
+    }
+
+    private fun debugDisplayLocation(): Location = Location(
+        HITWConst.Locations.WORLD,
+        (wallRegion.minimumPoint.x() + wallRegion.maximumPoint.x() + 1) / 2.0,
+        wallRegion.maximumPoint.y() + 3.0,
+        (wallRegion.minimumPoint.z() + wallRegion.maximumPoint.z() + 1) / 2.0
+    )
+
+    //endregion
+
+    //region -- Wall types --
+
+    /** If True, the wall will later resume moving after stopping before the middle, otherwise, the wall will very shortly decay and remove itself*/
+    private fun calculateInitialLifespan(): Int {
+        // Decide the base lifespan
+        var initialLifespan: Int = when {
+            // A wall that will decay at its stop sign must keep its short lifespan. A
+            // resumed wall otherwise behaves like a normal wall, so it must not override
+            // a combined lifespan modifier such as Early Decayed.
+            !canResume -> {
+                minimumLifespanToReachStopSign()
+            }
+
+            hasWallType<EarlyDecayedWall>() -> HITWConst.WallLifespans.FAST_DECAYED_WALL_LIFESPAN_RANGE.random()
+            hasWallType<RammingWall>() -> HITWConst.WallLifespans.RAMMING_WALL_LIFESPAN
+
+            else -> HITWConst.WallLifespans.DEFAULT_WALL_TRAVEL_LIFESPAN
+        }
+
+        if (hasWallType<ReturningWall>())
+            initialLifespan += ReturningWall.calcExtraLifespanForReturning()
+
+        if (hasWallType<JumpscareWall>())
+            initialLifespan -= HITWConst.WallLifespans.JUMPSCARE_WALL_LIFESPAN_SHORTENER
+
+        getWallType<RepeaterWall>()?.let {
+            initialLifespan += it.calculateExtraLifespan(directionWallComesFrom)
+        }
+
+        return initialLifespan
+    }
+
+    /**
+     * Lets a non-resuming Psych wall enter its stop-sign region, then leaves one movement step
+     * for the lifecycle to observe that stop before normal zero-lifespan removal can occur.
+     */
+    private fun minimumLifespanToReachStopSign(): Int =
+        abs(
+            HITWConst.Locations.axisSpawnPosition(directionWallComesFrom) -
+                HITWConst.Locations.stopSignAxisPosition(directionWallComesFrom)
+        ) + 1
+
+    fun isAtMiddle(): Boolean {
+        val coordinate = axisLocation.coordinate
+        return when (this.axisLocation.axis) {
+            HITWConst.Locations.ArenaAxis.X -> coordinate >= HITWConst.Locations.DISTANCE_FROM_CENTER_TO_SOUTH_PLATFORM_EDGE && coordinate <= HITWConst.Locations.DISTANCE_FROM_CENTER_TO_NORTH_PLATFORM_EDGE
+            HITWConst.Locations.ArenaAxis.Z -> coordinate >= HITWConst.Locations.DISTANCE_FROM_CENTER_TO_EAST_PLATFORM_EDGE && coordinate <= HITWConst.Locations.DISTANCE_FROM_CENTER_TO_WEST_PLATFORM_EDGE
+        }
+    }
+
+    /** Replaces the current wall type set with the provided types, deduplicated by class. */
+    fun setWallTypes(types: Collection<WallType>) {
+        wallTypes.clear()
+
+        types.forEach { type ->
+            if (wallTypes.none { it::class == type::class }) {
+                wallTypes.add(type)
+            }
+        }
+    }
+
+    fun hasAnyWallTypes() = wallTypes.isNotEmpty()
+
+    /** Adds a wall type if another instance of its class is not already present. */
+    fun addWallType(type: WallType) {
+        if (wallTypes.none { it::class == type::class }) {
+            wallTypes.add(type)
+        }
+    }
+
+    /** Returns `true` when a wall type of the requested reified type is attached. */
+    inline fun <reified T : WallType> hasWallType(): Boolean {
+        return wallTypes.any { it is T }
+    }
+
+    /** Returns the first attached wall type of the requested reified type, if any. */
+    inline fun <reified T : WallType> getWallType(): T? {
+        return wallTypes.filterIsInstance<T>().firstOrNull()
+    }
+
+
+    //endregion
+
+    /** Highlights the wall's bounding corners for debugging. */
+    internal fun showBlocks() {
+        fun putBlock(location: Location) {
+            location.block.type = Material.DIAMOND_BLOCK
+        }
+
+        val min = Location(
+            HITWConst.Locations.WORLD,
+            wallRegion.minimumPoint.x().toDouble(),
+            wallRegion.minimumPoint.y().toDouble(),
+            wallRegion.minimumPoint.z().toDouble()
+        )
+        val max = Location(
+            HITWConst.Locations.WORLD,
+            wallRegion.maximumPoint.x().toDouble(),
+            wallRegion.maximumPoint.y().toDouble(),
+            wallRegion.maximumPoint.z().toDouble()
+        )
+
+        putBlock(min)
+        putBlock(max)
+    }
+
+    override fun toString(): String {
+        return "#$debugId{spawnDir=$directionWallComesFrom, batch=${spawnBatch.id}, lifespanRem=$lifespanRemaining, wallTypes=$wallTypes}"
+    }
+
+}
+
+/** Identifies whether a wall reached the end of its lifespan normally or was destroyed by another effect. */
+internal enum class WallDecayCause {
+    NATURAL,
+    DOOMINATOR_NUKE,
+    RAMMING,
+}

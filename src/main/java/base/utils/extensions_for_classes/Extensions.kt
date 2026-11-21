@@ -7,6 +7,7 @@ import net.kyori.adventure.text.Component.text
 import net.kyori.adventure.text.format.TextColor
 import net.kyori.adventure.title.Title
 import org.bukkit.Bukkit.*
+import org.bukkit.Location
 import org.bukkit.Material
 import org.bukkit.World
 import org.bukkit.block.Block
@@ -58,6 +59,10 @@ operator fun BlockVector3.minus(other: BlockVector3): BlockVector3 {
 }
 
 fun Block.toBlockVector3() : BlockVector3 {
+    return BlockVector3.at(this.x,this.y,this.z)
+}
+
+fun Location.toBlockVector(): BlockVector3 {
     return BlockVector3.at(this.x,this.y,this.z)
 }
 

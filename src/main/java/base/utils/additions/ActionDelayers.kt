@@ -7,7 +7,9 @@ import org.bukkit.scheduler.BukkitRunnable
 import org.bukkit.scheduler.BukkitTask
 import kotlin.math.max
 
-
+/**
+ * The delay will be in Ticks
+ */
 infix fun Long.delayTheFollowing(runnable: ()-> Unit) {
     Bukkit.getScheduler().runTaskLater(MinigamePlugin.plugin,runnable,this)
 }
@@ -98,6 +100,14 @@ class PausableBukkitRunnable(
                 elapsedTicks
 
         remainingTicks = max(0, remainingTicks - elapsedTicksInCycle)
+    }
+
+    /** Permanently stops this runnable so it cannot resume with its owning minigame. */
+    fun cancel() {
+        task?.cancel()
+        task = null
+        isPaused = true
+        shouldNotBeUsed = true
     }
 
     /**

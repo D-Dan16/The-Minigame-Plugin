@@ -8,6 +8,8 @@ import base.minigames.disco_mayhem.DiscoMayhem
 import base.minigames.disco_mayhem.DiscoMayhemCommands
 import base.minigames.hole_in_the_wall.HoleInTheWall
 import base.minigames.hole_in_the_wall.HoleInTheWallCommands
+import base.minigames.hole_in_the_wall.arena.PlatformStagePreviewer
+import base.minigames.hole_in_the_wall.arena.WallPackPreviewer
 import base.minigames.MinigameSkeleton
 import base.minigames.maze_hunt.MazeHunt
 import base.minigames.maze_hunt.MazeHuntCommands
@@ -16,6 +18,7 @@ import base.minigames.parkour_dash.ParkourDash
 import base.minigames.parkour_dash.ParkourDashCommands
 import base.minigames.parkour_dash.ParkourDashCourseCreatorListener
 import base.minigames.parkour_dash.GameEvents
+import base.minigames.hole_in_the_wall.debug.HITWDevLogger
 import org.bukkit.Bukkit
 import org.bukkit.Difficulty
 import org.bukkit.GameMode
@@ -80,9 +83,9 @@ class MinigamePlugin : JavaPlugin() {
         getCommand("mg_blueprint_bazaar")?.setExecutor(
             BlueprintBazaarCommands(blueprintBazaar)
         )
-        getCommand("mg_hole_in_the_wall")?.setExecutor(
-            HoleInTheWallCommands(holeInTheWall)
-        )
+        val holeInTheWallCommands = HoleInTheWallCommands(holeInTheWall)
+        getCommand("mg_hole_in_the_wall")?.setExecutor(holeInTheWallCommands)
+        getCommand("hitw")?.setExecutor(holeInTheWallCommands)
         getCommand("mg_maze_hunt")?.setExecutor(
             MazeHuntCommands(mazeHunt)
         )
@@ -99,15 +102,21 @@ class MinigamePlugin : JavaPlugin() {
             listOfMinigames.forEach {
                 it.nukeArena()
             }
+
+        // A preview is not part of a running minigame, so remove it explicitly on reload/shutdown.
+        WallPackPreviewer.clear()
+        PlatformStagePreviewer.clear()
+
+        HITWDevLogger.shutdown()
     }
 
     fun getSchematicsBaseFolder(minigame: MinigameType): File {
         return when (minigame) {
             MinigameType.BLUEPRINT_BAZAAR -> File(dataFolder, "Minigames/BlueprintBazaar")
             MinigameType.HOLE_IN_THE_WALL -> File(dataFolder, "Minigames/HoleInTheWall")
-            MinigameType.DISCO_MAYHEM -> File(dataFolder, "DiscoMayhem") //Doesn't exist
+            MinigameType.DISCO_MAYHEM -> File(dataFolder, "Minigames/DiscoMayhem") //Doesn't exist
             MinigameType.PARKOUR_DASH -> File(dataFolder, "Minigames/ParkourDash")
-            MinigameType.MAZE_HUNT -> File(dataFolder, "MazeHunt") //Doesn't exist
+            MinigameType.MAZE_HUNT -> File(dataFolder, "Minigames/MazeHunt") //Doesn't exist
         }
     }
 
